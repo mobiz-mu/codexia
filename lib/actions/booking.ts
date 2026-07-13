@@ -199,6 +199,7 @@ export async function createBooking(input: CreateBookingInput & { locale: "en" |
       accepted_at: new Date().toISOString(),
       access_token_hash: accessTokenHash,
       idempotency_key: data.idempotencyKey,
+      payment_method: data.paymentMethod,
     })
     .select("id, reference")
     .single();

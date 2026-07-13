@@ -1212,6 +1212,10 @@ create policy storage_invoices_staff on storage.objects
     bucket_id = 'invoices' and has_permission(auth.uid(), 'create_invoices')
   );
 
+-- ---- 0013_booking_payment_method.sql ----
+alter table bookings
+  add column payment_method text check (payment_method in ('bank_transfer', 'pay_on_arrival', 'online'));
+
 -- ---- seed.sql ----
 -- ============================================================================
 -- Codexia Ltd — seed data. Vehicles/pricing below are clearly-marked demo

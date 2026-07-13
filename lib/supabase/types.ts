@@ -13,6 +13,37 @@ type Table<Row> = {
 export type Database = {
   public: {
     Tables: {
+      profiles: Table<{
+        id: string;
+        full_name: string | null;
+        phone: string | null;
+        avatar_path: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      roles: Table<{
+        id: string;
+        key: string;
+        name: string;
+        description: string | null;
+        created_at: string;
+      }>;
+      permissions: Table<{
+        id: string;
+        key: string;
+        description: string | null;
+        created_at: string;
+      }>;
+      role_permissions: Table<{
+        role_id: string;
+        permission_id: string;
+      }>;
+      user_roles: Table<{
+        user_id: string;
+        role_id: string;
+        assigned_at: string;
+        assigned_by: string | null;
+      }>;
       site_settings: Table<{
         key: string;
         value: unknown;
@@ -304,6 +335,7 @@ export type Database = {
         google_event_id: string | null;
         access_token_hash: string | null;
         idempotency_key: string | null;
+        payment_method: "bank_transfer" | "pay_on_arrival" | "online" | null;
         created_at: string;
         updated_at: string;
         deleted_at: string | null;
@@ -376,6 +408,28 @@ export type Database = {
         payment_date: string | null;
         reviewer_id: string | null;
         rejection_reason: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      audit_logs: Table<{
+        id: string;
+        actor_id: string | null;
+        action: string;
+        entity: string;
+        entity_id: string | null;
+        diff: unknown;
+        created_at: string;
+      }>;
+      payments: Table<{
+        id: string;
+        booking_id: string;
+        method: "bank_transfer" | "online" | "pay_on_arrival" | "cash";
+        amount_cents: number;
+        currency: string;
+        status: "pending" | "recorded" | "refunded";
+        recorded_by: string | null;
+        note: string | null;
+        paid_at: string | null;
         created_at: string;
         updated_at: string;
       }>;
