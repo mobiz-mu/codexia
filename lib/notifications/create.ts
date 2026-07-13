@@ -7,7 +7,8 @@ export type NotificationType =
   | "new_review"
   | "new_contact_message"
   | "new_newsletter_subscriber"
-  | "failed_email";
+  | "failed_email"
+  | "online_payment_received";
 
 export async function createNotification(
   type: NotificationType,

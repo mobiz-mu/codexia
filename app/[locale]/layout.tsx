@@ -7,6 +7,8 @@ import { routing } from "@/i18n/routing";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
 import { WhatsAppButton } from "@/components/site/WhatsAppButton";
+import { AnalyticsTracker } from "@/components/site/AnalyticsTracker";
+import { AnalyticsScripts } from "@/components/site/AnalyticsScripts";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import "../globals.css";
 
@@ -63,7 +65,9 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${jakarta.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-ink">
+        <AnalyticsScripts />
         <NextIntlClientProvider>
+          <AnalyticsTracker locale={locale} />
           <Header />
           <main id="main-content" className="flex-1">
             {children}

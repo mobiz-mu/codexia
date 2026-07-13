@@ -433,6 +433,47 @@ export type Database = {
         created_at: string;
         updated_at: string;
       }>;
+      payment_transactions: Table<{
+        id: string;
+        booking_id: string;
+        provider: string;
+        provider_ref: string | null;
+        amount_cents: number;
+        currency: string;
+        status: "pending" | "succeeded" | "failed" | "cancelled";
+        webhook_payload: unknown;
+        idempotency_key: string;
+        created_at: string;
+        updated_at: string;
+      }>;
+      reminder_logs: Table<{
+        id: string;
+        booking_id: string;
+        reminder_type: "seven_day" | "tomorrow";
+        sent_at: string;
+      }>;
+      analytics_events: Table<{
+        id: string;
+        event: string;
+        path: string | null;
+        vehicle_id: string | null;
+        session_hash: string | null;
+        device: string | null;
+        browser: string | null;
+        country: string | null;
+        locale: string | null;
+        referrer: string | null;
+        created_at: string;
+      }>;
+      calendar_sync_log: Table<{
+        id: string;
+        booking_id: string;
+        action: "create" | "update" | "delete";
+        status: "success" | "failed";
+        error: string | null;
+        google_event_id: string | null;
+        created_at: string;
+      }>;
       notifications: Table<{
         id: string;
         type: string;

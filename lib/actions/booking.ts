@@ -304,5 +304,7 @@ export async function createBooking(input: CreateBookingInput & { locale: "en" |
     `/admin/bookings/${booking.id}`
   );
 
+  await supabase.from("analytics_events").insert({ event: "booking_submitted", vehicle_id: data.vehicleId });
+
   return { ok: true, reference: booking.reference, accessToken, paymentMethod: data.paymentMethod };
 }

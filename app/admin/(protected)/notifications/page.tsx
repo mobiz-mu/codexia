@@ -12,6 +12,7 @@ const TYPE_LABELS: Record<string, string> = {
   new_contact_message: "New Contact Message",
   new_newsletter_subscriber: "New Newsletter Subscriber",
   failed_email: "Failed Email",
+  online_payment_received: "Online Payment Received",
 };
 
 export default async function AdminNotificationsPage() {

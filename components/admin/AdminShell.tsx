@@ -21,6 +21,7 @@ import {
   MessageSquare,
   Bell,
   Settings,
+  BarChart3,
 } from "lucide-react";
 import type { CurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { logoutAdmin } from "@/lib/auth/actions";
@@ -50,6 +51,7 @@ const NAV_ITEMS = [
   { href: "/admin/newsletter", label: "Newsletter", icon: MailPlus, permission: "manage_content" },
   { href: "/admin/messages", label: "Contact Messages", icon: MessageSquare, permission: "manage_content" },
   { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: null },
+  { href: "/admin/analytics", label: "Analytics", icon: BarChart3, permission: "view_analytics" },
   { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_settings" },
 ] as const;
 

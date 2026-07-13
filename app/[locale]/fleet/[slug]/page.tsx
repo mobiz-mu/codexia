@@ -15,6 +15,7 @@ import { FaqAccordion } from "@/components/site/FaqAccordion";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
 import { SITE_DEFAULTS } from "@/lib/config/site";
+import { trackVehicleView } from "@/lib/analytics/track";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -49,6 +50,7 @@ export default async function VehicleDetailPage({
     getRelatedVehicles(vehicle.category_id, vehicle.id),
     getApprovedReviews({ targetType: "vehicle", targetId: vehicle.id }),
     getFaqCategoriesWithEntries(),
+    trackVehicleView(vehicle.id, locale),
   ]);
 
   const description = locale === "fr" ? vehicle.description_fr : vehicle.description_en;

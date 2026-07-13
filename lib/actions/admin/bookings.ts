@@ -8,11 +8,38 @@ import type { Database } from "@/lib/supabase/types";
 type BookingStatusColumn = Database["public"]["Tables"]["bookings"]["Row"]["status"];
 import { sendBookingConfirmedEmail } from "@/lib/email/booking-confirmed";
 import { sendBookingReceivedEmails } from "@/lib/email/booking-received";
+import { upsertBookingCalendarEvent, deleteBookingCalendarEvent } from "@/lib/google/calendar";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {
     throw new Error(`Missing required permission: ${permission}`);
   }
+}
+
+async function syncBookingCalendarEvent(bookingId: string) {
+  const supabase = createAdminClient();
+  const { data: booking } = await supabase.from("bookings").select("*").eq("id", bookingId).maybeSingle();
+  if (!booking) return;
+
+  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }] = await Promise.all([
+    supabase.from("booking_customers").select("full_name").eq("booking_id", bookingId).maybeSingle(),
+    booking.vehicle_id
+      ? supabase.from("vehicles").select("name").eq("id", booking.vehicle_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("locations").select("name_en").eq("id", booking.pickup_location_id).maybeSingle(),
+    supabase.from("locations").select("name_en").eq("id", booking.dropoff_location_id).maybeSingle(),
+  ]);
+
+  await upsertBookingCalendarEvent({
+    bookingId,
+    reference: booking.reference,
+    vehicleName: vehicle?.name ?? "Unassigned",
+    customerName: customer?.full_name ?? "",
+    pickupAt: booking.pickup_at,
+    returnAt: booking.return_at,
+    pickupLocationName: pickupLoc?.name_en ?? "",
+    dropoffLocationName: dropoffLoc?.name_en ?? "",
+  });
 }
 
 export async function listBookings(filters?: { status?: string; search?: string }) {
@@ -154,6 +181,11 @@ export async function updateBookingStatus(
 
   if (newStatus === "confirmed") {
     await sendBookingConfirmedEmail(bookingId, locale);
+    await syncBookingCalendarEvent(bookingId);
+  }
+
+  if (["cancelled", "rejected", "refunded", "no_show"].includes(newStatus)) {
+    await deleteBookingCalendarEvent(bookingId);
   }
 
   return { ok: true };
@@ -189,6 +221,8 @@ export async function reassignVehicle(bookingId: string, vehicleId: string): Pro
     entity_id: bookingId,
     diff: { vehicle_id: vehicleId },
   });
+
+  await syncBookingCalendarEvent(bookingId);
 
   return { ok: true };
 }

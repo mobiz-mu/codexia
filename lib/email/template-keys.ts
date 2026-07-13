@@ -30,4 +30,17 @@ export const KNOWN_TEMPLATE_KEYS = [
       "myBookingUrl",
     ],
   },
+  {
+    key: "booking_reminder_customer",
+    label: "Booking Pickup Reminder (Customer)",
+    variables: [
+      "reference",
+      "customerName",
+      "vehicleName",
+      "pickupLocationName",
+      "pickupAt",
+      "balanceFormatted",
+      "myBookingUrl",
+    ],
+  },
 ] as const;
