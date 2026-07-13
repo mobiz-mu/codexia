@@ -1,5 +1,13 @@
 import { setRequestLocale } from "next-intl/server";
-import { MauritiusSubpage } from "@/components/site/MauritiusSubpage";
+import type { Metadata } from "next";
+import { MauritiusSubpage, getMauritiusSubpageMetadata } from "@/components/site/MauritiusSubpage";
+
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await props.params;
+  return getMauritiusSubpageMetadata(locale, "drivingGuide");
+}
 
 export default async function DrivingGuidePage({
   params,

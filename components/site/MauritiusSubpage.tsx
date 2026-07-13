@@ -1,11 +1,21 @@
 import { getTranslations } from "next-intl/server";
+import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 
-export async function MauritiusSubpage({
-  sectionKey,
-}: {
-  sectionKey: "placesToVisit" | "drivingGuide" | "airportGuide" | "travelTips";
-}) {
+type MauritiusSectionKey = "placesToVisit" | "drivingGuide" | "airportGuide" | "travelTips";
+
+export async function getMauritiusSubpageMetadata(
+  locale: string,
+  sectionKey: MauritiusSectionKey
+): Promise<Metadata> {
+  const t = await getTranslations({ locale, namespace: "mauritius" });
+  return {
+    title: t(`${sectionKey}.title`),
+    description: t(`${sectionKey}.text`),
+  };
+}
+
+export async function MauritiusSubpage({ sectionKey }: { sectionKey: MauritiusSectionKey }) {
   const t = await getTranslations("mauritius");
 
   return (
