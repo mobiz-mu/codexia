@@ -1,0 +1,237 @@
+{
+  "nav": {
+    "vehicles": {
+      "label": "Vehicles",
+      "fleet": "Full Fleet",
+      "categories": "Categories",
+      "airportRental": "Airport Rental"
+    },
+    "booking": {
+      "label": "Booking",
+      "bookNow": "Book Now",
+      "manageBooking": "Manage Booking"
+    },
+    "mauritius": {
+      "label": "Mauritius",
+      "about": "About Mauritius",
+      "placesToVisit": "Places to Visit",
+      "drivingGuide": "Driving Guide",
+      "airportGuide": "Airport Guide",
+      "travelTips": "Travel Tips",
+      "blog": "Blog"
+    },
+    "company": {
+      "label": "Company",
+      "about": "About Codexia",
+      "services": "Services",
+      "faq": "FAQ",
+      "contact": "Contact"
+    },
+    "bookNowCta": "Book Now"
+  },
+  "footer": {
+    "companyBlurb": "Mauritius car rental with 10+ years of experience. Unlimited mileage, comprehensive insurance, and 24/7 road assistance on every booking.",
+    "columns": {
+      "carRental": "Car Rental",
+      "mauritius": "Mauritius",
+      "policies": "Policies"
+    },
+    "links": {
+      "fleet": "Fleet",
+      "book": "Book",
+      "airportRental": "Airport Rental",
+      "categories": "Categories",
+      "locations": "Locations",
+      "manageBooking": "Manage Booking",
+      "about": "About",
+      "placesToVisit": "Places to Visit",
+      "drivingGuide": "Driving Guide",
+      "airportGuide": "Airport Guide",
+      "travelTips": "Travel Tips",
+      "blog": "Blog"
+    },
+    "newsletter": {
+      "heading": "Stay updated",
+      "placeholder": "Your email address",
+      "submit": "Subscribe",
+      "success": "Subscribed! Thank you.",
+      "error": "Something went wrong. Please try again."
+    },
+    "policyLinks": {
+      "general-rental-conditions": "General Rental Conditions",
+      "privacy": "Privacy Policy",
+      "cookie": "Cookie Policy",
+      "cancellation": "Cancellation Policy",
+      "insurance": "Insurance Policy",
+      "payment": "Payment Policy",
+      "fuel": "Fuel Policy",
+      "terms-of-use": "Terms of Use"
+    },
+    "emergencyLabel": "Emergency",
+    "copyright": "© {year} Codexia Ltd. All rights reserved.",
+    "sitemap": "Sitemap",
+    "accessibility": "Accessibility Statement"
+  },
+  "common": {
+    "skipToContent": "Skip to content",
+    "languageSwitcher": "Language",
+    "whatsappCta": "Chat on WhatsApp"
+  },
+  "home": {
+    "heroTitle": "Drive Mauritius on your terms",
+    "heroSubtitle": "Unlimited mileage, comprehensive insurance, and 24/7 support with every rental.",
+    "heroCta": "Search Availability",
+    "featuredTitle": "Featured Vehicles",
+    "featuredSubtitle": "A sample of our demonstration fleet — full lineup on the Fleet page.",
+    "viewAllFleet": "View Full Fleet",
+    "whyChooseUsTitle": "Why Choose Codexia",
+    "whyChooseUs": {
+      "mileage": { "title": "Unlimited Mileage", "text": "Drive as much as you like, every rental." },
+      "insurance": { "title": "Comprehensive Insurance", "text": "Included on every booking, with optional excess reduction." },
+      "assistance": { "title": "24/7 Road Assistance", "text": "Help is always a call away, day or night." },
+      "delivery": { "title": "Free Airport Delivery", "text": "We meet you at SSR Airport at no extra cost." }
+    },
+    "categoriesTitle": "Browse by Category",
+    "aboutCodexiaTitle": "About Codexia",
+    "aboutCodexiaText": "For over 10 years, Codexia Ltd has provided reliable car rental across Mauritius for locals and travellers alike.",
+    "aboutCodexiaCta": "Learn More",
+    "aboutMauritiusTitle": "Discover Mauritius",
+    "aboutMauritiusText": "From the beaches of Grand Baie to the mountains of Le Morne, explore the island at your own pace.",
+    "aboutMauritiusCta": "Explore Mauritius",
+    "reviewsTitle": "What Our Customers Say",
+    "articlesTitle": "Latest from the Blog",
+    "newsletterTitle": "Stay in the Loop",
+    "newsletterText": "Travel tips and offers from Codexia, straight to your inbox.",
+    "finalCtaTitle": "Ready to hit the road?",
+    "finalCtaText": "Search availability and book your rental in minutes.",
+    "finalCtaButton": "Book Now"
+  },
+  "search": {
+    "category": "Category",
+    "anyCategory": "Any category",
+    "pickupLocation": "Pickup Location",
+    "dropoffLocation": "Drop-off Location",
+    "pickupDate": "Pickup Date & Time",
+    "returnDate": "Return Date & Time",
+    "passengers": "Passengers",
+    "submit": "Search Availability"
+  },
+  "vehicleCard": {
+    "transmission": { "manual": "Manual", "automatic": "Automatic" },
+    "fuel": { "petrol": "Petrol", "diesel": "Diesel", "hybrid": "Hybrid", "electric": "Electric" },
+    "ac": "A/C",
+    "day": "day",
+    "view": "View",
+    "book": "Book",
+    "whatsappEnquiry": "Enquire about",
+    "noImage": "Photo coming soon"
+  },
+  "fleet": {
+    "title": "Our Fleet",
+    "subtitle": "Demonstration listings — pricing and availability confirmed at booking.",
+    "empty": "No vehicles are available right now. Please check back soon."
+  },
+  "categories": {
+    "title": "Vehicle Categories",
+    "subtitle": "Find the right category for your trip.",
+    "viewVehicles": "View Vehicles"
+  },
+  "locations": {
+    "title": "Our Locations",
+    "subtitle": "Pickup and drop-off across Mauritius.",
+    "deliveryFee": "Delivery fee",
+    "free": "Free"
+  },
+  "blog": {
+    "title": "Blog",
+    "subtitle": "Travel tips and news from Codexia.",
+    "readMore": "Read More",
+    "empty": "No articles published yet."
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Can't find your answer? Contact us on WhatsApp."
+  },
+  "about": {
+    "title": "About Codexia",
+    "intro": "Codexia Ltd has been renting cars across Mauritius for over 10 years, serving both local residents and international visitors.",
+    "missionTitle": "Our Mission",
+    "missionText": "To make exploring Mauritius simple, with transparent pricing, well-maintained vehicles, and support around the clock.",
+    "valuesTitle": "Why Renters Choose Us",
+    "values": {
+      "experience": "10+ years of local experience",
+      "transparency": "Transparent, all-inclusive pricing",
+      "support": "24/7 support, every day of the year",
+      "coverage": "Island-wide delivery and pickup"
+    }
+  },
+  "mauritius": {
+    "title": "Discover Mauritius",
+    "intro": "Mauritius offers pristine beaches, mountain hikes, and vibrant culture — all easily reachable by car.",
+    "placesToVisit": {
+      "title": "Places to Visit",
+      "text": "From Grand Baie's beaches to Chamarel's coloured earth, plan your route with a rental that keeps up."
+    },
+    "drivingGuide": {
+      "title": "Driving Guide",
+      "text": "Mauritius drives on the left. Speed limits, road signs, and etiquette follow British conventions."
+    },
+    "airportGuide": {
+      "title": "Airport Guide",
+      "text": "SSR International Airport (Plaisance) is our main pickup point, with free delivery and recovery."
+    },
+    "travelTips": {
+      "title": "Travel Tips",
+      "text": "Pack light, keep your documents handy, and allow extra time for scenic coastal roads."
+    }
+  },
+  "services": {
+    "title": "Our Services",
+    "intro": "Everything you need for a smooth rental experience, from airport pickup to island-wide delivery.",
+    "airportRental": {
+      "title": "Airport Rental",
+      "text": "Free delivery and recovery at SSR Airport, with flight tracking for delayed arrivals."
+    },
+    "delivery": {
+      "title": "Island-Wide Delivery",
+      "text": "We deliver and collect at any of our 10 locations across Mauritius."
+    },
+    "insurance": {
+      "title": "Insurance Options",
+      "text": "Comprehensive insurance included, with optional excess reduction for extra peace of mind."
+    }
+  },
+  "contact": {
+    "title": "Contact Us",
+    "subtitle": "Available 24/7 — reach us by phone, WhatsApp, or the form below.",
+    "form": {
+      "name": "Full Name",
+      "email": "Email",
+      "phone": "Phone",
+      "subject": "Subject",
+      "message": "Message",
+      "submit": "Send Message",
+      "success": "Thank you — we'll be in touch shortly.",
+      "error": "Something went wrong. Please try again or contact us on WhatsApp."
+    }
+  },
+  "policies": {
+    "lastUpdated": "Last updated"
+  },
+  "vehicleDetail": {
+    "specsTitle": "Specifications",
+    "descriptionTitle": "About This Vehicle",
+    "relatedTitle": "You Might Also Like",
+    "reviewsTitle": "Reviews",
+    "reviewsEmpty": "No reviews yet for this vehicle.",
+    "faqTitle": "Frequently Asked Questions",
+    "bookCta": "Book This Vehicle",
+    "whatsappCta": "Ask on WhatsApp",
+    "demoNotice": "Demonstration listing — final pricing and specifications confirmed by Codexia at booking."
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "The page you're looking for doesn't exist or has moved.",
+    "cta": "Back to Home"
+  }
+}

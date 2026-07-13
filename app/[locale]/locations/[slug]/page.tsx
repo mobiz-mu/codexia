@@ -1,0 +1,60 @@
+import { getTranslations, setRequestLocale } from "next-intl/server";
+import type { Metadata } from "next";
+import { notFound } from "next/navigation";
+import { getLocationBySlug } from "@/lib/data/locations";
+import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { Link } from "@/i18n/navigation";
+import { formatMoney } from "@/lib/pricing/format";
+
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string; slug: string }>;
+}): Promise<Metadata> {
+  const { locale, slug } = await props.params;
+  const location = await getLocationBySlug(slug);
+  if (!location) return {};
+
+  const name = locale === "fr" ? location.name_fr : location.name_en;
+  return { title: name };
+}
+
+export default async function LocationDetailPage({
+  params,
+}: {
+  params: Promise<{ locale: string; slug: string }>;
+}) {
+  const { locale, slug } = await params;
+  setRequestLocale(locale);
+
+  const location = await getLocationBySlug(slug);
+  if (!location) notFound();
+
+  const t = await getTranslations("locations");
+  const name = locale === "fr" ? location.name_fr : location.name_en;
+  const description = locale === "fr" ? location.description_fr : location.description_en;
+
+  return (
+    <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: t("title"), href: "/locations" },
+          { label: name },
+        ]}
+      />
+      <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">{name}</h1>
+      {description && <p className="mt-4 text-muted">{description}</p>}
+
+      <p className="mt-4 text-sm font-medium text-ink">
+        {t("deliveryFee")}:{" "}
+        {location.delivery_fee_cents === 0 ? t("free") : formatMoney(location.delivery_fee_cents, "EUR", locale)}
+      </p>
+
+      <Link
+        href={`/book?location=${location.slug}`}
+        className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+      >
+        {t("title")}
+      </Link>
+    </section>
+  );
+}
