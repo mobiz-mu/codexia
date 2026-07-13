@@ -261,6 +261,124 @@ export type Database = {
         created_at: string;
         updated_at: string;
       }>;
+      bookings: Table<{
+        id: string;
+        reference: string;
+        vehicle_id: string | null;
+        category_id: string;
+        pickup_at: string;
+        return_at: string;
+        pickup_location_id: string;
+        dropoff_location_id: string;
+        status:
+          | "draft"
+          | "pending"
+          | "awaiting_payment"
+          | "payment_proof_submitted"
+          | "payment_under_review"
+          | "confirmed"
+          | "partially_paid"
+          | "paid"
+          | "vehicle_assigned"
+          | "ready_for_pickup"
+          | "active"
+          | "completed"
+          | "cancelled"
+          | "no_show"
+          | "refunded"
+          | "rejected";
+        pricing: unknown;
+        total_cents: number;
+        paid_cents: number;
+        balance_cents: number;
+        passengers: number;
+        flight_number: string | null;
+        flight_airline: string | null;
+        flight_arrival_date: string | null;
+        flight_arrival_time: string | null;
+        special_requests: string | null;
+        policy_acceptance: unknown;
+        accepted_at: string | null;
+        accepted_ip: string | null;
+        accepted_user_agent: string | null;
+        google_event_id: string | null;
+        access_token_hash: string | null;
+        idempotency_key: string | null;
+        created_at: string;
+        updated_at: string;
+        deleted_at: string | null;
+      }>;
+      booking_customers: Table<{
+        booking_id: string;
+        full_name: string;
+        email: string;
+        phone: string;
+        whatsapp: string | null;
+        country: string;
+        address: string | null;
+        created_at: string;
+      }>;
+      booking_drivers: Table<{
+        id: string;
+        booking_id: string;
+        is_primary: boolean;
+        full_name: string;
+        age: number;
+        licence_country: string;
+        licence_issue_date: string;
+        created_at: string;
+      }>;
+      booking_extras: Table<{
+        id: string;
+        booking_id: string;
+        extra_id: string;
+        quantity: number;
+        unit_price_cents: number;
+        pricing_mode: string;
+        created_at: string;
+      }>;
+      booking_status_history: Table<{
+        id: string;
+        booking_id: string;
+        old_status: string | null;
+        new_status: string;
+        actor_id: string | null;
+        internal_note: string | null;
+        customer_note: string | null;
+        at: string;
+      }>;
+      vehicle_blocks: Table<{
+        id: string;
+        vehicle_id: string;
+        period: string;
+        type: "maintenance" | "internal";
+        note: string | null;
+        created_by: string | null;
+        created_at: string;
+      }>;
+      email_logs: Table<{
+        id: string;
+        template_key: string;
+        to_email: string;
+        booking_id: string | null;
+        status: "sent" | "failed";
+        error: string | null;
+        sent_at: string | null;
+        created_at: string;
+      }>;
+      payment_proofs: Table<{
+        id: string;
+        booking_id: string;
+        storage_path: string;
+        status: "pending" | "approved" | "rejected";
+        bank_name: string | null;
+        transaction_ref: string | null;
+        payment_date: string | null;
+        reviewer_id: string | null;
+        rejection_reason: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
     };
     Views: {
       public_reviews: {

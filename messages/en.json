@@ -233,5 +233,126 @@
     "title": "Page Not Found",
     "description": "The page you're looking for doesn't exist or has moved.",
     "cta": "Back to Home"
+  },
+  "booking": {
+    "steps": {
+      "search": "Search",
+      "vehicle": "Vehicle",
+      "extras": "Extras",
+      "details": "Details",
+      "summary": "Summary",
+      "payment": "Payment"
+    },
+    "back": "Back",
+    "continue": "Continue",
+    "vehicleStep": {
+      "title": "Choose Your Vehicle",
+      "modifySearch": "Modify search",
+      "noResults": "No vehicles are available for these dates. Try different dates or a different category.",
+      "select": "Select"
+    },
+    "extrasStep": {
+      "title": "Add Extras",
+      "subtitle": "Optional add-ons for your trip.",
+      "perDay": "/ day",
+      "flat": "one-time"
+    },
+    "detailsStep": {
+      "title": "Your Details",
+      "customerSection": "Contact Information",
+      "fullName": "Full Name",
+      "email": "Email",
+      "phone": "Phone",
+      "whatsapp": "WhatsApp (if different)",
+      "country": "Country",
+      "address": "Address",
+      "passengers": "Passengers",
+      "driverSection": "Primary Driver",
+      "age": "Age",
+      "licenceCountry": "Licence Country",
+      "licenceIssueDate": "Licence Issue Date",
+      "addSecondDriver": "Add a second driver (first additional driver is free)",
+      "secondDriverSection": "Second Driver",
+      "secondDriverName": "Second Driver Full Name",
+      "flightSection": "Flight Information",
+      "flightNotice": "Required for airport pickup so we can track your arrival.",
+      "flightNumber": "Flight Number",
+      "flightAirline": "Airline",
+      "flightArrivalDate": "Arrival Date",
+      "flightArrivalTime": "Arrival Time",
+      "specialRequests": "Special Requests"
+    },
+    "summaryStep": {
+      "title": "Booking Summary",
+      "total": "Total",
+      "dueNow": "Due now",
+      "deposit": "Security deposit (collected at pickup)",
+      "policiesTitle": "Terms & Conditions",
+      "generalConditions": "I accept the General Rental Conditions",
+      "privacy": "I accept the Privacy Policy",
+      "cancellation": "I accept the Cancellation Policy",
+      "insurance": "I accept the Insurance Policy",
+      "view": "View"
+    },
+    "paymentStep": {
+      "title": "Payment Method",
+      "bankTransfer": {
+        "title": "Bank Transfer",
+        "text": "Transfer the total amount using the bank details below, then upload your proof of payment from your booking page."
+      },
+      "payOnArrival": {
+        "title": "Pay on Arrival / WhatsApp",
+        "text": "We'll create your booking and open WhatsApp with a summary. Your booking is not confirmed until Codexia approves it."
+      },
+      "online": {
+        "title": "Online Payment (Coming Soon)",
+        "text": "Online payment via MCB is not yet available. Please choose bank transfer or pay on arrival."
+      },
+      "submit": "Submit Booking",
+      "submitting": "Submitting...",
+      "error": "Something went wrong. Please try again."
+    },
+    "confirmation": {
+      "title": "Booking Request Received",
+      "reference": "Your reference",
+      "notConfirmedNotice": "Your booking is not yet confirmed. Our team will review it and follow up shortly.",
+      "whatsappCta": "Continue on WhatsApp",
+      "bankDetailsTitle": "Bank Transfer Details",
+      "myBookingCta": "View My Booking",
+      "emailNotice": "A confirmation email with these details has been sent to you."
+    }
+  },
+  "myBooking": {
+    "landing": {
+      "title": "Manage Your Booking",
+      "intro": "Use the link from your confirmation email to view your booking. Lost it? Enter your email below and we'll send a new one.",
+      "emailLabel": "Email address",
+      "submit": "Send My Booking Link",
+      "sent": "If that email matches a booking, a link has been sent."
+    },
+    "detail": {
+      "reference": "Booking Reference",
+      "status": "Status",
+      "vehicle": "Vehicle",
+      "pickup": "Pickup",
+      "dropoff": "Drop-off",
+      "total": "Total",
+      "paid": "Paid",
+      "balance": "Balance due",
+      "notFound": "We couldn't find a booking for this link. It may have expired — request a new one.",
+      "proofTitle": "Upload Payment Proof",
+      "proofBankName": "Bank Name",
+      "proofTransactionRef": "Transaction Reference",
+      "proofDate": "Payment Date",
+      "proofFile": "Proof of Payment (PDF or image)",
+      "proofSubmit": "Upload Proof",
+      "proofSubmitted": "Proof submitted — pending review.",
+      "proofsUploaded": "Uploaded proofs",
+      "proofStatus": {
+        "pending": "Pending review",
+        "approved": "Approved",
+        "rejected": "Rejected"
+      }
+    }
   }
 }
