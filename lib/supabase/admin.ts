@@ -1,6 +1,7 @@
 import "server-only";
 import { createClient as createSupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
+import { fetchWithTimeout } from "./fetch-with-timeout";
 
 /**
  * Service-role client. Bypasses RLS entirely — only import this from
@@ -16,6 +17,7 @@ export function createAdminClient() {
         autoRefreshToken: false,
         persistSession: false,
       },
+      global: { fetch: fetchWithTimeout() },
     }
   );
 }

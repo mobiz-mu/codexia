@@ -3,6 +3,9 @@ import { Resend } from "resend";
 import type { ReactElement } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { SITE_DEFAULTS } from "@/lib/config/site";
+import { withTimeout } from "@/lib/utils/with-timeout";
+
+const RESEND_TIMEOUT_MS = 10_000;
 
 type SendEmailInput = {
   templateKey: string;
@@ -35,13 +38,17 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
     const from = process.env.EMAIL_FROM ?? `bookings@${SITE_DEFAULTS.domain.replace(/^www\./, "")}`;
     const replyTo = process.env.EMAIL_REPLY_TO ?? SITE_DEFAULTS.email;
 
-    const { error } = await resend.emails.send({
-      from: `${SITE_DEFAULTS.companyName} <${from}>`,
-      to: input.to,
-      replyTo,
-      subject: input.subject,
-      ...(input.react ? { react: input.react } : { html: input.html }),
-    });
+    const { error } = await withTimeout(
+      resend.emails.send({
+        from: `${SITE_DEFAULTS.companyName} <${from}>`,
+        to: input.to,
+        replyTo,
+        subject: input.subject,
+        ...(input.react ? { react: input.react } : { html: input.html }),
+      }),
+      RESEND_TIMEOUT_MS,
+      "Resend send"
+    );
 
     if (error) {
       await supabase.from("email_logs").insert({

@@ -3,7 +3,7 @@ import { randomBytes, createHash } from "crypto";
 import { sendEmail } from "./send";
 import { getTemplateOverride } from "./get-template-override";
 import BookingConfirmed from "@/emails/BookingConfirmed";
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { formatMoney } from "@/lib/pricing/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -18,13 +18,14 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
   const { data: booking } = await supabase.from("bookings").select("*").eq("id", bookingId).single();
   if (!booking) return;
 
-  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }] = await Promise.all([
+  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }, settings] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", bookingId).maybeSingle(),
     booking.vehicle_id
       ? supabase.from("vehicles").select("name, currency").eq("id", booking.vehicle_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
+    getSiteSettings(),
   ]);
 
   if (!customer) return;
@@ -54,9 +55,9 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
     dropoffLocationName: locale === "fr" ? dropoffLoc?.name_fr ?? "" : dropoffLoc?.name_en ?? "",
     pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
     returnAt: dateFormatter.format(new Date(booking.return_at)),
-    balanceFormatted: formatMoney(booking.balance_cents, vehicle?.currency ?? SITE_DEFAULTS.currency, locale),
-    companyPhone: SITE_DEFAULTS.phone,
-    companyEmail: SITE_DEFAULTS.email,
+    balanceFormatted: formatMoney(booking.balance_cents, vehicle?.currency ?? settings.currency, locale),
+    companyPhone: settings.phone,
+    companyEmail: settings.email,
     myBookingUrl,
   };
 

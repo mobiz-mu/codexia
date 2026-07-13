@@ -1040,7 +1040,16 @@ create policy reviews_staff_all on reviews
   for all using (has_permission(auth.uid(), 'approve_reviews'))
   with check (has_permission(auth.uid(), 'approve_reviews'));
 
-create view public_reviews with (security_invoker = true) as
+-- security_invoker = false (the default) is intentional here: anon/authenticated
+-- have no RLS SELECT policy on the base `reviews` table (only staff do, via
+-- reviews_staff_all), so a security_invoker view would return zero rows for
+-- public visitors regardless of its own WHERE clause. This view exists
+-- specifically to expose a safe column subset (no email) of approved reviews
+-- to the public, bypassing the base table's RLS by running as the view owner —
+-- the `where status = 'approved'` filter is the only thing standing in for
+-- row-level security here, so don't add columns without checking they're safe
+-- to expose.
+create view public_reviews as
   select id, target_type, target_id, name, country, rating, body, admin_reply, featured, created_at
   from reviews
   where status = 'approved';
@@ -1216,6 +1225,39 @@ create policy storage_invoices_staff on storage.objects
 alter table bookings
   add column payment_method text check (payment_method in ('bank_transfer', 'pay_on_arrival', 'online'));
 
+-- ---- 0014_whatsapp_setting.sql ----
+-- The `whatsapp` display value was previously read from `phone` at the
+-- application layer, which meant changing the office phone number silently
+-- changed the displayed WhatsApp number too, independent of the actual
+-- wa.me link target stored in `whatsapp_number`. Give it its own row.
+insert into site_settings (key, value, value_type, description)
+values ('whatsapp', '"+230 52811999"', 'string', 'Displayed WhatsApp contact number (formatted)')
+on conflict (key) do nothing;
+
+-- ---- 0015_balance_cents_not_null.sql ----
+-- balance_cents is generated always as (total_cents - paid_cents), and both
+-- of those are `integer not null`, so it can never actually be null — but
+-- Postgres doesn't infer NOT NULL for generated columns automatically. Declare
+-- it explicitly so application code doesn't have to handle an impossible case.
+alter table bookings alter column balance_cents set not null;
+
+-- ---- 0016_fix_public_reviews_view.sql ----
+-- The view was originally created with security_invoker = true, which made it
+-- return zero rows for anon/authenticated visitors: those roles have no RLS
+-- SELECT policy on the base `reviews` table (only staff do), and a
+-- security_invoker view enforces the invoking role's RLS on the underlying
+-- table before its own WHERE clause is even applied. Recreate it as a
+-- security-definer view (the default), which is the standard pattern for a
+-- public, column-limited view over an RLS-protected table.
+drop view if exists public_reviews;
+
+create view public_reviews as
+  select id, target_type, target_id, name, country, rating, body, admin_reply, featured, created_at
+  from reviews
+  where status = 'approved';
+
+grant select on public_reviews to anon, authenticated;
+
 -- ---- seed.sql ----
 -- ============================================================================
 -- Codexia Ltd — seed data. Vehicles/pricing below are clearly-marked demo
@@ -1298,7 +1340,8 @@ on conflict do nothing;
 insert into site_settings (key, value, value_type, description) values
   ('company_name', '"Codexia Ltd"', 'string', 'Legal company name'),
   ('domain', '"www.codexia.mu"', 'string', 'Primary domain'),
-  ('phone', '"+230 52811999"', 'string', 'Primary phone / WhatsApp number'),
+  ('phone', '"+230 52811999"', 'string', 'Primary phone number'),
+  ('whatsapp', '"+230 52811999"', 'string', 'Displayed WhatsApp contact number (formatted)'),
   ('whatsapp_number', '"23052811999"', 'string', 'WhatsApp number, digits only for wa.me links'),
   ('email', '"dyash21@hotmail.com"', 'string', 'Primary contact / reply-to email'),
   ('emergency_phone', '"+230 5253 2101"', 'string', 'Emergency contact number'),

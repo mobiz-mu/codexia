@@ -12,6 +12,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["next", "dev", "--webpack"],
       "port": 3000
+    },
+    {
+      "name": "codexia-prod",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "start"],
+      "port": 3000
     }
   ]
 }

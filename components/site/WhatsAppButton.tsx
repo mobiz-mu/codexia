@@ -1,8 +1,9 @@
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 
-export function WhatsAppButton({ message }: { message?: string }) {
+export async function WhatsAppButton({ message }: { message?: string }) {
+  const settings = await getSiteSettings();
   const text = message ?? "Hello Codexia, I'd like to know more about your car rental service.";
-  const href = `https://wa.me/${SITE_DEFAULTS.whatsappNumber}?text=${encodeURIComponent(text)}`;
+  const href = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(text)}`;
 
   return (
     <a

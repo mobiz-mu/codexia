@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Inter, Plus_Jakarta_Sans } from "next/font/google";
+import localFont from "next/font/local";
 import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
@@ -12,14 +12,20 @@ import { AnalyticsScripts } from "@/components/site/AnalyticsScripts";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import "../globals.css";
 
-const inter = Inter({
+// Self-hosted (not next/font/google) so the build never depends on network
+// access to fonts.googleapis.com/gstatic.com.
+const inter = localFont({
+  src: "../fonts/Inter-Variable.woff2",
   variable: "--font-inter",
-  subsets: ["latin"],
+  weight: "100 900",
+  display: "swap",
 });
 
-const jakarta = Plus_Jakarta_Sans({
+const jakarta = localFont({
+  src: "../fonts/PlusJakartaSans-Variable.woff2",
   variable: "--font-display",
-  subsets: ["latin"],
+  weight: "200 800",
+  display: "swap",
 });
 
 export function generateStaticParams() {

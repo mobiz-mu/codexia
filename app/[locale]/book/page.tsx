@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { getVehicleCategories } from "@/lib/data/categories";
 import { getActiveLocations } from "@/lib/data/locations";
 import { getBankDetails } from "@/lib/config/get-bank-details";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 import { buildAlternates } from "@/lib/seo/alternates";
 
@@ -25,10 +26,11 @@ export default async function BookPage({
   const search = await searchParams;
   setRequestLocale(locale);
 
-  const [categories, locations, bankDetails] = await Promise.all([
+  const [categories, locations, bankDetails, settings] = await Promise.all([
     getVehicleCategories(),
     getActiveLocations(),
     getBankDetails(),
+    getSiteSettings(),
   ]);
 
   const getParam = (key: string) => {
@@ -59,6 +61,7 @@ export default async function BookPage({
         }}
         initialVehicleSlug={getParam("vehicle") ?? ""}
         bankDetails={bankDetails}
+        whatsappNumber={settings.whatsappNumber}
       />
     </section>
   );

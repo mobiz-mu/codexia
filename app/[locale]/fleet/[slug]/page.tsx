@@ -14,7 +14,7 @@ import { ReviewForm } from "@/components/site/ReviewForm";
 import { FaqAccordion } from "@/components/site/FaqAccordion";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { trackVehicleView } from "@/lib/analytics/track";
 import { buildAlternates } from "@/lib/seo/alternates";
 
@@ -44,13 +44,14 @@ export default async function VehicleDetailPage({
   const vehicle = await getVehicleBySlug(slug);
   if (!vehicle) notFound();
 
-  const [t, tFleet, tReview, related, reviews, faqCategories] = await Promise.all([
+  const [t, tFleet, tReview, related, reviews, faqCategories, settings] = await Promise.all([
     getTranslations("vehicleDetail"),
     getTranslations("fleet"),
     getTranslations("reviewForm"),
     getRelatedVehicles(vehicle.category_id, vehicle.id),
     getApprovedReviews({ targetType: "vehicle", targetId: vehicle.id }),
     getFaqCategoriesWithEntries(),
+    getSiteSettings(),
     trackVehicleView(vehicle.id, locale),
   ]);
 
@@ -78,7 +79,7 @@ export default async function VehicleDetailPage({
     }))
   );
 
-  const whatsappHref = `https://wa.me/${SITE_DEFAULTS.whatsappNumber}?text=${encodeURIComponent(
+  const whatsappHref = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
     `Hi Codexia, I'd like to ask about the ${vehicle.name}.`
   )}`;
 

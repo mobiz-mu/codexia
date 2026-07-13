@@ -2,6 +2,8 @@ import "server-only";
 import { createSign } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 
+const GOOGLE_API_TIMEOUT_MS = 10_000;
+
 type ServiceAccount = { client_email: string; private_key: string };
 
 function base64url(input: Buffer | string) {
@@ -44,6 +46,7 @@ async function getAccessToken(account: ServiceAccount): Promise<string> {
       grant_type: "urn:ietf:params:oauth:grant-type:jwt-bearer",
       assertion,
     }),
+    signal: AbortSignal.timeout(GOOGLE_API_TIMEOUT_MS),
   });
 
   if (!res.ok) throw new Error(`Google token exchange failed: ${await res.text()}`);
@@ -110,6 +113,7 @@ export async function upsertBookingCalendarEvent(input: BookingEventInput): Prom
       method: existingEventId ? "PATCH" : "POST",
       headers: { Authorization: `Bearer ${accessToken}`, "Content-Type": "application/json" },
       body: JSON.stringify(event),
+      signal: AbortSignal.timeout(GOOGLE_API_TIMEOUT_MS),
     });
 
     if (!res.ok) throw new Error(await res.text());
@@ -144,7 +148,7 @@ export async function deleteBookingCalendarEvent(bookingId: string): Promise<voi
     const accessToken = await getAccessToken(account);
     const res = await fetch(
       `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events/${booking.google_event_id}`,
-      { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` } }
+      { method: "DELETE", headers: { Authorization: `Bearer ${accessToken}` }, signal: AbortSignal.timeout(GOOGLE_API_TIMEOUT_MS) }
     );
 
     if (!res.ok && res.status !== 410) throw new Error(await res.text());

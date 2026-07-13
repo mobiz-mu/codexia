@@ -8,7 +8,7 @@ import {
   Section,
   Text,
   Hr,
-} from "@react-email/components";
+} from "./components";
 
 export type BookingReceivedProps = {
   locale: "en" | "fr";

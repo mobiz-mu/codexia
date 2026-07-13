@@ -3,7 +3,7 @@ import { randomBytes, createHash } from "crypto";
 import { sendEmail } from "./send";
 import { getTemplateOverride } from "./get-template-override";
 import BookingReminder from "@/emails/BookingReminder";
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { formatMoney } from "@/lib/pricing/format";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -18,12 +18,13 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
   const { data: booking } = await supabase.from("bookings").select("*").eq("id", bookingId).single();
   if (!booking) return;
 
-  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }] = await Promise.all([
+  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, settings] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", bookingId).maybeSingle(),
     booking.vehicle_id
       ? supabase.from("vehicles").select("name, currency").eq("id", booking.vehicle_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
+    getSiteSettings(),
   ]);
 
   if (!customer) return;
@@ -52,9 +53,9 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
     pickupLocationName: locale === "fr" ? pickupLoc?.name_fr ?? "" : pickupLoc?.name_en ?? "",
     pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
     balanceFormatted:
-      booking.balance_cents > 0 ? formatMoney(booking.balance_cents, vehicle?.currency ?? SITE_DEFAULTS.currency, locale) : "",
-    companyPhone: SITE_DEFAULTS.phone,
-    companyEmail: SITE_DEFAULTS.email,
+      booking.balance_cents > 0 ? formatMoney(booking.balance_cents, vehicle?.currency ?? settings.currency, locale) : "",
+    companyPhone: settings.phone,
+    companyEmail: settings.email,
     myBookingUrl,
   };
 
@@ -69,12 +70,21 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
     myBookingUrl,
   });
 
-  await sendEmail({
-    templateKey: "booking_reminder_customer",
-    to: customer.email,
-    bookingId,
-    ...(override
-      ? { subject: override.subject, html: override.html }
-      : { subject, react: BookingReminder(emailProps) }),
-  });
+  await Promise.all([
+    sendEmail({
+      templateKey: "booking_reminder_customer",
+      to: customer.email,
+      bookingId,
+      ...(override
+        ? { subject: override.subject, html: override.html }
+        : { subject, react: BookingReminder(emailProps) }),
+    }),
+    sendEmail({
+      templateKey: "booking_reminder_admin",
+      to: settings.email,
+      subject: `[Admin] ${subject}`,
+      react: BookingReminder(emailProps),
+      bookingId,
+    }),
+  ]);
 }

@@ -79,7 +79,8 @@ on conflict do nothing;
 insert into site_settings (key, value, value_type, description) values
   ('company_name', '"Codexia Ltd"', 'string', 'Legal company name'),
   ('domain', '"www.codexia.mu"', 'string', 'Primary domain'),
-  ('phone', '"+230 52811999"', 'string', 'Primary phone / WhatsApp number'),
+  ('phone', '"+230 52811999"', 'string', 'Primary phone number'),
+  ('whatsapp', '"+230 52811999"', 'string', 'Displayed WhatsApp contact number (formatted)'),
   ('whatsapp_number', '"23052811999"', 'string', 'WhatsApp number, digits only for wa.me links'),
   ('email', '"dyash21@hotmail.com"', 'string', 'Primary contact / reply-to email'),
   ('emergency_phone', '"+230 5253 2101"', 'string', 'Emergency contact number'),

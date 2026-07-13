@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { SITE_DEFAULTS, type SiteSettings } from "./site";
 import { createClient } from "@/lib/supabase/server";
 
@@ -5,7 +6,10 @@ function pick<T>(row: Record<string, unknown> | undefined, fallback: T): T {
   return row?.value !== undefined ? (row.value as T) : fallback;
 }
 
-export async function getSiteSettings(): Promise<SiteSettings> {
+// React.cache() dedupes repeated calls within a single request/render pass —
+// pages that render many VehicleCards (each of which reads settings for its
+// WhatsApp link) would otherwise issue one DB round-trip per card.
+export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
   try {
     const supabase = await createClient();
     const { data, error } = await supabase.from("site_settings").select("key, value");
@@ -18,7 +22,7 @@ export async function getSiteSettings(): Promise<SiteSettings> {
       companyName: pick(rows.company_name, SITE_DEFAULTS.companyName),
       domain: pick(rows.domain, SITE_DEFAULTS.domain),
       phone: pick(rows.phone, SITE_DEFAULTS.phone),
-      whatsapp: pick(rows.phone, SITE_DEFAULTS.whatsapp),
+      whatsapp: pick(rows.whatsapp, SITE_DEFAULTS.whatsapp),
       whatsappNumber: pick(rows.whatsapp_number, SITE_DEFAULTS.whatsappNumber),
       email: pick(rows.email, SITE_DEFAULTS.email),
       emergencyPhone: pick(rows.emergency_phone, SITE_DEFAULTS.emergencyPhone),
@@ -41,4 +45,4 @@ export async function getSiteSettings(): Promise<SiteSettings> {
   } catch {
     return SITE_DEFAULTS;
   }
-}
+});

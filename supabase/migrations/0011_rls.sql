@@ -179,7 +179,16 @@ create policy reviews_staff_all on reviews
   for all using (has_permission(auth.uid(), 'approve_reviews'))
   with check (has_permission(auth.uid(), 'approve_reviews'));
 
-create view public_reviews with (security_invoker = true) as
+-- security_invoker = false (the default) is intentional here: anon/authenticated
+-- have no RLS SELECT policy on the base `reviews` table (only staff do, via
+-- reviews_staff_all), so a security_invoker view would return zero rows for
+-- public visitors regardless of its own WHERE clause. This view exists
+-- specifically to expose a safe column subset (no email) of approved reviews
+-- to the public, bypassing the base table's RLS by running as the view owner —
+-- the `where status = 'approved'` filter is the only thing standing in for
+-- row-level security here, so don't add columns without checking they're safe
+-- to expose.
+create view public_reviews as
   select id, target_type, target_id, name, country, rating, body, admin_reply, featured, created_at
   from reviews
   where status = 'approved';

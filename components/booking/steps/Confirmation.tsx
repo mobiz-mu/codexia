@@ -3,7 +3,6 @@
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CheckCircle2 } from "lucide-react";
-import { SITE_DEFAULTS } from "@/lib/config/site";
 import type { PaymentMethod } from "../types";
 
 export function Confirmation({
@@ -12,17 +11,19 @@ export function Confirmation({
   paymentMethod,
   vehicleName,
   bankDetails,
+  whatsappNumber,
 }: {
   reference: string;
   accessToken: string;
   paymentMethod: PaymentMethod;
   vehicleName: string;
   bankDetails: { bankName: string; accountName: string; accountNumber: string; swift: string };
+  whatsappNumber: string;
 }) {
   const c = useTranslations("booking.confirmation");
 
   const whatsappMessage = `Hi Codexia, I've just submitted booking ${reference} for the ${vehicleName}. I'd like to arrange payment on arrival.`;
-  const whatsappHref = `https://wa.me/${SITE_DEFAULTS.whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
+  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   return (
     <div className="flex flex-col items-center gap-6 rounded-xl border border-border bg-background p-8 text-center">

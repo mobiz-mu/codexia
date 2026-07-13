@@ -4,7 +4,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 
 type VehicleCardData = {
   slug: string;
@@ -27,7 +27,7 @@ export async function VehicleCard({
   vehicle: VehicleCardData;
   locale: string;
 }) {
-  const t = await getTranslations("vehicleCard");
+  const [t, settings] = await Promise.all([getTranslations("vehicleCard"), getSiteSettings()]);
   const mainImage = vehicle.vehicle_images?.find((img) => img.is_main) ?? vehicle.vehicle_images?.[0];
   const imageUrl = publicStorageUrl("vehicle-images", mainImage?.path);
 
@@ -40,7 +40,7 @@ export async function VehicleCard({
     ...(vehicle.air_conditioning ? [{ icon: Snowflake, label: t("ac") }] : []),
   ];
 
-  const whatsappHref = `https://wa.me/${SITE_DEFAULTS.whatsappNumber}?text=${encodeURIComponent(
+  const whatsappHref = `https://wa.me/${settings.whatsappNumber}?text=${encodeURIComponent(
     `${t("whatsappEnquiry")} ${vehicle.name} — ${process.env.NEXT_PUBLIC_SITE_URL ?? ""}/${locale}/fleet/${vehicle.slug}`
   )}`;
 

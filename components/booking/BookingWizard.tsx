@@ -32,6 +32,7 @@ export function BookingWizard({
   initialCriteria,
   initialVehicleSlug,
   bankDetails,
+  whatsappNumber,
 }: {
   locale: "en" | "fr";
   categories: Option[];
@@ -39,6 +40,7 @@ export function BookingWizard({
   initialCriteria: BookingCriteria;
   initialVehicleSlug: string;
   bankDetails: BankDetails;
+  whatsappNumber: string;
 }) {
   const t = useTranslations("booking");
 
@@ -195,6 +197,7 @@ export function BookingWizard({
         paymentMethod={paymentMethod}
         vehicleName={vehicle?.name ?? ""}
         bankDetails={bankDetails}
+        whatsappNumber={whatsappNumber}
       />
     );
   }

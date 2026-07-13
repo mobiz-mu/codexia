@@ -2,7 +2,7 @@ import "server-only";
 import { sendEmail } from "./send";
 import { getTemplateOverride } from "./get-template-override";
 import BookingReceived from "@/emails/BookingReceived";
-import { SITE_DEFAULTS } from "@/lib/config/site";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { formatMoney } from "@/lib/pricing/format";
 
 const SUBJECTS = {
@@ -37,6 +37,7 @@ export async function sendBookingReceivedEmails(input: {
     timeStyle: "short",
   });
 
+  const settings = await getSiteSettings();
   const myBookingUrl = `${input.siteUrl}/${input.locale}/my-booking/${input.accessToken}`;
 
   const emailProps = {
@@ -50,8 +51,8 @@ export async function sendBookingReceivedEmails(input: {
     returnAt: dateFormatter.format(input.returnAt),
     paymentMethodLabel: PAYMENT_LABELS[input.locale][input.paymentMethod],
     totalFormatted: formatMoney(input.totalCents, input.currency, input.locale),
-    companyPhone: SITE_DEFAULTS.phone,
-    companyEmail: SITE_DEFAULTS.email,
+    companyPhone: settings.phone,
+    companyEmail: settings.email,
     myBookingUrl,
   };
 
@@ -82,7 +83,7 @@ export async function sendBookingReceivedEmails(input: {
     }),
     sendEmail({
       templateKey: "booking_received_admin",
-      to: SITE_DEFAULTS.email,
+      to: settings.email,
       subject: `[Admin] ${subject}`,
       react: BookingReceived(emailProps),
       bookingId: input.bookingId,

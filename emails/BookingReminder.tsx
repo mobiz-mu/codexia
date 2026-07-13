@@ -1,4 +1,4 @@
-import { Body, Container, Head, Heading, Html, Preview, Section, Text, Hr } from "@react-email/components";
+import { Body, Container, Head, Heading, Html, Preview, Section, Text, Hr } from "./components";
 
 export type BookingReminderProps = {
   locale: "en" | "fr";
