@@ -5,6 +5,7 @@ import { getVehicleCategoryBySlug } from "@/lib/data/categories";
 import { getVehicles } from "@/lib/data/vehicles";
 import { VehicleCard } from "@/components/site/VehicleCard";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -15,7 +16,11 @@ export async function generateMetadata(props: {
 
   const name = locale === "fr" ? category.name_fr : category.name_en;
   const description = locale === "fr" ? category.description_fr : category.description_en;
-  return { title: name, description: description ?? undefined };
+  return {
+    title: name,
+    description: description ?? undefined,
+    alternates: buildAlternates(locale, `/categories/${slug}`, category.canonical_path),
+  };
 }
 
 export default async function CategoryDetailPage({
@@ -40,6 +45,7 @@ export default async function CategoryDetailPage({
   return (
     <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: t("title"), href: "/categories" },

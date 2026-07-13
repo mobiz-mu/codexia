@@ -16,5 +16,5 @@ export default async function PlacesToVisitPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <MauritiusSubpage sectionKey="placesToVisit" />;
+  return <MauritiusSubpage sectionKey="placesToVisit" locale={locale} />;
 }

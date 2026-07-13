@@ -2,13 +2,18 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "services" });
-  return { title: t("airportRental.title"), description: t("airportRental.text") };
+  return {
+    title: t("airportRental.title"),
+    description: t("airportRental.text"),
+    alternates: buildAlternates(locale, "/services/airport-rental"),
+  };
 }
 
 export default async function AirportRentalPage({
@@ -23,6 +28,7 @@ export default async function AirportRentalPage({
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: t("title"), href: "/services" },

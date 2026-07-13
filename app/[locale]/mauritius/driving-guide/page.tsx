@@ -16,5 +16,5 @@ export default async function DrivingGuidePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <MauritiusSubpage sectionKey="drivingGuide" />;
+  return <MauritiusSubpage sectionKey="drivingGuide" locale={locale} />;
 }

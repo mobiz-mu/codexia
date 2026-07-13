@@ -1,13 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { Link } from "@/i18n/navigation";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "mauritius" });
-  return { title: t("title"), description: t("intro") };
+  return { title: t("title"), description: t("intro"), alternates: buildAlternates(locale, "/mauritius") };
 }
 
 const SECTIONS = ["placesToVisit", "drivingGuide", "airportGuide", "travelTips"] as const;

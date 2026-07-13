@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getPolicyBySlug } from "@/lib/data/policies";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -13,7 +14,7 @@ export async function generateMetadata(props: {
   if (!result) return {};
 
   const title = locale === "fr" ? result.page.title_fr : result.page.title_en;
-  return { title };
+  return { title, alternates: buildAlternates(locale, `/policies/${slug}`) };
 }
 
 function renderMarkdownLite(body: string) {
@@ -84,6 +85,7 @@ export default async function PolicyPage({
   return (
     <section className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: tFooter("columns.policies") },

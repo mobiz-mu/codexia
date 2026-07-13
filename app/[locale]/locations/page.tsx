@@ -5,13 +5,14 @@ import { Link } from "@/i18n/navigation";
 import { getActiveLocations } from "@/lib/data/locations";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "locations" });
-  return { title: t("title"), description: t("subtitle") };
+  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/locations") };
 }
 
 export default async function LocationsPage({
@@ -42,7 +43,13 @@ export default async function LocationsPage({
             >
               <div className="relative aspect-[16/9] w-full bg-surface">
                 {imageUrl ? (
-                  <Image src={imageUrl} alt={name} fill className="object-cover" />
+                  <Image
+                    src={imageUrl}
+                    alt={name}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                  />
                 ) : (
                   <div className="flex h-full items-center justify-center text-sm text-muted">
                     {name}

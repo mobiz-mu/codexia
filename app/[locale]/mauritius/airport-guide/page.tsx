@@ -16,5 +16,5 @@ export default async function AirportGuidePage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
-  return <MauritiusSubpage sectionKey="airportGuide" />;
+  return <MauritiusSubpage sectionKey="airportGuide" locale={locale} />;
 }

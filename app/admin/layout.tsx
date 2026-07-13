@@ -7,6 +7,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: { default: "Codexia Admin", template: "%s | Codexia Admin" },
   robots: { index: false, follow: false },
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
 };
 
 export default function AdminRootLayout({ children }: { children: React.ReactNode }) {

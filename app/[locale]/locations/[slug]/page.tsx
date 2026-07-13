@@ -5,6 +5,7 @@ import { getLocationBySlug } from "@/lib/data/locations";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/pricing/format";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -14,7 +15,12 @@ export async function generateMetadata(props: {
   if (!location) return {};
 
   const name = locale === "fr" ? location.name_fr : location.name_en;
-  return { title: name };
+  const description = locale === "fr" ? location.description_fr : location.description_en;
+  return {
+    title: name,
+    description: description ?? undefined,
+    alternates: buildAlternates(locale, `/locations/${slug}`, location.canonical_path),
+  };
 }
 
 export default async function LocationDetailPage({
@@ -35,6 +41,7 @@ export default async function LocationDetailPage({
   return (
     <section className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: t("title"), href: "/locations" },

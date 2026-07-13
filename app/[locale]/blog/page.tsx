@@ -4,13 +4,14 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { getPublishedPosts } from "@/lib/data/blog";
 import { publicStorageUrl } from "@/lib/supabase/storage";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "blog" });
-  return { title: t("title"), description: t("subtitle") };
+  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/blog") };
 }
 
 export default async function BlogPage({
@@ -45,7 +46,13 @@ export default async function BlogPage({
               >
                 <div className="relative aspect-[16/9] w-full bg-surface">
                   {imageUrl && (
-                    <Image src={imageUrl} alt={title} fill className="object-cover" />
+                    <Image
+                      src={imageUrl}
+                      alt={title}
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                    />
                   )}
                 </div>
                 <div className="p-4">

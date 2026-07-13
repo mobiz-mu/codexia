@@ -9,7 +9,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "myBooking.detail" });
-  return { title: t("reference") };
+  return { title: t("reference"), robots: { index: false, follow: false } };
 }
 
 export default async function MyBookingDetailPage({

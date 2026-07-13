@@ -5,6 +5,7 @@ import Image from "next/image";
 import { getPostBySlug } from "@/lib/data/blog";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { publicStorageUrl } from "@/lib/supabase/storage";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -18,7 +19,7 @@ export async function generateMetadata(props: {
   return {
     title,
     description: description ?? undefined,
-    alternates: { canonical: post.canonical_path ?? undefined },
+    alternates: buildAlternates(locale, `/blog/${slug}`, post.canonical_path),
   };
 }
 
@@ -53,6 +54,7 @@ export default async function BlogPostPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: t("title"), href: "/blog" },
@@ -63,7 +65,14 @@ export default async function BlogPostPage({
 
       {imageUrl && (
         <div className="relative mt-6 aspect-[16/9] w-full overflow-hidden rounded-xl bg-surface">
-          <Image src={imageUrl} alt={title} fill className="object-cover" priority />
+          <Image
+            src={imageUrl}
+            alt={title}
+            fill
+            className="object-cover"
+            priority
+            sizes="(min-width: 768px) 768px, 100vw"
+          />
         </div>
       )}
 

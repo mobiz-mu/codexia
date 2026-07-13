@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import Image from "next/image";
 import { Fuel, ShieldCheck, PhoneCall, PlaneLanding } from "lucide-react";
@@ -12,6 +13,8 @@ import { SearchBar } from "@/components/site/SearchBar";
 import { ReviewsList } from "@/components/site/ReviewsList";
 import { NewsletterForm } from "@/components/site/NewsletterForm";
 import { publicStorageUrl } from "@/lib/supabase/storage";
+import { buildAlternates } from "@/lib/seo/alternates";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 
 const WHY_CHOOSE_US = [
   { key: "mileage", icon: Fuel },
@@ -19,6 +22,13 @@ const WHY_CHOOSE_US = [
   { key: "assistance", icon: PhoneCall },
   { key: "delivery", icon: PlaneLanding },
 ] as const;
+
+export async function generateMetadata(props: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await props.params;
+  return { alternates: buildAlternates(locale, "/") };
+}
 
 export default async function HomePage({
   params,
@@ -28,7 +38,7 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
 
-  const [t, tFooter, vehicles, categories, locations, reviews, posts] = await Promise.all([
+  const [t, tFooter, vehicles, categories, locations, reviews, posts, settings] = await Promise.all([
     getTranslations("home"),
     getTranslations("footer"),
     getFeaturedVehicles(),
@@ -36,10 +46,27 @@ export default async function HomePage({
     getActiveLocations(),
     getApprovedReviews({ targetType: "homepage", limit: 6 }),
     getPublishedPosts(3),
+    getSiteSettings(),
   ]);
+
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "AutoRental",
+    name: settings.companyName,
+    url: `${siteUrl}/${locale}`,
+    telephone: settings.phone,
+    email: settings.email,
+    areaServed: "MU",
+    sameAs: [settings.socials.facebook, settings.socials.instagram].filter(Boolean),
+  };
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <section className="mx-auto flex max-w-7xl flex-col items-start gap-8 px-4 py-16 sm:px-6 lg:px-8 lg:py-24">
         <div className="max-w-2xl">
           <h1 className="text-4xl font-bold tracking-tight text-ink sm:text-5xl">
@@ -108,7 +135,13 @@ export default async function HomePage({
                   >
                     <div className="relative aspect-[16/9] w-full bg-background">
                       {imageUrl ? (
-                        <Image src={imageUrl} alt={name} fill className="object-cover" />
+                        <Image
+                          src={imageUrl}
+                          alt={name}
+                          fill
+                          className="object-cover"
+                          sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                        />
                       ) : (
                         <div className="flex h-full items-center justify-center text-sm text-muted">
                           {name}
@@ -168,7 +201,15 @@ export default async function HomePage({
                   className="group overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-shadow hover:shadow-md"
                 >
                   <div className="relative aspect-[16/9] w-full bg-surface">
-                    {imageUrl && <Image src={imageUrl} alt={title} fill className="object-cover" />}
+                    {imageUrl && (
+                      <Image
+                        src={imageUrl}
+                        alt={title}
+                        fill
+                        className="object-cover"
+                        sizes="(min-width: 640px) 33vw, 100vw"
+                      />
+                    )}
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-ink group-hover:text-primary-dark">{title}</h3>

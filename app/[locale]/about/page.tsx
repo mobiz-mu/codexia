@@ -1,13 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { CheckCircle2 } from "lucide-react";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "about" });
-  return { title: t("title"), description: t("intro") };
+  return { title: t("title"), description: t("intro"), alternates: buildAlternates(locale, "/about") };
 }
 
 export default async function AboutPage({

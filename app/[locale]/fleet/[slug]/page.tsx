@@ -16,6 +16,7 @@ import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
 import { SITE_DEFAULTS } from "@/lib/config/site";
 import { trackVehicleView } from "@/lib/analytics/track";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -28,7 +29,7 @@ export async function generateMetadata(props: {
   return {
     title: vehicle.name,
     description: description ?? undefined,
-    alternates: { canonical: vehicle.canonical_path ?? undefined },
+    alternates: buildAlternates(locale, `/fleet/${slug}`, vehicle.canonical_path),
   };
 }
 
@@ -102,6 +103,7 @@ export default async function VehicleDetailPage({
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <Breadcrumbs
+        locale={locale}
         items={[
           { label: "Home", href: "/" },
           { label: tFleet("title"), href: "/fleet" },
@@ -113,7 +115,14 @@ export default async function VehicleDetailPage({
         <div>
           <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface">
             {mainImageUrl ? (
-              <Image src={mainImageUrl} alt={mainImage?.alt_en ?? vehicle.name} fill className="object-cover" priority />
+              <Image
+                src={mainImageUrl}
+                alt={mainImage?.alt_en ?? vehicle.name}
+                fill
+                className="object-cover"
+                priority
+                sizes="(min-width: 1024px) 50vw, 100vw"
+              />
             ) : (
               <div className="flex h-full items-center justify-center text-muted">No photo yet</div>
             )}
@@ -125,7 +134,13 @@ export default async function VehicleDetailPage({
                 if (!url) return null;
                 return (
                   <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-surface">
-                    <Image src={url} alt={img.alt_en ?? vehicle.name} fill className="object-cover" />
+                    <Image
+                      src={url}
+                      alt={img.alt_en ?? vehicle.name}
+                      fill
+                      className="object-cover"
+                      sizes="(min-width: 1024px) 12vw, 25vw"
+                    />
                   </div>
                 );
               })}

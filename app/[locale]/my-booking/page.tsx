@@ -1,13 +1,14 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { ResendBookingLinkForm } from "@/components/site/ResendBookingLinkForm";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "myBooking.landing" });
-  return { title: t("title") };
+  return { title: t("title"), alternates: buildAlternates(locale, "/my-booking") };
 }
 
 export default async function MyBookingLandingPage({
