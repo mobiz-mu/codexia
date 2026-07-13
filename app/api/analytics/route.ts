@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 const ALLOWED_EVENTS = new Set(["pageview", "vehicle_view", "book_now_click", "booking_submitted"]);
 
 export async function POST(request: NextRequest) {
+  const rateLimit = await checkRateLimit("analytics_ingest", { limit: 60, windowMs: 60 * 1000 });
+  if (!rateLimit.ok) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   let body: { event?: string; path?: string; vehicleId?: string; locale?: string; referrer?: string };
   try {
     body = await request.json();

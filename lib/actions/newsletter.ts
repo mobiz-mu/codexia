@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications/create";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 const subscribeSchema = z.object({
   email: z.email().max(320),
@@ -17,6 +18,11 @@ export async function subscribeToNewsletter(
   _prevState: NewsletterFormState,
   formData: FormData
 ): Promise<NewsletterFormState> {
+  const rateLimit = await checkRateLimit("subscribe_newsletter", { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rateLimit.ok) {
+    return { status: "error" };
+  }
+
   const parsed = subscribeSchema.safeParse({
     email: formData.get("email"),
     locale: formData.get("locale"),

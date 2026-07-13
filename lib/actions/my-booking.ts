@@ -7,6 +7,7 @@ import { sendEmail } from "@/lib/email/send";
 import BookingLinkEmail from "@/emails/BookingLink";
 import { SITE_DEFAULTS } from "@/lib/config/site";
 import { createNotification } from "@/lib/notifications/create";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -50,6 +51,9 @@ export async function resendBookingLink(
   _prev: ResendLinkState,
   formData: FormData
 ): Promise<ResendLinkState> {
+  const rateLimit = await checkRateLimit("resend_booking_link", { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rateLimit.ok) return { status: "error" };
+
   const parsed = resendSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) return { status: "error" };
 

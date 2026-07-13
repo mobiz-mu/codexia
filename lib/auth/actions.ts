@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 const loginSchema = z.object({
   email: z.email(),
@@ -12,6 +13,11 @@ const loginSchema = z.object({
 export type LoginState = { status: "idle" | "error"; error?: string };
 
 export async function loginAdmin(_prev: LoginState, formData: FormData): Promise<LoginState> {
+  const rateLimit = await checkRateLimit("admin_login", { limit: 10, windowMs: 10 * 60 * 1000 });
+  if (!rateLimit.ok) {
+    return { status: "error", error: "Too many login attempts. Please try again later." };
+  }
+
   const parsed = loginSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),

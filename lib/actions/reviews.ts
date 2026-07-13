@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications/create";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 const reviewSchema = z.object({
   targetType: z.enum(["vehicle", "post", "homepage"]),
@@ -20,6 +21,11 @@ const reviewSchema = z.object({
 export type ReviewFormState = { status: "idle" | "success" | "error"; error?: string };
 
 export async function submitReview(_prev: ReviewFormState, formData: FormData): Promise<ReviewFormState> {
+  const rateLimit = await checkRateLimit("submit_review", { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rateLimit.ok) {
+    return { status: "error", error: "Too many submissions. Please try again later." };
+  }
+
   const parsed = reviewSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return { status: "error", error: "Please check the form for errors." };

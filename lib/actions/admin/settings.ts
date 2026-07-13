@@ -50,5 +50,13 @@ export async function updateSettings(_prev: SettingsFormState, formData: FormDat
     return { status: "error", error: "Failed to save some settings." };
   }
 
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "settings_updated",
+    entity: "site_settings",
+    entity_id: null,
+    diff: { keys: (settings ?? []).map((s) => s.key) },
+  });
+
   return { status: "success" };
 }

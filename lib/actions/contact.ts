@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { createNotification } from "@/lib/notifications/create";
+import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -20,6 +21,11 @@ export async function submitContactMessage(
   _prevState: ContactFormState,
   formData: FormData
 ): Promise<ContactFormState> {
+  const rateLimit = await checkRateLimit("submit_contact", { limit: 5, windowMs: 15 * 60 * 1000 });
+  if (!rateLimit.ok) {
+    return { status: "error" };
+  }
+
   const parsed = contactSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
