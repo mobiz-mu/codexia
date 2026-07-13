@@ -9,6 +9,16 @@ import {
   ShieldOff,
   ReceiptText,
   Users,
+  Star,
+  Newspaper,
+  Image as ImageIcon,
+  HelpCircle,
+  FileText,
+  Mail,
+  MailPlus,
+  MessageSquare,
+  Bell,
+  Settings,
 } from "lucide-react";
 import type { CurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { logoutAdmin } from "@/lib/auth/actions";
@@ -27,6 +37,16 @@ const NAV_ITEMS = [
     permission: "approve_payment_proofs",
   },
   { href: "/admin/customers", label: "Customers", icon: Users, permission: "manage_bookings" },
+  { href: "/admin/reviews", label: "Reviews", icon: Star, permission: "approve_reviews" },
+  { href: "/admin/blog", label: "Blog", icon: Newspaper, permission: "manage_content" },
+  { href: "/admin/banners", label: "Hero Banners", icon: ImageIcon, permission: "manage_content" },
+  { href: "/admin/faq", label: "FAQ", icon: HelpCircle, permission: "manage_content" },
+  { href: "/admin/pages", label: "Pages", icon: FileText, permission: "manage_content" },
+  { href: "/admin/email-templates", label: "Email Templates", icon: Mail, permission: "manage_content" },
+  { href: "/admin/newsletter", label: "Newsletter", icon: MailPlus, permission: "manage_content" },
+  { href: "/admin/messages", label: "Contact Messages", icon: MessageSquare, permission: "manage_content" },
+  { href: "/admin/notifications", label: "Notifications", icon: Bell, permission: null },
+  { href: "/admin/settings", label: "Settings", icon: Settings, permission: "manage_settings" },
 ] as const;
 
 export function AdminShell({
@@ -42,7 +62,7 @@ export function AdminShell({
 
   return (
     <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col border-r border-border bg-background">
+      <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-background">
         <div className="flex items-center gap-2 border-b border-border p-4">
           <Image src="/logo-mark.svg" alt="Codexia" width={32} height={32} />
           <span className="font-semibold text-ink">Codexia Admin</span>
@@ -54,7 +74,7 @@ export function AdminShell({
               href={item.href}
               className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"
             >
-              <item.icon className="h-4 w-4 text-muted" aria-hidden="true" />
+              <item.icon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
               {item.label}
             </Link>
           ))}

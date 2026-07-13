@@ -6,6 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send";
 import BookingLinkEmail from "@/emails/BookingLink";
 import { SITE_DEFAULTS } from "@/lib/config/site";
+import { createNotification } from "@/lib/notifications/create";
 
 function hashToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
@@ -151,6 +152,12 @@ export async function uploadPaymentProof(
     new_status: "payment_proof_submitted",
     customer_note: "Payment proof uploaded by customer",
   });
+
+  await createNotification(
+    "new_payment_proof",
+    { reference: result.booking.reference },
+    `/admin/payment-proofs`
+  );
 
   return { status: "success" };
 }

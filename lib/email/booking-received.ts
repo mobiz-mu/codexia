@@ -1,5 +1,6 @@
 import "server-only";
 import { sendEmail } from "./send";
+import { getTemplateOverride } from "./get-template-override";
 import BookingReceived from "@/emails/BookingReceived";
 import { SITE_DEFAULTS } from "@/lib/config/site";
 import { formatMoney } from "@/lib/pricing/format";
@@ -55,14 +56,29 @@ export async function sendBookingReceivedEmails(input: {
   };
 
   const subject = SUBJECTS[input.locale](input.reference);
+  const variables = {
+    reference: input.reference,
+    customerName: input.customerName,
+    vehicleName: input.vehicleName,
+    pickupLocationName: input.pickupLocationName,
+    dropoffLocationName: input.dropoffLocationName,
+    pickupAt: emailProps.pickupAt,
+    returnAt: emailProps.returnAt,
+    paymentMethodLabel: emailProps.paymentMethodLabel,
+    totalFormatted: emailProps.totalFormatted,
+    myBookingUrl,
+  };
+
+  const customerOverride = await getTemplateOverride("booking_received_customer", input.locale, variables);
 
   await Promise.all([
     sendEmail({
       templateKey: "booking_received_customer",
       to: input.customerEmail,
-      subject,
-      react: BookingReceived(emailProps),
       bookingId: input.bookingId,
+      ...(customerOverride
+        ? { subject: customerOverride.subject, html: customerOverride.html }
+        : { subject, react: BookingReceived(emailProps) }),
     }),
     sendEmail({
       templateKey: "booking_received_admin",

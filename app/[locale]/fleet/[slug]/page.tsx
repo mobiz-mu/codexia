@@ -10,6 +10,7 @@ import { getFaqCategoriesWithEntries } from "@/lib/data/faq";
 import { VehicleCard } from "@/components/site/VehicleCard";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { ReviewsList } from "@/components/site/ReviewsList";
+import { ReviewForm } from "@/components/site/ReviewForm";
 import { FaqAccordion } from "@/components/site/FaqAccordion";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
@@ -41,9 +42,10 @@ export default async function VehicleDetailPage({
   const vehicle = await getVehicleBySlug(slug);
   if (!vehicle) notFound();
 
-  const [t, tFleet, related, reviews, faqCategories] = await Promise.all([
+  const [t, tFleet, tReview, related, reviews, faqCategories] = await Promise.all([
     getTranslations("vehicleDetail"),
     getTranslations("fleet"),
+    getTranslations("reviewForm"),
     getRelatedVehicles(vehicle.category_id, vehicle.id),
     getApprovedReviews({ targetType: "vehicle", targetId: vehicle.id }),
     getFaqCategoriesWithEntries(),
@@ -203,6 +205,23 @@ export default async function VehicleDetailPage({
         <h2 className="text-2xl font-bold text-ink">{t("reviewsTitle")}</h2>
         <div className="mt-6">
           <ReviewsList reviews={reviews} emptyLabel={t("reviewsEmpty")} />
+        </div>
+        <div className="mt-6 max-w-xl">
+          <ReviewForm
+            targetType="vehicle"
+            targetId={vehicle.id}
+            labels={{
+              title: tReview("title"),
+              name: tReview("name"),
+              email: tReview("email"),
+              country: tReview("country"),
+              rating: tReview("rating"),
+              body: tReview("body"),
+              consent: tReview("consent"),
+              submit: tReview("submit"),
+              success: tReview("success"),
+            }}
+          />
         </div>
       </div>
 

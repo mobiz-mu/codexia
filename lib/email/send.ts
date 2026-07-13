@@ -8,9 +8,8 @@ type SendEmailInput = {
   templateKey: string;
   to: string;
   subject: string;
-  react: ReactElement;
   bookingId?: string;
-};
+} & ({ react: ReactElement; html?: never } | { react?: never; html: string });
 
 /**
  * Best-effort send: failures are logged to email_logs and never thrown,
@@ -41,7 +40,7 @@ export async function sendEmail(input: SendEmailInput): Promise<void> {
       to: input.to,
       replyTo,
       subject: input.subject,
-      react: input.react,
+      ...(input.react ? { react: input.react } : { html: input.html }),
     });
 
     if (error) {

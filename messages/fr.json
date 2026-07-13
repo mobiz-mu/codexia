@@ -229,6 +229,17 @@
     "whatsappCta": "Demander sur WhatsApp",
     "demoNotice": "Annonce de démonstration — prix et caractéristiques finaux confirmés par Codexia lors de la réservation."
   },
+  "reviewForm": {
+    "title": "Laisser un avis",
+    "name": "Votre nom",
+    "email": "Votre e-mail",
+    "country": "Pays (facultatif)",
+    "rating": "Note",
+    "body": "Votre avis",
+    "consent": "Je consens à ce que mon avis (nom, pays, note et commentaire) soit publié sur ce site. Mon e-mail ne sera jamais affiché publiquement.",
+    "submit": "Envoyer l'avis",
+    "success": "Merci — votre avis a été soumis et apparaîtra une fois approuvé."
+  },
   "notFound": {
     "title": "Page introuvable",
     "description": "La page que vous recherchez n'existe pas ou a été déplacée.",

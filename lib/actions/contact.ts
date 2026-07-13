@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createNotification } from "@/lib/notifications/create";
 
 const contactSchema = z.object({
   name: z.string().trim().min(1).max(200),
@@ -32,18 +33,28 @@ export async function submitContactMessage(
   }
 
   const supabase = createAdminClient();
-  const { error } = await supabase.from("contact_messages").insert({
-    name: parsed.data.name,
-    email: parsed.data.email,
-    phone: parsed.data.phone || null,
-    subject: parsed.data.subject || null,
-    message: parsed.data.message,
-  });
+  const { data, error } = await supabase
+    .from("contact_messages")
+    .insert({
+      name: parsed.data.name,
+      email: parsed.data.email,
+      phone: parsed.data.phone || null,
+      subject: parsed.data.subject || null,
+      message: parsed.data.message,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("submitContactMessage failed", error.message);
     return { status: "error" };
   }
+
+  await createNotification(
+    "new_contact_message",
+    { name: parsed.data.name, subject: parsed.data.subject || null },
+    `/admin/messages/${data.id}`
+  );
 
   return { status: "success" };
 }

@@ -1,6 +1,7 @@
 import "server-only";
 import { randomBytes, createHash } from "crypto";
 import { sendEmail } from "./send";
+import { getTemplateOverride } from "./get-template-override";
 import BookingConfirmed from "@/emails/BookingConfirmed";
 import { SITE_DEFAULTS } from "@/lib/config/site";
 import { formatMoney } from "@/lib/pricing/format";
@@ -44,24 +45,40 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
     timeStyle: "short",
   });
 
+  const emailProps = {
+    locale,
+    reference: booking.reference,
+    customerName: customer.full_name,
+    vehicleName: vehicle?.name ?? "",
+    pickupLocationName: locale === "fr" ? pickupLoc?.name_fr ?? "" : pickupLoc?.name_en ?? "",
+    dropoffLocationName: locale === "fr" ? dropoffLoc?.name_fr ?? "" : dropoffLoc?.name_en ?? "",
+    pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
+    returnAt: dateFormatter.format(new Date(booking.return_at)),
+    balanceFormatted: formatMoney(booking.balance_cents, vehicle?.currency ?? SITE_DEFAULTS.currency, locale),
+    companyPhone: SITE_DEFAULTS.phone,
+    companyEmail: SITE_DEFAULTS.email,
+    myBookingUrl,
+  };
+
+  const subject = SUBJECTS[locale](booking.reference);
+  const override = await getTemplateOverride("booking_confirmed_customer", locale, {
+    reference: emailProps.reference,
+    customerName: emailProps.customerName,
+    vehicleName: emailProps.vehicleName,
+    pickupLocationName: emailProps.pickupLocationName,
+    dropoffLocationName: emailProps.dropoffLocationName,
+    pickupAt: emailProps.pickupAt,
+    returnAt: emailProps.returnAt,
+    balanceFormatted: emailProps.balanceFormatted,
+    myBookingUrl,
+  });
+
   await sendEmail({
     templateKey: "booking_confirmed_customer",
     to: customer.email,
-    subject: SUBJECTS[locale](booking.reference),
     bookingId,
-    react: BookingConfirmed({
-      locale,
-      reference: booking.reference,
-      customerName: customer.full_name,
-      vehicleName: vehicle?.name ?? "",
-      pickupLocationName: locale === "fr" ? pickupLoc?.name_fr ?? "" : pickupLoc?.name_en ?? "",
-      dropoffLocationName: locale === "fr" ? dropoffLoc?.name_fr ?? "" : dropoffLoc?.name_en ?? "",
-      pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
-      returnAt: dateFormatter.format(new Date(booking.return_at)),
-      balanceFormatted: formatMoney(booking.balance_cents, vehicle?.currency ?? SITE_DEFAULTS.currency, locale),
-      companyPhone: SITE_DEFAULTS.phone,
-      companyEmail: SITE_DEFAULTS.email,
-      myBookingUrl,
-    }),
+    ...(override
+      ? { subject: override.subject, html: override.html }
+      : { subject, react: BookingConfirmed(emailProps) }),
   });
 }

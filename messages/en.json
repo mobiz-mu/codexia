@@ -229,6 +229,17 @@
     "whatsappCta": "Ask on WhatsApp",
     "demoNotice": "Demonstration listing — final pricing and specifications confirmed by Codexia at booking."
   },
+  "reviewForm": {
+    "title": "Leave a Review",
+    "name": "Your Name",
+    "email": "Your Email",
+    "country": "Country (optional)",
+    "rating": "Rating",
+    "body": "Your Review",
+    "consent": "I consent to my review (name, country, rating, and comment) being published on this site. My email will never be shown publicly.",
+    "submit": "Submit Review",
+    "success": "Thank you — your review has been submitted and will appear once approved."
+  },
   "notFound": {
     "title": "Page Not Found",
     "description": "The page you're looking for doesn't exist or has moved.",

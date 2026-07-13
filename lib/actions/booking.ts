@@ -4,6 +4,7 @@ import { randomBytes, createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { calculateBookingPrice } from "@/lib/pricing/calculate";
 import { sendBookingReceivedEmails } from "@/lib/email/booking-received";
+import { createNotification } from "@/lib/notifications/create";
 import {
   createBookingSchema,
   type CreateBookingInput,
@@ -296,6 +297,12 @@ export async function createBooking(input: CreateBookingInput & { locale: "en" |
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     accessToken,
   });
+
+  await createNotification(
+    "new_booking",
+    { reference: booking.reference, customerName: data.customer.fullName, vehicleName: vehicle.name },
+    `/admin/bookings/${booking.id}`
+  );
 
   return { ok: true, reference: booking.reference, accessToken, paymentMethod: data.paymentMethod };
 }

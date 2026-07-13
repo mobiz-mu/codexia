@@ -433,6 +433,25 @@ export type Database = {
         created_at: string;
         updated_at: string;
       }>;
+      notifications: Table<{
+        id: string;
+        type: string;
+        payload: unknown;
+        link: string | null;
+        read_at: string | null;
+        archived_at: string | null;
+        created_at: string;
+      }>;
+      email_templates: Table<{
+        id: string;
+        key: string;
+        locale: string;
+        subject: string;
+        body: string;
+        created_at: string;
+        updated_at: string;
+        updated_by: string | null;
+      }>;
     };
     Views: {
       public_reviews: {

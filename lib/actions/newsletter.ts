@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { createNotification } from "@/lib/notifications/create";
 
 const subscribeSchema = z.object({
   email: z.email().max(320),
@@ -40,6 +41,8 @@ export async function subscribeToNewsletter(
     console.error("subscribeToNewsletter failed", error.message);
     return { status: "error" };
   }
+
+  await createNotification("new_newsletter_subscriber", { email: parsed.data.email }, `/admin/newsletter`);
 
   return { status: "success" };
 }
