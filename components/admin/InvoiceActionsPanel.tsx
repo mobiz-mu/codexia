@@ -1,0 +1,128 @@
+"use client";
+
+import { useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  duplicateInvoice,
+  getInvoiceSignedUrl,
+  markInvoiceSent,
+  regenerateInvoicePdf,
+  voidInvoice,
+} from "@/lib/actions/admin/invoices";
+
+export function InvoiceActionsPanel({
+  invoiceId,
+  status,
+  storagePath,
+}: {
+  invoiceId: string;
+  status: string;
+  storagePath: string | null;
+}) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  const [message, setMessage] = useState<string | null>(null);
+
+  function handleGeneratePdf() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await regenerateInvoicePdf(invoiceId);
+      setMessage(result.ok ? "PDF generated." : result.error ?? "Failed to generate PDF.");
+      router.refresh();
+    });
+  }
+
+  function handleDownload() {
+    if (!storagePath) {
+      setMessage("Generate the PDF first.");
+      return;
+    }
+    setMessage(null);
+    startTransition(async () => {
+      const url = await getInvoiceSignedUrl(storagePath);
+      if (url) window.open(url, "_blank", "noopener,noreferrer");
+      else setMessage("Failed to create download link.");
+    });
+  }
+
+  function handleMarkSent() {
+    setMessage(null);
+    startTransition(async () => {
+      await markInvoiceSent(invoiceId);
+      setMessage("Marked as sent.");
+      router.refresh();
+    });
+  }
+
+  function handleVoid() {
+    if (!confirm("Void this invoice? This cannot be undone.")) return;
+    setMessage(null);
+    startTransition(async () => {
+      await voidInvoice(invoiceId);
+      router.refresh();
+    });
+  }
+
+  function handleDuplicate() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await duplicateInvoice(invoiceId);
+      if (result.ok) router.push(`/admin/invoices/${result.invoiceId}`);
+      else setMessage(result.error ?? "Failed to duplicate.");
+    });
+  }
+
+  return (
+    <div className="flex flex-col gap-2">
+      <div className="flex flex-wrap gap-2">
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleGeneratePdf}
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+        >
+          Generate / Refresh PDF
+        </button>
+        {storagePath && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handleDownload}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+          >
+            Download PDF
+          </button>
+        )}
+        {status === "draft" && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handleMarkSent}
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+          >
+            Mark Sent
+          </button>
+        )}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleDuplicate}
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+        >
+          Duplicate
+        </button>
+        {status !== "void" && (
+          <button
+            type="button"
+            disabled={pending}
+            onClick={handleVoid}
+            className="rounded-full border border-red-300 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-60"
+          >
+            Void
+          </button>
+        )}
+      </div>
+      {message && <p className="text-sm text-muted">{message}</p>}
+    </div>
+  );
+}

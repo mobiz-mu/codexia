@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/pricing/format";
 import { BookingStatusForm } from "@/components/admin/BookingStatusForm";
 import { VehicleReassignForm } from "@/components/admin/VehicleReassignForm";
 import { ResendEmailButtons } from "@/components/admin/ResendEmailButtons";
+import { createInvoiceFromBookingAndRedirect } from "@/lib/actions/admin/invoices";
 
 export const metadata: Metadata = { title: "Booking Detail" };
 
@@ -151,6 +152,18 @@ export default async function AdminBookingDetailPage({
           <section className="rounded-xl border border-border bg-background p-4">
             <h2 className="mb-3 font-semibold text-ink">Emails</h2>
             <ResendEmailButtons bookingId={booking.id} />
+          </section>
+
+          <section className="rounded-xl border border-border bg-background p-4">
+            <h2 className="mb-3 font-semibold text-ink">Invoice</h2>
+            <form action={createInvoiceFromBookingAndRedirect.bind(null, booking.id)}>
+              <button
+                type="submit"
+                className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink"
+              >
+                Create Invoice
+              </button>
+            </form>
           </section>
         </div>
       </div>

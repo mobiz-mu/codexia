@@ -452,6 +452,53 @@ export type Database = {
         updated_at: string;
         updated_by: string | null;
       }>;
+      invoices: Table<{
+        id: string;
+        number: string;
+        booking_id: string | null;
+        customer_name: string;
+        customer_email: string;
+        customer_address: string | null;
+        issue_date: string;
+        due_date: string;
+        status: "draft" | "sent" | "paid" | "partially_paid" | "void";
+        terms: string | null;
+        notes: string | null;
+        subtotal_cents: number;
+        tax_cents: number;
+        discount_cents: number;
+        total_cents: number;
+        paid_cents: number;
+        storage_path: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      invoice_items: Table<{
+        id: string;
+        invoice_id: string;
+        description: string;
+        quantity: number;
+        unit_price_cents: number;
+        tax_rate: number;
+        discount_cents: number;
+        line_total_cents: number;
+        display_order: number;
+      }>;
+      invoice_payments: Table<{
+        id: string;
+        invoice_id: string;
+        amount_cents: number;
+        method: string;
+        paid_at: string;
+        note: string | null;
+        recorded_by: string | null;
+        created_at: string;
+      }>;
+      invoice_counters: Table<{
+        year: number;
+        next_number: number;
+      }>;
     };
     Views: {
       public_reviews: {
