@@ -58,7 +58,7 @@ export default async function LocationDetailPage({
 
       <Link
         href={`/book?location=${location.slug}`}
-        className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+        className="mt-8 inline-block rounded-full bg-action px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-action-dark"
       >
         {t("title")}
       </Link>

@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
+import { MapPin, Car, PlaneLanding, Lightbulb } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { buildAlternates } from "@/lib/seo/alternates";
 
@@ -11,13 +12,12 @@ export async function generateMetadata(props: {
   return { title: t("title"), description: t("intro"), alternates: buildAlternates(locale, "/mauritius") };
 }
 
-const SECTIONS = ["placesToVisit", "drivingGuide", "airportGuide", "travelTips"] as const;
-const SECTION_HREFS: Record<(typeof SECTIONS)[number], string> = {
-  placesToVisit: "/mauritius/places-to-visit",
-  drivingGuide: "/mauritius/driving-guide",
-  airportGuide: "/mauritius/airport-guide",
-  travelTips: "/mauritius/travel-tips",
-};
+const SECTIONS = [
+  { key: "placesToVisit", href: "/mauritius/places-to-visit", icon: MapPin },
+  { key: "drivingGuide", href: "/mauritius/driving-guide", icon: Car },
+  { key: "airportGuide", href: "/mauritius/airport-guide", icon: PlaneLanding },
+  { key: "travelTips", href: "/mauritius/travel-tips", icon: Lightbulb },
+] as const;
 
 export default async function MauritiusPage({
   params,
@@ -34,14 +34,17 @@ export default async function MauritiusPage({
       <p className="mt-4 max-w-2xl text-lg text-muted">{t("intro")}</p>
 
       <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2">
-        {SECTIONS.map((key) => (
+        {SECTIONS.map(({ key, href, icon: Icon }) => (
           <Link
             key={key}
-            href={SECTION_HREFS[key]}
-            className="rounded-xl border border-border bg-background p-6 shadow-sm transition-shadow hover:shadow-md"
+            href={href}
+            className="group flex flex-col gap-3 rounded-xl border border-border bg-background p-6 shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
           >
-            <h2 className="text-lg font-semibold text-ink">{t(`${key}.title`)}</h2>
-            <p className="mt-2 text-sm text-muted">{t(`${key}.text`)}</p>
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-primary-tint text-primary-dark">
+              <Icon className="h-5 w-5" aria-hidden="true" />
+            </span>
+            <h2 className="text-lg font-semibold text-ink group-hover:text-primary-dark">{t(`${key}.title`)}</h2>
+            <p className="text-sm text-muted">{t(`${key}.text`)}</p>
           </Link>
         ))}
       </div>

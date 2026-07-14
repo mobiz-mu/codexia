@@ -37,8 +37,16 @@ export function UserRolesEditor({
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap gap-2">
         {allRoles.map((role) => (
-          <label key={role.id} className="flex items-center gap-1 text-xs">
-            <input type="checkbox" checked={selected.has(role.id)} onChange={() => toggle(role.id)} />
+          <label
+            key={role.id}
+            className="flex items-center gap-1.5 rounded-full border border-border px-2.5 py-1 text-xs text-ink transition-colors hover:border-primary"
+          >
+            <input
+              type="checkbox"
+              checked={selected.has(role.id)}
+              onChange={() => toggle(role.id)}
+              className="h-3.5 w-3.5 accent-primary"
+            />
             {role.name}
           </label>
         ))}
@@ -47,7 +55,7 @@ export function UserRolesEditor({
         type="button"
         disabled={pending}
         onClick={save}
-        className="self-start rounded-full border border-border px-3 py-1 text-xs font-medium text-ink disabled:opacity-60"
+        className="self-start rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-60"
       >
         {pending ? "Saving..." : "Save Roles"}
       </button>

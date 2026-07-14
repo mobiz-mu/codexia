@@ -24,7 +24,7 @@ export default async function AdminReviewsPage({
           <option value="rejected">Rejected</option>
           <option value="hidden">Hidden</option>
         </select>
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">
+        <button type="submit" className="rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white">
           Filter
         </button>
       </form>

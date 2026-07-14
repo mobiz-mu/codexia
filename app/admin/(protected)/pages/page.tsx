@@ -22,7 +22,7 @@ export default async function AdminPagesListPage() {
             {pages.map((p) => (
               <tr key={p.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/pages/${p.slug}`} className="font-medium text-primary-dark">
+                  <Link href={`/admin/pages/${p.slug}`} className="font-medium text-action-dark">
                     {p.title_en}
                   </Link>
                 </td>

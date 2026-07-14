@@ -34,7 +34,7 @@ export function BannerForm({
     <form action={formAction} className="flex flex-col gap-4">
       {url && (
         <div className="relative aspect-[21/9] w-full overflow-hidden rounded-lg bg-surface">
-          <Image src={url} alt="Banner" fill className="object-cover" />
+          <Image src={url} alt="Banner" fill className="object-cover" sizes="(min-width: 1024px) 60vw, 100vw" />
         </div>
       )}
       <div className="flex flex-col gap-1">
@@ -151,7 +151,7 @@ export function BannerForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
       >
         {pending ? "Saving..." : submitLabel}
       </button>

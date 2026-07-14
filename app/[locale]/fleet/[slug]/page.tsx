@@ -1,13 +1,13 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Image from "next/image";
-import { Users, DoorOpen, Luggage, Cog, Fuel, Snowflake, Bluetooth, MapPin } from "lucide-react";
+import { Users, DoorOpen, Luggage, Cog, Fuel, Snowflake, Bluetooth, MapPin, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { getVehicleBySlug, getRelatedVehicles } from "@/lib/data/vehicles";
 import { getApprovedReviews } from "@/lib/data/reviews";
 import { getFaqCategoriesWithEntries } from "@/lib/data/faq";
 import { VehicleCard } from "@/components/site/VehicleCard";
+import { VehicleGallery } from "@/components/site/VehicleGallery";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { ReviewsList } from "@/components/site/ReviewsList";
 import { ReviewForm } from "@/components/site/ReviewForm";
@@ -97,8 +97,15 @@ export default async function VehicleDetailPage({
     },
   };
 
+  const galleryImages = images
+    .map((img: { path: string; alt_en: string | null }) => {
+      const url = publicStorageUrl("vehicle-images", img.path);
+      return url ? { url, alt: img.alt_en ?? vehicle.name } : null;
+    })
+    .filter((img): img is { url: string; alt: string } => img !== null);
+
   return (
-    <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
+    <section className="mx-auto max-w-7xl px-4 py-12 pb-28 sm:px-6 lg:px-8 lg:pb-12">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -112,44 +119,10 @@ export default async function VehicleDetailPage({
         ]}
       />
 
-      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2">
-        <div>
-          <div className="relative aspect-[4/3] w-full overflow-hidden rounded-xl bg-surface">
-            {mainImageUrl ? (
-              <Image
-                src={mainImageUrl}
-                alt={mainImage?.alt_en ?? vehicle.name}
-                fill
-                className="object-cover"
-                priority
-                sizes="(min-width: 1024px) 50vw, 100vw"
-              />
-            ) : (
-              <div className="flex h-full items-center justify-center text-muted">No photo yet</div>
-            )}
-          </div>
-          {images.length > 1 && (
-            <div className="mt-3 grid grid-cols-4 gap-3">
-              {images.slice(0, 4).map((img: { path: string; alt_en: string | null }, i: number) => {
-                const url = publicStorageUrl("vehicle-images", img.path);
-                if (!url) return null;
-                return (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded-lg bg-surface">
-                    <Image
-                      src={url}
-                      alt={img.alt_en ?? vehicle.name}
-                      fill
-                      className="object-cover"
-                      sizes="(min-width: 1024px) 12vw, 25vw"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+      <div className="grid grid-cols-1 gap-10 lg:grid-cols-2 lg:items-start">
+        <VehicleGallery images={galleryImages} emptyLabel="No photo yet" />
 
-        <div className="flex flex-col gap-6">
+        <div className="flex flex-col gap-6 lg:sticky lg:top-24">
           <div>
             <h1 className="text-3xl font-bold tracking-tight text-ink">{vehicle.name}</h1>
             <p className="mt-1 text-sm text-muted">
@@ -157,7 +130,7 @@ export default async function VehicleDetailPage({
             </p>
           </div>
 
-          <p className="text-2xl font-bold text-ink">
+          <p className="text-2xl font-bold text-action-dark">
             {formatMoney(vehicle.daily_price_cents, vehicle.currency, locale)}
             <span className="text-base font-normal text-muted"> / day</span>
           </p>
@@ -166,10 +139,10 @@ export default async function VehicleDetailPage({
             <p className="rounded-lg bg-surface px-3 py-2 text-xs text-muted">{t("demoNotice")}</p>
           )}
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="hidden flex-col gap-3 sm:flex-row lg:flex">
             <Link
               href={`/book?vehicle=${vehicle.slug}`}
-              className="flex-1 rounded-full bg-primary px-6 py-3 text-center text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+              className="flex-1 rounded-full bg-action px-6 py-3 text-center text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
             >
               {t("bookCta")}
             </Link>
@@ -177,7 +150,7 @@ export default async function VehicleDetailPage({
               href={whatsappHref}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex-1 rounded-full border border-border px-6 py-3 text-center text-sm font-semibold text-ink transition-colors hover:bg-surface"
+              className="flex-1 rounded-full border border-border px-6 py-3 text-center text-sm font-semibold text-ink transition-colors hover:border-primary hover:text-primary-dark"
             >
               {t("whatsappCta")}
             </a>
@@ -197,6 +170,37 @@ export default async function VehicleDetailPage({
             </ul>
           </div>
 
+          <div className="rounded-xl border border-border bg-background p-4">
+            <h2 className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-muted">
+              <ShieldCheck className="h-4 w-4 text-primary" aria-hidden="true" />
+              {t("insuranceDepositTitle")}
+            </h2>
+            <dl className="mt-3 flex flex-col gap-2 text-sm">
+              <div className="flex items-center justify-between">
+                <dt className="text-ink">{t("depositLabel")}</dt>
+                <dd className="font-semibold text-ink">
+                  {formatMoney(vehicle.deposit_cents, vehicle.currency, locale)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-ink">{t("insuranceExcessLabel")}</dt>
+                <dd className="font-semibold text-ink">
+                  {formatMoney(vehicle.insurance_excess_cents, vehicle.currency, locale)}
+                </dd>
+              </div>
+              {vehicle.extra_insurance_daily_cents > 0 && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-ink">{t("extraInsuranceLabel")}</dt>
+                  <dd className="font-semibold text-ink">
+                    {formatMoney(vehicle.extra_insurance_daily_cents, vehicle.currency, locale)}{" "}
+                    <span className="font-normal text-muted">{t("perDay")}</span>
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <p className="mt-2 text-xs text-muted">{t("depositNote")}</p>
+          </div>
+
           {description && (
             <div>
               <h2 className="text-sm font-semibold uppercase tracking-wide text-muted">
@@ -205,6 +209,22 @@ export default async function VehicleDetailPage({
               <p className="mt-3 text-sm text-ink">{description}</p>
             </div>
           )}
+        </div>
+      </div>
+
+      {/* Fixed mobile CTA bar */}
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-background/95 px-4 py-3 pr-24 shadow-[0_-4px_12px_rgba(0,0,0,0.08)] backdrop-blur lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-sm font-bold text-action-dark">
+            {formatMoney(vehicle.daily_price_cents, vehicle.currency, locale)}
+            <span className="text-xs font-normal text-muted"> / day</span>
+          </p>
+          <Link
+            href={`/book?vehicle=${vehicle.slug}`}
+            className="rounded-full bg-action px-5 py-2.5 text-sm font-semibold text-white shadow-sm"
+          >
+            {t("bookCta")}
+          </Link>
         </div>
       </div>
 

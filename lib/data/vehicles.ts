@@ -5,7 +5,12 @@ type VehicleRow = Database["public"]["Tables"]["vehicles"]["Row"];
 type VehicleImageRow = Database["public"]["Tables"]["vehicle_images"]["Row"];
 type VehicleCategoryRow = Database["public"]["Tables"]["vehicle_categories"]["Row"];
 
-export type VehicleWithImages = VehicleRow & { vehicle_images: VehicleImageRow[] };
+type VehicleCategoryBadge = Pick<VehicleCategoryRow, "slug" | "name_en" | "name_fr">;
+
+export type VehicleWithImages = VehicleRow & {
+  vehicle_images: VehicleImageRow[];
+  vehicle_categories?: VehicleCategoryBadge | null;
+};
 export type VehicleWithDetails = VehicleRow & {
   vehicle_images: VehicleImageRow[];
   vehicle_categories: VehicleCategoryRow;
@@ -15,7 +20,7 @@ export async function getFeaturedVehicles(limit = 6): Promise<VehicleWithImages[
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vehicles")
-    .select("*, vehicle_images(*)")
+    .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
     .eq("featured", true)
     .order("created_at", { ascending: false })
     .limit(limit);
@@ -29,7 +34,9 @@ export async function getFeaturedVehicles(limit = 6): Promise<VehicleWithImages[
 
 export async function getVehicles(options?: { categorySlug?: string }): Promise<VehicleWithImages[]> {
   const supabase = await createClient();
-  let query = supabase.from("vehicles").select("*, vehicle_images(*), vehicle_categories!inner(slug)");
+  let query = supabase
+    .from("vehicles")
+    .select("*, vehicle_images(*), vehicle_categories!inner(slug, name_en, name_fr)");
 
   if (options?.categorySlug) {
     query = query.eq("vehicle_categories.slug", options.categorySlug);
@@ -67,7 +74,7 @@ export async function getRelatedVehicles(
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vehicles")
-    .select("*, vehicle_images(*)")
+    .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
     .eq("category_id", categoryId)
     .neq("id", excludeId)
     .limit(limit);

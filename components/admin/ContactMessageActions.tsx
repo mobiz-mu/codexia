@@ -18,12 +18,12 @@ export function ContactMessageActions({ id, status }: { id: string; status: stri
   return (
     <div className="flex gap-2">
       {status === "new" && (
-        <button type="button" disabled={pending} onClick={() => update("read")} className="text-xs text-primary-dark disabled:opacity-60">
+        <button type="button" disabled={pending} onClick={() => update("read")} className="text-xs text-action-dark disabled:opacity-60">
           Mark Read
         </button>
       )}
       {status !== "replied" && (
-        <button type="button" disabled={pending} onClick={() => update("replied")} className="text-xs text-primary-dark disabled:opacity-60">
+        <button type="button" disabled={pending} onClick={() => update("replied")} className="text-xs text-action-dark disabled:opacity-60">
           Mark Replied
         </button>
       )}

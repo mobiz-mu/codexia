@@ -24,7 +24,7 @@ export function PostImageUpload({ postId, currentPath }: { postId: string; curre
     <div className="flex flex-col gap-3">
       {url && (
         <div className="relative aspect-video w-full max-w-sm overflow-hidden rounded-lg bg-surface">
-          <Image src={url} alt="Featured" fill className="object-cover" />
+          <Image src={url} alt="Featured" fill className="object-cover" sizes="384px" />
         </div>
       )}
       <form ref={formRef} action={handleUpload} className="flex items-center gap-3">
@@ -32,7 +32,7 @@ export function PostImageUpload({ postId, currentPath }: { postId: string; curre
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           Upload
         </button>

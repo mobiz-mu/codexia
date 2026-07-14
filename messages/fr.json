@@ -75,12 +75,21 @@
   "common": {
     "skipToContent": "Aller au contenu",
     "languageSwitcher": "Langue",
-    "whatsappCta": "Discuter sur WhatsApp"
+    "whatsappCta": "Discuter sur WhatsApp",
+    "callUs": "Appelez-nous"
   },
   "home": {
-    "heroTitle": "Découvrez Maurice à votre rythme",
+    "heroTitle": "Roulez à Maurice en toute confiance",
     "heroSubtitle": "Kilométrage illimité, assurance complète et assistance 24h/24 pour chaque location.",
     "heroCta": "Rechercher une disponibilité",
+    "heroBookNow": "Réserver",
+    "heroViewFleet": "Voir la flotte",
+    "trustIndicators": {
+      "experience": "Plus de 10 ans d'expérience",
+      "insurance": "Assurance complète",
+      "support": "Support 24h/24",
+      "delivery": "Livraison gratuite à l'aéroport"
+    },
     "featuredTitle": "Véhicules en vedette",
     "featuredSubtitle": "Un aperçu de notre flotte de démonstration — liste complète sur la page Flotte.",
     "viewAllFleet": "Voir toute la flotte",
@@ -92,12 +101,29 @@
       "delivery": { "title": "Livraison aéroport gratuite", "text": "Nous vous accueillons à l'aéroport SSR sans frais supplémentaires." }
     },
     "categoriesTitle": "Parcourir par catégorie",
+    "categoriesCta": "Voir toutes les catégories",
+    "howItWorksTitle": "Comment réserver",
+    "howItWorksSubtitle": "Quatre étapes simples, de la recherche à la route.",
+    "howItWorks": {
+      "step1": { "title": "Cherchez & comparez", "text": "Choisissez vos dates et le lieu, puis parcourez notre flotte." },
+      "step2": { "title": "Réservez & confirmez", "text": "Réservez en ligne et payez un acompte ou la totalité — à votre choix." },
+      "step3": { "title": "Retrait ou livraison", "text": "Récupérez votre voiture ou faites-vous livrer gratuitement à l'aéroport SSR." },
+      "step4": { "title": "Profitez de Maurice", "text": "Prenez la route avec une assistance 24h/24, à tout moment." }
+    },
+    "airportHighlightTitle": "Livraison aéroport gratuite",
+    "airportHighlightText": "Vous atterrissez à l'aéroport international SSR ? Votre voiture vous attendra sans frais supplémentaires, avec suivi de vol en cas de retard.",
+    "airportHighlightCta": "En savoir plus",
+    "popularLocationsTitle": "Lieux populaires",
+    "popularLocationsSubtitle": "Prise en charge et retour partout à Maurice.",
+    "popularLocationsCta": "Voir tous les lieux",
     "aboutCodexiaTitle": "À propos de Codexia",
     "aboutCodexiaText": "Depuis plus de 10 ans, Codexia Ltd propose une location de voiture fiable à Maurice pour les résidents et les voyageurs.",
     "aboutCodexiaCta": "En savoir plus",
     "aboutMauritiusTitle": "Découvrir Maurice",
     "aboutMauritiusText": "Des plages de Grand Baie aux montagnes du Morne, explorez l'île à votre rythme.",
     "aboutMauritiusCta": "Explorer Maurice",
+    "faqPreviewTitle": "Questions fréquentes",
+    "faqPreviewCta": "Voir toutes les questions",
     "reviewsTitle": "Ce que disent nos clients",
     "articlesTitle": "Derniers articles du blog",
     "newsletterTitle": "Restez informé",
@@ -124,7 +150,8 @@
     "view": "Voir",
     "book": "Réserver",
     "whatsappEnquiry": "Renseignement sur",
-    "noImage": "Photo à venir"
+    "noImage": "Photo à venir",
+    "availableNow": "Disponible maintenant"
   },
   "fleet": {
     "title": "Notre flotte",
@@ -188,6 +215,7 @@
   "services": {
     "title": "Nos services",
     "intro": "Tout ce qu'il vous faut pour une location sans souci, de la prise en charge à l'aéroport à la livraison sur toute l'île.",
+    "bookCta": "Réserver",
     "airportRental": {
       "title": "Location à l'aéroport",
       "text": "Livraison et récupération gratuites à l'aéroport SSR, avec suivi des vols en cas de retard."
@@ -227,7 +255,13 @@
     "faqTitle": "Questions fréquentes",
     "bookCta": "Réserver ce véhicule",
     "whatsappCta": "Demander sur WhatsApp",
-    "demoNotice": "Annonce de démonstration — prix et caractéristiques finaux confirmés par Codexia lors de la réservation."
+    "demoNotice": "Annonce de démonstration — prix et caractéristiques finaux confirmés par Codexia lors de la réservation.",
+    "insuranceDepositTitle": "Assurance et dépôt",
+    "depositLabel": "Dépôt de garantie",
+    "depositNote": "Remboursable, collecté à la prise en charge",
+    "insuranceExcessLabel": "Franchise d'assurance",
+    "extraInsuranceLabel": "Réduction de franchise (optionnelle)",
+    "perDay": "/ jour"
   },
   "reviewForm": {
     "title": "Laisser un avis",
@@ -256,6 +290,15 @@
     },
     "back": "Retour",
     "continue": "Continuer",
+    "stepOf": "Étape {current} sur {total}",
+    "priceSummary": {
+      "title": "Votre voyage",
+      "selectPrompt": "Choisissez un véhicule pour voir votre prix.",
+      "estimatedTotal": "Total estimé",
+      "estimateNote": "Les extras et frais sont ajoutés lors du paiement.",
+      "night": "nuit",
+      "nights": "nuits"
+    },
     "vehicleStep": {
       "title": "Choisissez votre véhicule",
       "modifySearch": "Modifier la recherche",
@@ -266,7 +309,9 @@
       "title": "Ajouter des extras",
       "subtitle": "Options supplémentaires pour votre voyage.",
       "perDay": "/ jour",
-      "flat": "unique"
+      "flat": "unique",
+      "decreaseQuantity": "Diminuer la quantité",
+      "increaseQuantity": "Augmenter la quantité"
     },
     "detailsStep": {
       "title": "Vos informations",
@@ -330,7 +375,9 @@
       "whatsappCta": "Continuer sur WhatsApp",
       "bankDetailsTitle": "Coordonnées bancaires",
       "myBookingCta": "Voir ma réservation",
-      "emailNotice": "Un e-mail de confirmation avec ces détails vous a été envoyé."
+      "emailNotice": "Un e-mail de confirmation avec ces détails vous a été envoyé.",
+      "copyReference": "Copier la référence",
+      "copied": "Copié !"
     }
   },
   "myBooking": {
@@ -344,6 +391,24 @@
     "detail": {
       "reference": "Référence de réservation",
       "status": "Statut",
+      "statusLabels": {
+        "draft": "Brouillon",
+        "pending": "En attente de vérification",
+        "awaiting_payment": "En attente de paiement",
+        "payment_proof_submitted": "Preuve de paiement soumise",
+        "payment_under_review": "Paiement en cours de vérification",
+        "confirmed": "Confirmée",
+        "partially_paid": "Partiellement payée",
+        "paid": "Payée",
+        "vehicle_assigned": "Véhicule attribué",
+        "ready_for_pickup": "Prête pour la prise en charge",
+        "active": "En cours",
+        "completed": "Terminée",
+        "cancelled": "Annulée",
+        "no_show": "Non présenté",
+        "refunded": "Remboursée",
+        "rejected": "Rejetée"
+      },
       "vehicle": "Véhicule",
       "pickup": "Prise en charge",
       "dropoff": "Restitution",

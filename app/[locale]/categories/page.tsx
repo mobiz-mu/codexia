@@ -57,11 +57,11 @@ export default async function CategoriesPage({
                 )}
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-semibold text-ink group-hover:text-primary-dark">
+                <h2 className="text-lg font-semibold text-ink group-hover:text-action-dark">
                   {name}
                 </h2>
                 {description && <p className="mt-1 text-sm text-muted">{description}</p>}
-                <span className="mt-3 inline-block text-sm font-semibold text-primary-dark">
+                <span className="mt-3 inline-block text-sm font-semibold text-action-dark">
                   {t("viewVehicles")}
                 </span>
               </div>

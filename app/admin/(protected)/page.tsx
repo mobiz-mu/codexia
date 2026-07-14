@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Car, Banknote, Scale, ReceiptText, Star, MailWarning, CalendarClock, type LucideIcon } from "lucide-react";
 import { getOverviewStats } from "@/lib/actions/admin/overview";
 import { formatMoney } from "@/lib/pricing/format";
 
@@ -32,18 +33,35 @@ export default async function AdminOverviewPage() {
       <h1 className="text-2xl font-bold text-ink">Overview</h1>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard label="Active Rentals" value={String(stats.activeRentalsCount)} />
-        <StatCard label="Revenue Collected" value={formatMoney(stats.revenueCents, "EUR", "en")} />
-        <StatCard label="Outstanding Balance" value={formatMoney(stats.outstandingCents, "EUR", "en")} />
-        <StatCard label="Pending Payment Proofs" value={String(stats.pendingProofsCount)} />
+        <StatCard icon={Car} label="Active Rentals" value={String(stats.activeRentalsCount)} tone="primary" />
+        <StatCard
+          icon={Banknote}
+          label="Revenue Collected"
+          value={formatMoney(stats.revenueCents, "EUR", "en")}
+          tone="action"
+        />
+        <StatCard
+          icon={Scale}
+          label="Outstanding Balance"
+          value={formatMoney(stats.outstandingCents, "EUR", "en")}
+          tone="primary"
+        />
+        <StatCard
+          icon={ReceiptText}
+          label="Pending Payment Proofs"
+          value={String(stats.pendingProofsCount)}
+          tone="primary"
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard label="Pending Reviews" value={String(stats.pendingReviewsCount)} />
-        <StatCard label="Failed Emails" value={String(stats.failedEmailsCount)} />
+        <StatCard icon={Star} label="Pending Reviews" value={String(stats.pendingReviewsCount)} tone="primary" />
+        <StatCard icon={MailWarning} label="Failed Emails" value={String(stats.failedEmailsCount)} tone="primary" />
         <StatCard
+          icon={CalendarClock}
           label="Bookings (all time)"
           value={String(Object.values(stats.byStatus).reduce((a, b) => a + b, 0))}
+          tone="action"
         />
       </div>
 
@@ -51,7 +69,10 @@ export default async function AdminOverviewPage() {
         <h2 className="mb-3 text-lg font-semibold text-ink">Bookings by Status</h2>
         <div className="flex flex-wrap gap-2">
           {Object.entries(stats.byStatus).map(([status, count]) => (
-            <span key={status} className="rounded-full bg-background px-3 py-1 text-xs text-ink border border-border">
+            <span
+              key={status}
+              className="rounded-full border border-border bg-primary-tint px-3 py-1 text-xs font-medium text-primary-dark"
+            >
               {STATUS_LABELS[status] ?? status}: {count}
             </span>
           ))}
@@ -99,9 +120,9 @@ export default async function AdminOverviewPage() {
             </thead>
             <tbody>
               {stats.recentBookings.map((b) => (
-                <tr key={b.id} className="border-b border-border last:border-0">
+                <tr key={b.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
                   <td className="px-4 py-2">
-                    <Link href={`/admin/bookings/${b.id}`} className="font-medium text-primary-dark">
+                    <Link href={`/admin/bookings/${b.id}`} className="font-medium text-primary-dark hover:underline">
                       {b.reference}
                     </Link>
                   </td>
@@ -118,11 +139,32 @@ export default async function AdminOverviewPage() {
   );
 }
 
-function StatCard({ label, value }: { label: string; value: string }) {
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: LucideIcon;
+  label: string;
+  value: string;
+  tone: "primary" | "action";
+}) {
   return (
-    <div className="rounded-xl border border-border bg-background p-4">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
+    <div className="flex items-start gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
+      <span
+        className={
+          tone === "primary"
+            ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark"
+            : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-action-tint text-action-dark"
+        }
+      >
+        <Icon className="h-5 w-5" aria-hidden="true" />
+      </span>
+      <div>
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+        <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
+      </div>
     </div>
   );
 }
@@ -135,13 +177,16 @@ function BookingMiniList({
   empty: string;
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-muted">{empty}</p>;
+    return <p className="rounded-lg border border-border bg-surface p-3 text-sm text-muted">{empty}</p>;
   }
   return (
     <ul className="flex flex-col gap-2">
       {items.map((item) => (
-        <li key={item.id} className="rounded-lg border border-border bg-background p-3 text-sm">
-          <Link href={`/admin/bookings/${item.id}`} className="font-medium text-primary-dark">
+        <li
+          key={item.id}
+          className="rounded-lg border border-border bg-background p-3 text-sm transition-colors hover:bg-surface"
+        >
+          <Link href={`/admin/bookings/${item.id}`} className="font-medium text-primary-dark hover:underline">
             {item.reference}
           </Link>{" "}
           — {item.vehicle} — {new Date(item.date).toLocaleString("en-GB")}

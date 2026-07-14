@@ -2,7 +2,9 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
+import { ChevronDown } from "lucide-react";
 import { StepIndicator } from "./StepIndicator";
+import { PriceSummary } from "./PriceSummary";
 import { SearchStep } from "./steps/SearchStep";
 import { VehicleStep } from "./steps/VehicleStep";
 import { ExtrasStep } from "./steps/ExtrasStep";
@@ -202,20 +204,10 @@ export function BookingWizard({
     );
   }
 
-  return (
-    <div>
-      <StepIndicator
-        currentStep={step}
-        labels={{
-          search: t("steps.search"),
-          vehicle: t("steps.vehicle"),
-          extras: t("steps.extras"),
-          details: t("steps.details"),
-          summary: t("steps.summary"),
-          payment: t("steps.payment"),
-        }}
-      />
+  const showSummary = step >= 2;
 
+  const stepContent = (
+    <>
       {step === 1 && (
         <SearchStep
           categories={categories}
@@ -223,6 +215,7 @@ export function BookingWizard({
           criteria={criteria}
           onChange={setCriteria}
           onSubmit={handleSearchSubmit}
+          loading={loading}
           error={error}
         />
       )}
@@ -255,6 +248,7 @@ export function BookingWizard({
           isAirportPickup={isAirportPickup}
           onContinue={handleDetailsContinue}
           onBack={() => setStep(3)}
+          loading={loading}
           error={error}
         />
       )}
@@ -279,6 +273,64 @@ export function BookingWizard({
           submitting={submitting}
           error={error}
         />
+      )}
+    </>
+  );
+
+  return (
+    <div>
+      <StepIndicator
+        currentStep={step}
+        labels={{
+          search: t("steps.search"),
+          vehicle: t("steps.vehicle"),
+          extras: t("steps.extras"),
+          details: t("steps.details"),
+          summary: t("steps.summary"),
+          payment: t("steps.payment"),
+        }}
+      />
+
+      {showSummary ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3 lg:gap-8">
+          <div className="lg:col-span-2">{stepContent}</div>
+
+          <div className="lg:col-span-1">
+            {/* Mobile/tablet: collapsible summary */}
+            <details className="group mb-2 rounded-xl border border-border bg-background lg:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between p-4 text-sm font-semibold text-ink marker:content-none">
+                {t("priceSummary.title")}
+                <ChevronDown
+                  className="h-4 w-4 text-muted transition-transform group-open:rotate-180"
+                  aria-hidden="true"
+                />
+              </summary>
+              <div className="px-4 pb-4">
+                <PriceSummary
+                  vehicle={vehicle}
+                  pickupAt={criteria.pickupAt}
+                  returnAt={criteria.returnAt}
+                  breakdown={breakdown}
+                  locale={locale}
+                />
+              </div>
+            </details>
+
+            {/* Desktop: sticky summary sidebar */}
+            <div className="sticky top-24 hidden lg:block">
+              <p className="mb-2 text-sm font-semibold text-ink">{t("priceSummary.title")}</p>
+              <PriceSummary
+                vehicle={vehicle}
+                pickupAt={criteria.pickupAt}
+                returnAt={criteria.returnAt}
+                breakdown={breakdown}
+                locale={locale}
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        stepContent
       )}
     </div>
   );

@@ -74,7 +74,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
                 <>
                   <dt className="text-muted">Booking</dt>
                   <dd>
-                    <a href={`/admin/bookings/${invoice.booking_id}`} className="text-primary-dark">
+                    <a href={`/admin/bookings/${invoice.booking_id}`} className="text-action-dark">
                       View booking
                     </a>
                   </dd>

@@ -54,7 +54,7 @@ export function CreateBlockForm({ vehicles }: { vehicles: { id: string; name: st
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {pending ? "Adding..." : "Add Block"}
       </button>

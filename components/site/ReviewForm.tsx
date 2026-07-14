@@ -29,7 +29,7 @@ export function ReviewForm({
 
   if (state.status === "success") {
     return (
-      <p className="rounded-xl border border-primary/30 bg-surface p-4 text-sm text-ink" role="status">
+      <p className="rounded-xl border border-action/30 bg-surface p-4 text-sm text-ink" role="status">
         {labels.success}
       </p>
     );
@@ -114,7 +114,7 @@ export function ReviewForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-primary px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
       >
         {pending ? "..." : labels.submit}
       </button>

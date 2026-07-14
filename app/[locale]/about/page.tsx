@@ -33,8 +33,11 @@ export default async function AboutPage({
       <h2 className="mt-10 text-xl font-semibold text-ink">{t("valuesTitle")}</h2>
       <ul className="mt-4 flex flex-col gap-3">
         {values.map((key) => (
-          <li key={key} className="flex items-center gap-3 text-ink">
-            <CheckCircle2 className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+          <li
+            key={key}
+            className="flex items-center gap-3 rounded-lg border border-border bg-background p-3 text-ink"
+          >
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-action-dark" aria-hidden="true" />
             {t(`values.${key}`)}
           </li>
         ))}

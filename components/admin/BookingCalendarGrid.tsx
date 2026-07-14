@@ -12,7 +12,7 @@ const STATUS_COLORS: Record<string, string> = {
   paid: "bg-blue-100 text-blue-800",
   vehicle_assigned: "bg-indigo-100 text-indigo-800",
   ready_for_pickup: "bg-indigo-100 text-indigo-800",
-  active: "bg-primary/20 text-primary-dark",
+  active: "bg-action/20 text-action-dark",
   completed: "bg-gray-100 text-gray-700",
   cancelled: "bg-red-100 text-red-700",
   no_show: "bg-red-100 text-red-700",

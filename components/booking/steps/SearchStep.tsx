@@ -1,9 +1,13 @@
 "use client";
 
 import { useTranslations } from "next-intl";
+import { Search } from "lucide-react";
 import type { BookingCriteria } from "../types";
 
 type Option = { slug: string; label: string };
+
+const fieldClass =
+  "rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
 
 export function SearchStep({
   categories,
@@ -11,6 +15,7 @@ export function SearchStep({
   criteria,
   onChange,
   onSubmit,
+  loading,
   error,
 }: {
   categories: Option[];
@@ -18,6 +23,7 @@ export function SearchStep({
   criteria: BookingCriteria;
   onChange: (criteria: BookingCriteria) => void;
   onSubmit: () => void;
+  loading: boolean;
   error: string | null;
 }) {
   const t = useTranslations("search");
@@ -39,7 +45,7 @@ export function SearchStep({
             id="wizard-category"
             value={criteria.categorySlug}
             onChange={(e) => onChange({ ...criteria, categorySlug: e.target.value })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           >
             <option value="">{t("anyCategory")}</option>
             {categories.map((c) => (
@@ -61,7 +67,7 @@ export function SearchStep({
             max={9}
             value={criteria.passengers}
             onChange={(e) => onChange({ ...criteria, passengers: Number(e.target.value) })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           />
         </div>
 
@@ -74,7 +80,7 @@ export function SearchStep({
             required
             value={criteria.pickupLocationSlug}
             onChange={(e) => onChange({ ...criteria, pickupLocationSlug: e.target.value })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           >
             <option value="" disabled>
               —
@@ -96,7 +102,7 @@ export function SearchStep({
             required
             value={criteria.dropoffLocationSlug}
             onChange={(e) => onChange({ ...criteria, dropoffLocationSlug: e.target.value })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           >
             <option value="" disabled>
               —
@@ -119,7 +125,7 @@ export function SearchStep({
             required
             value={criteria.pickupAt}
             onChange={(e) => onChange({ ...criteria, pickupAt: e.target.value })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           />
         </div>
 
@@ -133,21 +139,23 @@ export function SearchStep({
             required
             value={criteria.returnAt}
             onChange={(e) => onChange({ ...criteria, returnAt: e.target.value })}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className={fieldClass}
           />
         </div>
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
           {error}
         </p>
       )}
 
       <button
         type="submit"
-        className="self-start rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+        disabled={loading}
+        className="flex w-full items-center justify-center gap-2 self-start rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60 sm:w-auto"
       >
+        <Search className="h-4 w-4" aria-hidden="true" />
         {tBooking("continue")}
       </button>
     </form>

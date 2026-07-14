@@ -64,17 +64,19 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
+  const settings = await getSiteSettings();
+
   return (
     <html
       lang={locale}
       data-scroll-behavior="smooth"
       className={`${inter.variable} ${jakarta.variable} h-full antialiased`}
     >
-      <body className="flex min-h-full flex-col bg-background text-ink">
+      <body className="flex min-h-full flex-col bg-background text-body">
         <AnalyticsScripts />
         <NextIntlClientProvider>
           <AnalyticsTracker locale={locale} />
-          <Header />
+          <Header phone={settings.phone} whatsappNumber={settings.whatsappNumber} />
           <main id="main-content" className="flex-1">
             {children}
           </main>

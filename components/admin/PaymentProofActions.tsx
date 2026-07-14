@@ -36,7 +36,7 @@ export function PaymentProofActions({ proofId }: { proofId: string }) {
           type="button"
           disabled={pending}
           onClick={handleApprove}
-          className="rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-60"
+          className="rounded-full bg-action px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
         >
           Approve
         </button>
@@ -44,7 +44,7 @@ export function PaymentProofActions({ proofId }: { proofId: string }) {
           type="button"
           disabled={pending}
           onClick={() => setShowReject((v) => !v)}
-          className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-ink disabled:opacity-60"
+          className="rounded-full border border-border px-3 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
         >
           Reject
         </button>
@@ -56,20 +56,20 @@ export function PaymentProofActions({ proofId }: { proofId: string }) {
             placeholder="Rejection reason"
             value={reason}
             onChange={(e) => setReason(e.target.value)}
-            className="rounded-lg border border-border px-2 py-1 text-xs"
+            className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
           <button
             type="button"
             disabled={pending}
             onClick={handleReject}
-            className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-lg bg-red-600 px-3 py-1 text-xs font-semibold text-white transition-colors hover:bg-red-700 disabled:pointer-events-none disabled:opacity-60"
           >
             Confirm
           </button>
         </div>
       )}
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="rounded bg-red-50 px-2 py-1 text-xs text-red-700" role="alert" aria-live="assertive">
           {error}
         </p>
       )}

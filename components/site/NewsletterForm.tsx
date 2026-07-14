@@ -35,14 +35,14 @@ export function NewsletterForm({
           placeholder={labels.placeholder}
           className={
             isDark
-              ? "w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-accent"
-              : "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-accent"
+              ? "w-full rounded-lg border border-white/20 bg-white/5 px-3 py-2 text-sm text-white placeholder:text-white/40 focus:border-primary"
+              : "w-full rounded-lg border border-border px-3 py-2 text-sm text-ink focus:border-primary"
           }
         />
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+          className="shrink-0 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white hover:bg-action-dark disabled:opacity-60"
         >
           {labels.submit}
         </button>

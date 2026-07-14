@@ -48,7 +48,7 @@ export function ReviewModerationActions({
             type="button"
             disabled={pending}
             onClick={() => moderate("approved")}
-            className="rounded-full bg-primary px-3 py-1 text-xs font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-action px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
           >
             Approve
           </button>
@@ -58,7 +58,7 @@ export function ReviewModerationActions({
             type="button"
             disabled={pending}
             onClick={() => moderate("rejected")}
-            className="rounded-full border border-border px-3 py-1 text-xs disabled:opacity-60"
+            className="rounded-full border border-border px-3 py-1 text-xs text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
           >
             Reject
           </button>
@@ -68,7 +68,7 @@ export function ReviewModerationActions({
             type="button"
             disabled={pending}
             onClick={() => moderate("hidden")}
-            className="rounded-full border border-border px-3 py-1 text-xs disabled:opacity-60"
+            className="rounded-full border border-border px-3 py-1 text-xs text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
           >
             Hide
           </button>
@@ -77,7 +77,7 @@ export function ReviewModerationActions({
           type="button"
           disabled={pending}
           onClick={toggleFeatured}
-          className="rounded-full border border-border px-3 py-1 text-xs disabled:opacity-60"
+          className="rounded-full border border-border px-3 py-1 text-xs text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
         >
           {featured ? "Unfeature" : "Feature"}
         </button>
@@ -88,13 +88,13 @@ export function ReviewModerationActions({
           value={reply}
           onChange={(e) => setReply(e.target.value)}
           placeholder="Admin reply"
-          className="rounded-lg border border-border px-2 py-1 text-xs"
+          className="rounded-lg border border-border bg-background px-2 py-1 text-xs text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
         <button
           type="button"
           disabled={pending}
           onClick={saveReply}
-          className="rounded-lg border border-border px-2 py-1 text-xs disabled:opacity-60"
+          className="rounded-lg border border-border px-2 py-1 text-xs text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
         >
           Save Reply
         </button>

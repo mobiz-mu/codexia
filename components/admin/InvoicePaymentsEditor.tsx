@@ -83,7 +83,7 @@ export function InvoicePaymentsEditor({
           <button
             type="submit"
             disabled={pending}
-            className="col-span-2 rounded-full bg-primary px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-4 sm:w-fit"
+            className="col-span-2 rounded-full bg-action px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-4 sm:w-fit"
           >
             {pending ? "Recording..." : "Record Payment"}
           </button>

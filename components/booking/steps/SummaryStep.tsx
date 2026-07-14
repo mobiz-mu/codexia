@@ -2,6 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
+import { cn } from "@/lib/utils/cn";
 import { formatMoney } from "@/lib/pricing/format";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
 
@@ -72,13 +73,19 @@ export function SummaryStep({
         </div>
       )}
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold text-muted">{s("policiesTitle")}</legend>
+      <fieldset className="flex flex-col gap-2 rounded-xl border border-border bg-background p-4">
+        <legend className="mb-1 px-1 text-sm font-semibold text-ink">{s("policiesTitle")}</legend>
         {POLICIES.map((policy) => (
-          <label key={policy.key} className="flex items-start gap-2 text-sm text-ink">
+          <label
+            key={policy.key}
+            className={cn(
+              "flex items-start gap-2 rounded-lg p-2 text-sm text-ink transition-colors",
+              policyAcceptance[policy.key] ? "bg-primary-tint/40" : "hover:bg-surface"
+            )}
+          >
             <input
               type="checkbox"
-              className="mt-0.5"
+              className="mt-0.5 h-4 w-4 accent-primary"
               checked={policyAcceptance[policy.key]}
               onChange={(e) =>
                 onPolicyChange({ ...policyAcceptance, [policy.key]: e.target.checked })
@@ -86,7 +93,7 @@ export function SummaryStep({
             />
             <span>
               {s(policy.labelKey)} (
-              <Link href={`/policies/${policy.slug}`} target="_blank" className="underline">
+              <Link href={`/policies/${policy.slug}`} target="_blank" className="text-primary-dark underline">
                 {s("view")}
               </Link>
               )
@@ -96,14 +103,14 @@ export function SummaryStep({
       </fieldset>
 
       <div className="flex gap-3">
-        <button type="button" onClick={onBack} className="text-sm font-medium text-muted">
+        <button type="button" onClick={onBack} className="text-sm font-medium text-muted transition-colors hover:text-ink">
           {t("back")}
         </button>
         <button
           type="button"
           onClick={onContinue}
           disabled={!allAccepted}
-          className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:cursor-not-allowed disabled:opacity-50"
+          className="rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-50 disabled:shadow-none"
         >
           {t("continue")}
         </button>

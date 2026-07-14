@@ -20,7 +20,7 @@ export default async function AdminInvoicesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Invoices</h1>
-        <Link href="/admin/invoices/new" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/admin/invoices/new" className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white">
           New Invoice
         </Link>
       </div>
@@ -42,7 +42,7 @@ export default async function AdminInvoicesPage() {
             {invoices.map((inv) => (
               <tr key={inv.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/invoices/${inv.id}`} className="font-medium text-primary-dark">
+                  <Link href={`/admin/invoices/${inv.id}`} className="font-medium text-action-dark">
                     {inv.number}
                   </Link>
                 </td>

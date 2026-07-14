@@ -20,7 +20,7 @@ export function LanguageSwitcher() {
             locale: e.target.value as (typeof routing.locales)[number],
           });
         }}
-        className="cursor-pointer rounded-md border border-border bg-background px-2 py-1 text-sm text-ink"
+        className="cursor-pointer rounded-md border border-border bg-background px-2 py-1 text-sm text-ink transition-colors hover:border-primary focus-visible:border-primary"
       >
         {routing.locales.map((loc) => (
           <option key={loc} value={loc}>

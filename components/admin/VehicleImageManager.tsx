@@ -60,7 +60,7 @@ export function VehicleImageManager({
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
         >
           Upload
         </button>
@@ -72,12 +72,20 @@ export function VehicleImageManager({
           return (
             <div key={img.id} className="flex flex-col gap-1 rounded-lg border border-border p-2">
               <div className="relative aspect-square w-full overflow-hidden rounded bg-surface">
-                {url && <Image src={url} alt={img.alt_en ?? ""} fill className="object-cover" />}
+                {url && (
+                  <Image
+                    src={url}
+                    alt={img.alt_en ?? ""}
+                    fill
+                    className="object-cover"
+                    sizes="(min-width: 640px) 25vw, 50vw"
+                  />
+                )}
               </div>
-              {img.is_main && <span className="text-xs font-semibold text-primary-dark">Main</span>}
+              {img.is_main && <span className="text-xs font-semibold text-action-dark">Main</span>}
               <div className="flex flex-wrap gap-1">
                 {!img.is_main && (
-                  <button type="button" onClick={() => handleSetMain(img.id)} className="text-xs text-primary-dark">
+                  <button type="button" onClick={() => handleSetMain(img.id)} className="text-xs text-action-dark">
                     Set main
                   </button>
                 )}

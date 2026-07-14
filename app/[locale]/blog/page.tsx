@@ -30,7 +30,9 @@ export default async function BlogPage({
       <p className="mt-2 max-w-2xl text-muted">{t("subtitle")}</p>
 
       {posts.length === 0 ? (
-        <p className="mt-10 text-muted">{t("empty")}</p>
+        <p className="mt-10 rounded-xl border border-border bg-surface p-6 text-center text-muted">
+          {t("empty")}
+        </p>
       ) : (
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {posts.map((post) => {
@@ -42,7 +44,7 @@ export default async function BlogPage({
               <Link
                 key={post.id}
                 href={`/blog/${post.slug}`}
-                className="group overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-shadow hover:shadow-md"
+                className="group overflow-hidden rounded-xl border border-border bg-background shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary hover:shadow-md"
               >
                 <div className="relative aspect-[16/9] w-full bg-surface">
                   {imageUrl && (
@@ -56,11 +58,11 @@ export default async function BlogPage({
                   )}
                 </div>
                 <div className="p-4">
-                  <h2 className="text-lg font-semibold text-ink group-hover:text-primary-dark">
+                  <h2 className="text-lg font-semibold text-ink group-hover:text-action-dark">
                     {title}
                   </h2>
                   {excerpt && <p className="mt-1 text-sm text-muted">{excerpt}</p>}
-                  <span className="mt-3 inline-block text-sm font-semibold text-primary-dark">
+                  <span className="mt-3 inline-block text-sm font-semibold text-action-dark">
                     {t("readMore")}
                   </span>
                 </div>

@@ -22,7 +22,7 @@ export function ReviewsList({ reviews, emptyLabel }: { reviews: Review[]; emptyL
             {Array.from({ length: 5 }).map((_, i) => (
               <Star
                 key={i}
-                className={`h-4 w-4 ${i < review.rating ? "fill-primary text-primary" : "text-border"}`}
+                className={`h-4 w-4 ${i < review.rating ? "fill-action text-action" : "text-border"}`}
                 aria-hidden="true"
               />
             ))}

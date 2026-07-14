@@ -75,12 +75,21 @@
   "common": {
     "skipToContent": "Skip to content",
     "languageSwitcher": "Language",
-    "whatsappCta": "Chat on WhatsApp"
+    "whatsappCta": "Chat on WhatsApp",
+    "callUs": "Call us"
   },
   "home": {
-    "heroTitle": "Drive Mauritius on your terms",
+    "heroTitle": "Drive Mauritius with Confidence",
     "heroSubtitle": "Unlimited mileage, comprehensive insurance, and 24/7 support with every rental.",
     "heroCta": "Search Availability",
+    "heroBookNow": "Book Now",
+    "heroViewFleet": "View Fleet",
+    "trustIndicators": {
+      "experience": "10+ Years of Experience",
+      "insurance": "Comprehensive Insurance",
+      "support": "24/7 Support",
+      "delivery": "Free Airport Delivery"
+    },
     "featuredTitle": "Featured Vehicles",
     "featuredSubtitle": "A sample of our demonstration fleet — full lineup on the Fleet page.",
     "viewAllFleet": "View Full Fleet",
@@ -92,12 +101,29 @@
       "delivery": { "title": "Free Airport Delivery", "text": "We meet you at SSR Airport at no extra cost." }
     },
     "categoriesTitle": "Browse by Category",
+    "categoriesCta": "View All Categories",
+    "howItWorksTitle": "How Booking Works",
+    "howItWorksSubtitle": "Four simple steps from search to the open road.",
+    "howItWorks": {
+      "step1": { "title": "Search & Compare", "text": "Pick your dates and location, then browse our fleet." },
+      "step2": { "title": "Book & Confirm", "text": "Reserve online and pay a deposit or in full — your choice." },
+      "step3": { "title": "Pick Up or Delivery", "text": "Collect your car or have it delivered free at SSR Airport." },
+      "step4": { "title": "Enjoy Mauritius", "text": "Hit the road with 24/7 support whenever you need it." }
+    },
+    "airportHighlightTitle": "Free Airport Delivery",
+    "airportHighlightText": "Landing at SSR International Airport? We'll have your car ready at no extra cost, with flight tracking for delayed arrivals.",
+    "airportHighlightCta": "Learn More",
+    "popularLocationsTitle": "Popular Locations",
+    "popularLocationsSubtitle": "Pickup and drop-off across Mauritius.",
+    "popularLocationsCta": "View All Locations",
     "aboutCodexiaTitle": "About Codexia",
     "aboutCodexiaText": "For over 10 years, Codexia Ltd has provided reliable car rental across Mauritius for locals and travellers alike.",
     "aboutCodexiaCta": "Learn More",
     "aboutMauritiusTitle": "Discover Mauritius",
     "aboutMauritiusText": "From the beaches of Grand Baie to the mountains of Le Morne, explore the island at your own pace.",
     "aboutMauritiusCta": "Explore Mauritius",
+    "faqPreviewTitle": "Frequently Asked Questions",
+    "faqPreviewCta": "View All FAQs",
     "reviewsTitle": "What Our Customers Say",
     "articlesTitle": "Latest from the Blog",
     "newsletterTitle": "Stay in the Loop",
@@ -124,7 +150,8 @@
     "view": "View",
     "book": "Book",
     "whatsappEnquiry": "Enquire about",
-    "noImage": "Photo coming soon"
+    "noImage": "Photo coming soon",
+    "availableNow": "Available Now"
   },
   "fleet": {
     "title": "Our Fleet",
@@ -188,6 +215,7 @@
   "services": {
     "title": "Our Services",
     "intro": "Everything you need for a smooth rental experience, from airport pickup to island-wide delivery.",
+    "bookCta": "Book Now",
     "airportRental": {
       "title": "Airport Rental",
       "text": "Free delivery and recovery at SSR Airport, with flight tracking for delayed arrivals."
@@ -227,7 +255,13 @@
     "faqTitle": "Frequently Asked Questions",
     "bookCta": "Book This Vehicle",
     "whatsappCta": "Ask on WhatsApp",
-    "demoNotice": "Demonstration listing — final pricing and specifications confirmed by Codexia at booking."
+    "demoNotice": "Demonstration listing — final pricing and specifications confirmed by Codexia at booking.",
+    "insuranceDepositTitle": "Insurance & Deposit",
+    "depositLabel": "Security deposit",
+    "depositNote": "Refundable, collected at pickup",
+    "insuranceExcessLabel": "Insurance excess",
+    "extraInsuranceLabel": "Optional excess reduction",
+    "perDay": "/ day"
   },
   "reviewForm": {
     "title": "Leave a Review",
@@ -256,6 +290,15 @@
     },
     "back": "Back",
     "continue": "Continue",
+    "stepOf": "Step {current} of {total}",
+    "priceSummary": {
+      "title": "Your Trip",
+      "selectPrompt": "Choose a vehicle to see your price.",
+      "estimatedTotal": "Estimated total",
+      "estimateNote": "Extras and fees are added at checkout.",
+      "night": "night",
+      "nights": "nights"
+    },
     "vehicleStep": {
       "title": "Choose Your Vehicle",
       "modifySearch": "Modify search",
@@ -266,7 +309,9 @@
       "title": "Add Extras",
       "subtitle": "Optional add-ons for your trip.",
       "perDay": "/ day",
-      "flat": "one-time"
+      "flat": "one-time",
+      "decreaseQuantity": "Decrease quantity",
+      "increaseQuantity": "Increase quantity"
     },
     "detailsStep": {
       "title": "Your Details",
@@ -330,7 +375,9 @@
       "whatsappCta": "Continue on WhatsApp",
       "bankDetailsTitle": "Bank Transfer Details",
       "myBookingCta": "View My Booking",
-      "emailNotice": "A confirmation email with these details has been sent to you."
+      "emailNotice": "A confirmation email with these details has been sent to you.",
+      "copyReference": "Copy reference",
+      "copied": "Copied!"
     }
   },
   "myBooking": {
@@ -344,6 +391,24 @@
     "detail": {
       "reference": "Booking Reference",
       "status": "Status",
+      "statusLabels": {
+        "draft": "Draft",
+        "pending": "Pending Review",
+        "awaiting_payment": "Awaiting Payment",
+        "payment_proof_submitted": "Payment Proof Submitted",
+        "payment_under_review": "Payment Under Review",
+        "confirmed": "Confirmed",
+        "partially_paid": "Partially Paid",
+        "paid": "Paid",
+        "vehicle_assigned": "Vehicle Assigned",
+        "ready_for_pickup": "Ready for Pickup",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "no_show": "No Show",
+        "refunded": "Refunded",
+        "rejected": "Rejected"
+      },
       "vehicle": "Vehicle",
       "pickup": "Pickup",
       "dropoff": "Drop-off",

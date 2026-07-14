@@ -1,8 +1,28 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
+import { Car, MapPin, CalendarClock, Receipt } from "lucide-react";
 import { getBookingByToken } from "@/lib/actions/my-booking";
 import { PaymentProofUpload } from "@/components/site/PaymentProofUpload";
 import { formatMoney } from "@/lib/pricing/format";
+import { cn } from "@/lib/utils/cn";
+
+const NEGATIVE_STATUSES = new Set(["cancelled", "no_show", "rejected"]);
+const POSITIVE_STATUSES = new Set([
+  "confirmed",
+  "partially_paid",
+  "paid",
+  "vehicle_assigned",
+  "ready_for_pickup",
+  "active",
+  "completed",
+  "approved",
+]);
+
+function statusTone(status: string) {
+  if (NEGATIVE_STATUSES.has(status)) return "bg-red-50 text-red-700";
+  if (POSITIVE_STATUSES.has(status)) return "bg-action-tint text-action-dark";
+  return "bg-primary-tint text-primary-dark";
+}
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; token: string }>;
@@ -26,7 +46,7 @@ export default async function MyBookingDetailPage({
   if (!result) {
     return (
       <section className="mx-auto max-w-xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <p className="text-muted">{t("notFound")}</p>
+        <p className="rounded-xl border border-border bg-surface p-6 text-muted">{t("notFound")}</p>
       </section>
     );
   }
@@ -43,38 +63,66 @@ export default async function MyBookingDetailPage({
   const balanceCents = booking.total_cents - booking.paid_cents;
   const currency = "EUR";
 
+  const statusLabel = t(`statusLabels.${booking.status}` as "statusLabels.pending");
+
   return (
     <section className="mx-auto max-w-2xl px-4 py-12 sm:px-6 lg:px-8">
-      <h1 className="text-2xl font-bold text-ink">
-        {t("reference")}: {booking.reference}
-      </h1>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-ink">
+          {t("reference")}: {booking.reference}
+        </h1>
+        <span className={cn("rounded-full px-3 py-1.5 text-sm font-semibold", statusTone(booking.status))}>
+          {statusLabel}
+        </span>
+      </div>
 
-      <div className="mt-6 rounded-xl border border-border p-4 text-sm">
-        <p>
-          <strong>{t("status")}:</strong> {booking.status}
-        </p>
-        <p>
-          <strong>{t("vehicle")}:</strong> {vehicle?.name ?? "—"}
-        </p>
-        <p>
-          <strong>{t("pickup")}:</strong> {locationName(pickupLoc)} —{" "}
-          {dateFormatter.format(new Date(booking.pickup_at))}
-        </p>
-        <p>
-          <strong>{t("dropoff")}:</strong> {locationName(dropoffLoc)} —{" "}
-          {dateFormatter.format(new Date(booking.return_at))}
-        </p>
-        <p>
-          <strong>{t("total")}:</strong> {formatMoney(booking.total_cents, currency, locale)}
-        </p>
-        <p>
-          <strong>{t("paid")}:</strong> {formatMoney(booking.paid_cents, currency, locale)}
-        </p>
-        <p>
-          <strong>{t("balance")}:</strong> {formatMoney(balanceCents, currency, locale)}
-        </p>
+      <div className="mt-6 rounded-xl border border-border bg-background p-5">
+        <dl className="flex flex-col gap-3 text-sm">
+          <div className="flex items-center gap-3">
+            <Car className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <dt className="text-muted">{t("vehicle")}</dt>
+            <dd className="ml-auto font-medium text-ink">{vehicle?.name ?? "—"}</dd>
+          </div>
+          <div className="flex items-center gap-3">
+            <MapPin className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <dt className="text-muted">{t("pickup")}</dt>
+            <dd className="ml-auto text-right font-medium text-ink">
+              {locationName(pickupLoc)}
+              <br />
+              <span className="font-normal text-muted">{dateFormatter.format(new Date(booking.pickup_at))}</span>
+            </dd>
+          </div>
+          <div className="flex items-center gap-3">
+            <CalendarClock className="h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+            <dt className="text-muted">{t("dropoff")}</dt>
+            <dd className="ml-auto text-right font-medium text-ink">
+              {locationName(dropoffLoc)}
+              <br />
+              <span className="font-normal text-muted">{dateFormatter.format(new Date(booking.return_at))}</span>
+            </dd>
+          </div>
+        </dl>
+
+        <div className="mt-4 flex flex-col gap-2 border-t border-border pt-4 text-sm">
+          <div className="flex items-center justify-between">
+            <span className="flex items-center gap-2 text-ink">
+              <Receipt className="h-4 w-4 text-primary" aria-hidden="true" />
+              {t("total")}
+            </span>
+            <span className="font-semibold text-ink">{formatMoney(booking.total_cents, currency, locale)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted">{t("paid")}</span>
+            <span className="font-medium text-action-dark">{formatMoney(booking.paid_cents, currency, locale)}</span>
+          </div>
+          <div className="flex items-center justify-between">
+            <span className="text-muted">{t("balance")}</span>
+            <span className="font-semibold text-ink">{formatMoney(balanceCents, currency, locale)}</span>
+          </div>
+        </div>
+
         {customer && (
-          <p className="mt-2 text-muted">
+          <p className="mt-4 border-t border-border pt-4 text-sm text-muted">
             {customer.full_name} · {customer.email}
           </p>
         )}
@@ -85,9 +133,16 @@ export default async function MyBookingDetailPage({
           <h2 className="mb-2 text-sm font-semibold text-muted">{t("proofsUploaded")}</h2>
           <ul className="flex flex-col gap-2 text-sm">
             {proofs.map((proof) => (
-              <li key={proof.id} className="rounded-lg bg-surface p-3">
-                {proof.bank_name} · {proof.transaction_ref} —{" "}
-                {t(`proofStatus.${proof.status}` as "proofStatus.pending")}
+              <li
+                key={proof.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background p-3"
+              >
+                <span className="text-ink">
+                  {proof.bank_name} · {proof.transaction_ref}
+                </span>
+                <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusTone(proof.status))}>
+                  {t(`proofStatus.${proof.status}` as "proofStatus.pending")}
+                </span>
               </li>
             ))}
           </ul>

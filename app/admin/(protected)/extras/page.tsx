@@ -12,7 +12,7 @@ export default async function AdminExtrasPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Extras</h1>
-        <Link href="/admin/extras/new" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/admin/extras/new" className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white">
           Add Extra
         </Link>
       </div>
@@ -33,7 +33,7 @@ export default async function AdminExtrasPage() {
             {extras.map((e) => (
               <tr key={e.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/extras/${e.id}`} className="font-medium text-primary-dark">
+                  <Link href={`/admin/extras/${e.id}`} className="font-medium text-action-dark">
                     {e.name_en}
                   </Link>
                 </td>

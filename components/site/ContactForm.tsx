@@ -23,7 +23,7 @@ export function ContactForm({
 
   if (state.status === "success") {
     return (
-      <p className="rounded-xl border border-primary/30 bg-surface p-4 text-ink" role="status">
+      <p className="rounded-xl border border-action/30 bg-surface p-4 text-ink" role="status">
         {labels.success}
       </p>
     );
@@ -41,7 +41,7 @@ export function ContactForm({
             name="name"
             type="text"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -53,7 +53,7 @@ export function ContactForm({
             name="email"
             type="email"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -64,7 +64,7 @@ export function ContactForm({
             id="contact-phone"
             name="phone"
             type="tel"
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -75,7 +75,7 @@ export function ContactForm({
             id="contact-subject"
             name="subject"
             type="text"
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
       </div>
@@ -93,7 +93,7 @@ export function ContactForm({
       </div>
 
       {state.status === "error" && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
           {labels.error}
         </p>
       )}
@@ -101,9 +101,9 @@ export function ContactForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark disabled:opacity-60"
+        className="self-start rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
       >
-        {labels.submit}
+        {pending ? "…" : labels.submit}
       </button>
     </form>
   );

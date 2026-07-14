@@ -53,13 +53,13 @@ export async function Footer() {
           <p className="text-sm text-white/70">{t("companyBlurb")}</p>
           <ul className="flex flex-col gap-2 text-sm text-white/80">
             <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
+              <Phone className="h-4 w-4 text-action" aria-hidden="true" />
               <a href={`tel:${settings.phone.replace(/\s+/g, "")}`} className="hover:text-white">
                 {settings.phone}
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4 text-primary" aria-hidden="true" />
+              <MessageCircle className="h-4 w-4 text-action" aria-hidden="true" />
               <a
                 href={`https://wa.me/${settings.whatsappNumber}`}
                 target="_blank"
@@ -70,13 +70,13 @@ export async function Footer() {
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 text-primary" aria-hidden="true" />
+              <Mail className="h-4 w-4 text-action" aria-hidden="true" />
               <a href={`mailto:${settings.email}`} className="hover:text-white">
                 {settings.email}
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <AlertTriangle className="h-4 w-4 text-accent" aria-hidden="true" />
+              <AlertTriangle className="h-4 w-4 text-primary" aria-hidden="true" />
               <span>
                 {t("emergencyLabel")}: {settings.emergencyPhone}
               </span>

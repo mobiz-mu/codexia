@@ -35,7 +35,7 @@ export default async function AdminCustomersPage() {
                 <td className="px-4 py-2">{c.bookingCount}</td>
                 <td className="px-4 py-2">{formatMoney(c.totalCents, "EUR", "en")}</td>
                 <td className="px-4 py-2">
-                  <Link href={`/admin/bookings`} className="text-primary-dark">
+                  <Link href={`/admin/bookings`} className="text-action-dark">
                     {c.lastReference}
                   </Link>
                 </td>

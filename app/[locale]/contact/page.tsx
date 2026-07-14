@@ -29,22 +29,34 @@ export default async function ContactPage({
       <p className="mt-2 max-w-2xl text-muted">{t("subtitle")}</p>
 
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
-        <div className="flex flex-col gap-4 text-sm text-ink">
-          <a href={`tel:${settings.phone.replace(/\s+/g, "")}`} className="flex items-center gap-2">
-            <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
+        <div className="flex flex-col gap-3 rounded-xl border border-border bg-background p-6 text-sm text-ink shadow-sm">
+          <a
+            href={`tel:${settings.phone.replace(/\s+/g, "")}`}
+            className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark">
+              <Phone className="h-4 w-4" aria-hidden="true" />
+            </span>
             {settings.phone}
           </a>
           <a
             href={`https://wa.me/${settings.whatsappNumber}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2"
+            className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface"
           >
-            <MessageCircle className="h-4 w-4 text-primary" aria-hidden="true" />
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark">
+              <MessageCircle className="h-4 w-4" aria-hidden="true" />
+            </span>
             {settings.whatsapp}
           </a>
-          <a href={`mailto:${settings.email}`} className="flex items-center gap-2">
-            <Mail className="h-4 w-4 text-primary" aria-hidden="true" />
+          <a
+            href={`mailto:${settings.email}`}
+            className="flex items-center gap-3 rounded-lg p-2 transition-colors hover:bg-surface"
+          >
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark">
+              <Mail className="h-4 w-4" aria-hidden="true" />
+            </span>
             {settings.email}
           </a>
         </div>

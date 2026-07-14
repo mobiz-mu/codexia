@@ -1,5 +1,6 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
+import { PlaneLanding } from "lucide-react";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { buildAlternates } from "@/lib/seo/alternates";
@@ -35,16 +36,21 @@ export default async function AirportRentalPage({
           { label: t("airportRental.title") },
         ]}
       />
-      <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
-        {t("airportRental.title")}
-      </h1>
+      <div className="mt-4 flex items-center gap-3">
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark">
+          <PlaneLanding className="h-5 w-5" aria-hidden="true" />
+        </span>
+        <h1 className="text-3xl font-bold tracking-tight text-ink sm:text-4xl">
+          {t("airportRental.title")}
+        </h1>
+      </div>
       <p className="mt-4 text-lg text-ink">{t("airportRental.text")}</p>
 
       <Link
         href="/book"
-        className="mt-8 inline-block rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+        className="mt-8 inline-block rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
       >
-        {t("title")}
+        {t("bookCta")}
       </Link>
     </section>
   );

@@ -19,7 +19,7 @@ export function FaqEntryRowActions({ entryId, active }: { entryId: string; activ
             router.refresh();
           })
         }
-        className="text-xs text-primary-dark disabled:opacity-60"
+        className="text-xs text-action-dark disabled:opacity-60"
       >
         {active ? "Deactivate" : "Activate"}
       </button>

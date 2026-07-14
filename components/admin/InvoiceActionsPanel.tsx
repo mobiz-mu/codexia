@@ -79,7 +79,7 @@ export function InvoiceActionsPanel({
           type="button"
           disabled={pending}
           onClick={handleGeneratePdf}
-          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
         >
           Generate / Refresh PDF
         </button>
@@ -88,7 +88,7 @@ export function InvoiceActionsPanel({
             type="button"
             disabled={pending}
             onClick={handleDownload}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
           >
             Download PDF
           </button>
@@ -98,7 +98,7 @@ export function InvoiceActionsPanel({
             type="button"
             disabled={pending}
             onClick={handleMarkSent}
-            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+            className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
           >
             Mark Sent
           </button>
@@ -107,7 +107,7 @@ export function InvoiceActionsPanel({
           type="button"
           disabled={pending}
           onClick={handleDuplicate}
-          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink disabled:opacity-60"
+          className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
         >
           Duplicate
         </button>
@@ -116,13 +116,17 @@ export function InvoiceActionsPanel({
             type="button"
             disabled={pending}
             onClick={handleVoid}
-            className="rounded-full border border-red-300 px-4 py-2 text-sm font-medium text-red-600 disabled:opacity-60"
+            className="rounded-full border border-red-300 px-4 py-2 text-sm font-medium text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-60"
           >
             Void
           </button>
         )}
       </div>
-      {message && <p className="text-sm text-muted">{message}</p>}
+      {message && (
+        <p className="rounded-lg bg-surface px-3 py-2 text-sm text-ink" role="status">
+          {message}
+        </p>
+      )}
     </div>
   );
 }

@@ -20,7 +20,7 @@ export function NotificationActions({ id, readAt }: { id: string; readAt: string
               router.refresh();
             })
           }
-          className="text-xs text-primary-dark disabled:opacity-60"
+          className="text-xs font-medium text-primary-dark hover:underline disabled:pointer-events-none disabled:opacity-60"
         >
           Mark Read
         </button>
@@ -34,7 +34,7 @@ export function NotificationActions({ id, readAt }: { id: string; readAt: string
             router.refresh();
           })
         }
-        className="text-xs text-muted disabled:opacity-60"
+        className="text-xs text-muted hover:text-ink disabled:pointer-events-none disabled:opacity-60"
       >
         Archive
       </button>

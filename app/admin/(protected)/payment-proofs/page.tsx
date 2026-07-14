@@ -30,21 +30,26 @@ export default async function AdminPaymentProofsPage() {
             {proofs.map((p) => {
               const url = p.signedUrl;
               return (
-                <tr key={p.id} className="border-b border-border last:border-0">
+                <tr key={p.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
                   <td className="px-4 py-2">
-                    <Link href={`/admin/bookings/${p.booking_id}`} className="font-medium text-primary-dark">
+                    <Link href={`/admin/bookings/${p.booking_id}`} className="font-medium text-primary-dark hover:underline">
                       {p.bookings?.reference}
                     </Link>
                   </td>
                   <td className="px-4 py-2">{p.bank_name}</td>
                   <td className="px-4 py-2">{p.transaction_ref}</td>
                   <td className="px-4 py-2">{p.payment_date}</td>
-                  <td className="px-4 py-2">
+                  <td className="px-4 py-2 font-medium text-ink">
                     {p.bookings ? formatMoney(p.bookings.total_cents, "EUR", "en") : "—"}
                   </td>
                   <td className="px-4 py-2">
                     {url && (
-                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-primary-dark underline">
+                      <a
+                        href={url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-dark underline hover:text-primary"
+                      >
                         View
                       </a>
                     )}
@@ -57,7 +62,7 @@ export default async function AdminPaymentProofsPage() {
             })}
             {proofs.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted">
                   No pending payment proofs.
                 </td>
               </tr>

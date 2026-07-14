@@ -47,7 +47,7 @@ export function VehicleForm({
             name="categoryId"
             defaultValue={initial?.category_id}
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
@@ -72,7 +72,7 @@ export function VehicleForm({
           <select
             name="transmission"
             defaultValue={initial?.transmission ?? "manual"}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="manual">Manual</option>
             <option value="automatic">Automatic</option>
@@ -83,7 +83,7 @@ export function VehicleForm({
           <select
             name="fuel"
             defaultValue={initial?.fuel ?? "petrol"}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="petrol">Petrol</option>
             <option value="diesel">Diesel</option>
@@ -96,7 +96,7 @@ export function VehicleForm({
           <select
             name="status"
             defaultValue={initial?.status ?? "draft"}
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           >
             <option value="draft">Draft</option>
             <option value="active">Active</option>
@@ -107,11 +107,11 @@ export function VehicleForm({
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <label className="flex items-center gap-2 text-sm text-ink">
-          <input type="checkbox" name="airConditioning" defaultChecked={initial?.air_conditioning ?? true} value="true" />
+          <input type="checkbox" name="airConditioning" defaultChecked={initial?.air_conditioning ?? true} value="true" className="h-4 w-4 accent-primary" />
           Air Conditioning
         </label>
         <label className="flex items-center gap-2 text-sm text-ink">
-          <input type="checkbox" name="featured" defaultChecked={initial?.featured ?? false} value="true" />
+          <input type="checkbox" name="featured" defaultChecked={initial?.featured ?? false} value="true" className="h-4 w-4 accent-primary" />
           Featured on homepage
         </label>
       </div>
@@ -136,16 +136,20 @@ export function VehicleForm({
       </div>
 
       {state.status === "error" && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
           {state.error}
         </p>
       )}
-      {state.status === "success" && <p className="text-sm text-green-700">Saved.</p>}
+      {state.status === "success" && (
+        <p className="rounded-lg bg-action-tint px-3 py-2 text-sm text-action-dark" role="status">
+          Saved.
+        </p>
+      )}
 
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-6 py-2.5 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
       >
         {pending ? "Saving..." : submitLabel}
       </button>

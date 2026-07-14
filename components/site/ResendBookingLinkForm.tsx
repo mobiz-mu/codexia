@@ -31,12 +31,12 @@ export function ResendBookingLinkForm({
         type="email"
         required
         placeholder={labels.emailLabel}
-        className="w-full rounded-lg border border-border px-3 py-2 text-sm"
+        className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
       />
       <button
         type="submit"
         disabled={pending}
-        className="shrink-0 rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+        className="shrink-0 rounded-full bg-action px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
       >
         {labels.submit}
       </button>

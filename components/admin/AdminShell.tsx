@@ -1,5 +1,3 @@
-import Link from "next/link";
-import Image from "next/image";
 import {
   LayoutDashboard,
   CalendarDays,
@@ -26,6 +24,7 @@ import {
 } from "lucide-react";
 import type { CurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { logoutAdmin } from "@/lib/auth/actions";
+import { AdminNav } from "./AdminNav";
 
 const NAV_ITEMS = [
   { href: "/admin", label: "Overview", icon: LayoutDashboard, permission: null },
@@ -69,37 +68,9 @@ export function AdminShell({
   );
 
   return (
-    <div className="flex min-h-screen">
-      <aside className="flex w-60 shrink-0 flex-col overflow-y-auto border-r border-border bg-background">
-        <div className="flex items-center gap-2 border-b border-border p-4">
-          <Image src="/logo-mark.svg" alt="Codexia" width={32} height={32} />
-          <span className="font-semibold text-ink">Codexia Admin</span>
-        </div>
-        <nav className="flex flex-1 flex-col gap-1 p-3">
-          {visibleItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className="flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface"
-            >
-              <item.icon className="h-4 w-4 shrink-0 text-muted" aria-hidden="true" />
-              {item.label}
-            </Link>
-          ))}
-        </nav>
-        <div className="border-t border-border p-3">
-          <p className="truncate px-3 text-xs text-muted">{user.email}</p>
-          <form action={logoutAdmin}>
-            <button
-              type="submit"
-              className="mt-1 w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-ink hover:bg-surface"
-            >
-              Sign Out
-            </button>
-          </form>
-        </div>
-      </aside>
-      <main className="flex-1 overflow-x-auto p-6">{children}</main>
+    <div className="flex min-h-screen flex-col lg:flex-row">
+      <AdminNav items={[...visibleItems]} userEmail={user.email} logoutAction={logoutAdmin} />
+      <main className="flex-1 overflow-x-auto p-4 sm:p-6">{children}</main>
     </div>
   );
 }

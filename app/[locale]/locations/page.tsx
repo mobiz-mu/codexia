@@ -57,7 +57,7 @@ export default async function LocationsPage({
                 )}
               </div>
               <div className="p-4">
-                <h2 className="text-lg font-semibold text-ink group-hover:text-primary-dark">
+                <h2 className="text-lg font-semibold text-ink group-hover:text-action-dark">
                   {name}
                 </h2>
                 <p className="mt-1 text-sm text-muted">

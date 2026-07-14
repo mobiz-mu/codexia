@@ -41,13 +41,13 @@ export default async function AdminCalendarPage({
         <div className="flex items-center gap-2">
           <Link
             href={`/admin/calendar?year=${prevYear}&month=${prevMonth}${vehicleQuery}`}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm text-ink transition-colors hover:border-primary hover:text-primary-dark"
           >
             ← Prev
           </Link>
           <Link
             href={`/admin/calendar?year=${nextYear}&month=${nextMonth}${vehicleQuery}`}
-            className="rounded-lg border border-border px-3 py-1.5 text-sm"
+            className="rounded-lg border border-border px-3 py-1.5 text-sm text-ink transition-colors hover:border-primary hover:text-primary-dark"
           >
             Next →
           </Link>
@@ -57,7 +57,11 @@ export default async function AdminCalendarPage({
       <form className="flex gap-3">
         <input type="hidden" name="year" value={year} />
         <input type="hidden" name="month" value={month} />
-        <select name="vehicle" defaultValue={params.vehicle ?? ""} className="rounded-lg border border-border px-3 py-2 text-sm">
+        <select
+          name="vehicle"
+          defaultValue={params.vehicle ?? ""}
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+        >
           <option value="">All vehicles</option>
           {vehicles.map((v) => (
             <option key={v.id} value={v.id}>
@@ -65,7 +69,10 @@ export default async function AdminCalendarPage({
             </option>
           ))}
         </select>
-        <button type="submit" className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white">
+        <button
+          type="submit"
+          className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark"
+        >
           Filter
         </button>
       </form>

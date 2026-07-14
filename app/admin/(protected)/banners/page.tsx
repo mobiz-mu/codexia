@@ -11,7 +11,7 @@ export default async function AdminBannersPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Hero Banners</h1>
-        <Link href="/admin/banners/new" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white">
+        <Link href="/admin/banners/new" className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white">
           Add Banner
         </Link>
       </div>
@@ -29,7 +29,7 @@ export default async function AdminBannersPage() {
             {banners.map((b) => (
               <tr key={b.id} className="border-b border-border last:border-0">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/banners/${b.id}`} className="font-medium text-primary-dark">
+                  <Link href={`/admin/banners/${b.id}`} className="font-medium text-action-dark">
                     {b.heading_en ?? "(no heading)"}
                   </Link>
                 </td>

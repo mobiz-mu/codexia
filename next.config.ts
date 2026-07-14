@@ -7,6 +7,11 @@ const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 // bootstrap snippets (components/site/AnalyticsScripts.tsx) — those are only
 // emitted when the corresponding env var is set. style-src needs it for
 // Tailwind's inline style attributes (e.g. the analytics bar chart).
+// 'unsafe-eval' is added to script-src ONLY in development: React Fast
+// Refresh/HMR and Next's dev-mode source-map tooling rely on eval(), but a
+// production build never needs it and must not ship with it.
+const isDev = process.env.NODE_ENV === "development";
+
 const CSP = [
   "default-src 'self'",
   "base-uri 'self'",
@@ -16,7 +21,7 @@ const CSP = [
   "font-src 'self' data:",
   "style-src 'self' 'unsafe-inline'",
   "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://www.googletagmanager.com",
-  "script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://connect.facebook.net",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ""} https://www.googletagmanager.com https://connect.facebook.net`,
   "frame-src https://www.googletagmanager.com",
 ].join("; ");
 

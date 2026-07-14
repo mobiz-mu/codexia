@@ -31,16 +31,19 @@ export default async function AdminNotificationsPage() {
           return (
             <div
               key={n.id}
-              className={`rounded-lg border p-3 text-sm ${n.read_at ? "border-border bg-background" : "border-primary/30 bg-surface"}`}
+              className={`rounded-lg border p-3 text-sm transition-colors ${n.read_at ? "border-border bg-background" : "border-primary/30 bg-primary-tint/40"}`}
             >
               <div className="flex items-center justify-between">
-                <p className="font-medium text-ink">{TYPE_LABELS[n.type] ?? n.type}</p>
+                <p className="flex items-center gap-2 font-medium text-ink">
+                  {!n.read_at && <span className="h-2 w-2 shrink-0 rounded-full bg-primary" aria-hidden="true" />}
+                  {TYPE_LABELS[n.type] ?? n.type}
+                </p>
                 <span className="text-xs text-muted">{new Date(n.created_at).toLocaleString("en-GB")}</span>
               </div>
               <p className="mt-1 text-muted">{content}</p>
               <div className="mt-2 flex items-center justify-between">
                 {n.link ? (
-                  <Link href={n.link} className="text-xs text-primary-dark">
+                  <Link href={n.link} className="text-xs font-medium text-primary-dark hover:underline">
                     View
                   </Link>
                 ) : (
@@ -51,7 +54,9 @@ export default async function AdminNotificationsPage() {
             </div>
           );
         })}
-        {notifications.length === 0 && <p className="text-center text-muted">No notifications.</p>}
+        {notifications.length === 0 && (
+          <p className="rounded-xl border border-border bg-surface p-6 text-center text-muted">No notifications.</p>
+        )}
       </div>
     </div>
   );

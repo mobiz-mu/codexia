@@ -35,7 +35,7 @@ export default async function AdminAnalyticsPage() {
           {summary.byDay.map(([day, count]) => (
             <div key={day} className="flex flex-col items-center gap-1" title={`${day}: ${count}`}>
               <div
-                className="w-3 rounded-t bg-primary"
+                className="w-3 rounded-t bg-action"
                 style={{ height: `${Math.max(4, (count / maxDayCount) * 100)}px` }}
               />
             </div>

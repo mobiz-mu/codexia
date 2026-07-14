@@ -43,7 +43,7 @@ export function PaymentProofUpload({
             id="proof-bank-name"
             name="bankName"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -54,7 +54,7 @@ export function PaymentProofUpload({
             id="proof-transaction-ref"
             name="transactionRef"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -66,7 +66,7 @@ export function PaymentProofUpload({
             name="paymentDate"
             type="date"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
         <div className="flex flex-col gap-1">
@@ -79,13 +79,13 @@ export function PaymentProofUpload({
             type="file"
             accept="application/pdf,image/*"
             required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
+            className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
           />
         </div>
       </div>
 
       {state.status === "error" && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
           {state.error}
         </p>
       )}
@@ -93,7 +93,7 @@ export function PaymentProofUpload({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-primary px-6 py-2 text-sm font-semibold text-white hover:bg-primary-dark disabled:opacity-60"
+        className="self-start rounded-full bg-action px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
       >
         {labels.submit}
       </button>

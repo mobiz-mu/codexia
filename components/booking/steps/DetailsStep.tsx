@@ -9,6 +9,7 @@ export function DetailsStep({
   isAirportPickup,
   onContinue,
   onBack,
+  loading,
   error,
 }: {
   customer: BookingCustomer;
@@ -16,6 +17,7 @@ export function DetailsStep({
   isAirportPickup: boolean;
   onContinue: () => void;
   onBack: () => void;
+  loading: boolean;
   error: string | null;
 }) {
   const t = useTranslations("booking");
@@ -34,8 +36,8 @@ export function DetailsStep({
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
       <h2 className="text-xl font-semibold text-ink">{d("title")}</h2>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold text-muted">{d("customerSection")}</legend>
+      <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
+        <legend className="mb-1 px-1 text-sm font-semibold text-ink">{d("customerSection")}</legend>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field label={d("fullName")} value={customer.fullName} onChange={(v) => set("fullName", v)} required />
           <Field
@@ -52,8 +54,8 @@ export function DetailsStep({
         </div>
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold text-muted">{d("driverSection")}</legend>
+      <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
+        <legend className="mb-1 px-1 text-sm font-semibold text-ink">{d("driverSection")}</legend>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Field
             label={d("age")}
@@ -118,9 +120,9 @@ export function DetailsStep({
         )}
       </fieldset>
 
-      <fieldset className="flex flex-col gap-3">
-        <legend className="mb-1 text-sm font-semibold text-muted">{d("flightSection")}</legend>
-        {isAirportPickup && <p className="text-xs text-accent">{d("flightNotice")}</p>}
+      <fieldset className="flex flex-col gap-3 rounded-xl border border-border bg-background p-4">
+        <legend className="mb-1 px-1 text-sm font-semibold text-ink">{d("flightSection")}</legend>
+        {isAirportPickup && <p className="text-xs text-primary">{d("flightNotice")}</p>}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field
             label={d("flightNumber")}
@@ -157,23 +159,24 @@ export function DetailsStep({
           rows={3}
           value={customer.specialRequests}
           onChange={(e) => set("specialRequests", e.target.value)}
-          className="rounded-lg border border-border px-3 py-2 text-sm"
+          className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
         />
       </div>
 
       {error && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700" role="alert" aria-live="assertive">
           {error}
         </p>
       )}
 
       <div className="flex gap-3">
-        <button type="button" onClick={onBack} className="text-sm font-medium text-muted">
+        <button type="button" onClick={onBack} className="text-sm font-medium text-muted transition-colors hover:text-ink">
           {t("back")}
         </button>
         <button
           type="submit"
-          className="rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white transition-colors hover:bg-primary-dark"
+          disabled={loading}
+          className="rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
         >
           {t("continue")}
         </button>
@@ -203,7 +206,7 @@ function Field({
         value={value}
         required={required}
         onChange={(e) => onChange(e.target.value)}
-        className="rounded-lg border border-border px-3 py-2 text-sm"
+        className="rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
       />
     </div>
   );
