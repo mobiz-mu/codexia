@@ -83,7 +83,7 @@ export default async function AdminBookingsPage({
                     {BOOKING_STATUS_LABELS[b.status as keyof typeof BOOKING_STATUS_LABELS] ?? b.status}
                   </span>
                 </td>
-                <td className="px-4 py-2 font-medium text-ink">{formatMoney(b.total_cents, "EUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-ink">{formatMoney(b.total_cents, "MUR", "en")}</td>
               </tr>
             ))}
             {bookings.length === 0 && (

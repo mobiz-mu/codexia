@@ -3,14 +3,14 @@ import type { Metadata } from "next";
 import { Phone, Mail, MessageCircle } from "lucide-react";
 import { ContactForm } from "@/components/site/ContactForm";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "contact" });
-  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/contact") };
+  return buildPageMetadata({ locale, path: "/contact", title: t("title"), description: t("subtitle") });
 }
 
 export default async function ContactPage({

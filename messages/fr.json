@@ -1,34 +1,59 @@
 {
   "nav": {
+    "homeAriaLabel": "Accueil de Codexia Ltd, location de voitures",
+    "primaryNavigation": "Navigation principale",
+    "mobileNavigation": "Navigation mobile",
+    "openNavigation": "Ouvrir le menu de navigation",
+    "closeNavigation": "Fermer le menu de navigation",
+    "aboutUs": "À propos",
+    "blog": "Blog",
+    "contact": "Contact",
+    "bookNowCta": "Réserver",
+    "mobileMenuTrust": "Réservation sécurisée · Livraison à l'aéroport · Assistance 24h/24",
+
     "vehicles": {
       "label": "Véhicules",
-      "fleet": "Toute la flotte",
-      "categories": "Catégories",
-      "airportRental": "Location à l'aéroport"
+      "eyebrow": "Trouvez votre véhicule",
+      "description": "Découvrez nos véhicules fiables pour vos arrivées à l'aéroport, voyages en famille et aventures à Maurice.",
+      "fleet": "Notre flotte",
+      "fleetDescription": "Découvrez tous les véhicules de location Codexia disponibles.",
+      "categories": "Catégories de véhicules",
+      "categoriesDescription": "Comparez les véhicules économiques, SUV, berlines, luxe et familiaux.",
+      "services": "Services de location",
+      "servicesDescription": "Découvrez nos services conçus pour faciliter votre séjour à Maurice.",
+      "airportRental": "Location à l'aéroport",
+      "airportRentalDescription": "Organisez la livraison et la récupération de votre véhicule à l'aéroport."
     },
+
     "booking": {
       "label": "Réservation",
-      "bookNow": "Réserver",
-      "manageBooking": "Gérer ma réservation"
+      "eyebrow": "Planifiez votre location",
+      "description": "Réservez votre véhicule, gérez une réservation existante ou trouvez rapidement une réponse.",
+      "bookNow": "Réserver un véhicule",
+      "bookNowDescription": "Choisissez votre véhicule, vos dates, vos lieux et vos options.",
+      "manageBooking": "Gérer ma réservation",
+      "manageBookingDescription": "Retrouvez et consultez une réservation Codexia existante.",
+      "faq": "Questions fréquentes",
+      "faqDescription": "Consultez les réponses concernant les réservations, assurances et paiements."
     },
+
     "mauritius": {
-      "label": "Maurice",
-      "about": "À propos de Maurice",
+      "label": "Découvrir Maurice",
+      "eyebrow": "Explorez Maurice",
+      "description": "Préparez votre voyage avec nos guides de conduite, conseils et informations sur l'aéroport.",
+      "aboutMauritius": "À propos de Maurice",
+      "aboutMauritiusDescription": "Découvrez les informations utiles sur l'île avant votre voyage.",
       "placesToVisit": "Lieux à visiter",
+      "placesToVisitDescription": "Explorez les plages, attractions, villages et lieux incontournables.",
       "drivingGuide": "Guide de conduite",
+      "drivingGuideDescription": "Comprenez les routes, règles locales et bonnes pratiques de conduite.",
       "airportGuide": "Guide de l'aéroport",
+      "airportGuideDescription": "Préparez votre arrivée à l'aéroport international Sir Seewoosagur Ramgoolam.",
       "travelTips": "Conseils de voyage",
-      "blog": "Blog"
-    },
-    "company": {
-      "label": "Société",
-      "about": "À propos de Codexia",
-      "services": "Services",
-      "faq": "FAQ",
-      "contact": "Contact"
-    },
-    "bookNowCta": "Réserver"
+      "travelTipsDescription": "Des conseils pratiques pour profiter pleinement de votre séjour à Maurice."
+    }
   },
+
   "footer": {
     "companyBlurb": "Location de voiture à Maurice avec plus de 10 ans d'expérience. Kilométrage illimité, assurance complète et assistance routière 24h/24 sur chaque réservation.",
     "columns": {
@@ -78,6 +103,14 @@
     "whatsappCta": "Discuter sur WhatsApp",
     "callUs": "Appelez-nous"
   },
+  "announcementBar": {
+  "airportDelivery": "Livraison et récupération gratuites à l'aéroport pour toute location Codexia éligible",
+  "airportDeliveryMobile": "Livraison gratuite à l'aéroport",
+  "premiumProtection": "Assurance tous risques, kilométrage illimité et assistance 24h/24 inclus",
+  "premiumProtectionMobile": "Assurance et kilométrage illimité",
+  "easyBooking": "Réservez votre voiture à Maurice en ligne avec confirmation rapide et assistance premium",
+  "easyBookingMobile": "Réservation en ligne simple et rapide"
+},
   "home": {
     "heroTitle": "Roulez à Maurice en toute confiance",
     "heroSubtitle": "Kilométrage illimité, assurance complète et assistance 24h/24 pour chaque location.",
@@ -90,8 +123,8 @@
       "support": "Support 24h/24",
       "delivery": "Livraison gratuite à l'aéroport"
     },
-    "featuredTitle": "Véhicules en vedette",
-    "featuredSubtitle": "Un aperçu de notre flotte de démonstration — liste complète sur la page Flotte.",
+    "featuredTitle": "Notre Flotte",
+    "featuredSubtitle": "Découvrez notre flotte moderne de véhicules de location fiables à Maurice, dont des voitures économiques, SUV, véhicules familiaux et modèles confort — prêts pour votre prochaine aventure sur l'île.",
     "viewAllFleet": "Voir toute la flotte",
     "whyChooseUsTitle": "Pourquoi choisir Codexia",
     "whyChooseUs": {
@@ -116,16 +149,21 @@
     "popularLocationsTitle": "Lieux populaires",
     "popularLocationsSubtitle": "Prise en charge et retour partout à Maurice.",
     "popularLocationsCta": "Voir tous les lieux",
-    "aboutCodexiaTitle": "À propos de Codexia",
-    "aboutCodexiaText": "Depuis plus de 10 ans, Codexia Ltd propose une location de voiture fiable à Maurice pour les résidents et les voyageurs.",
-    "aboutCodexiaCta": "En savoir plus",
-    "aboutMauritiusTitle": "Découvrir Maurice",
-    "aboutMauritiusText": "Des plages de Grand Baie aux montagnes du Morne, explorez l'île à votre rythme.",
-    "aboutMauritiusCta": "Explorer Maurice",
+    "aboutMauritius": {
+      "kicker": "Votre guide de voyage à Maurice",
+      "title": "Découvrez Maurice sur la route",
+      "paragraph1": "Maurice est une île de contrastes — des plages immaculées le long du lagon, des sommets montagneux spectaculaires à l'intérieur des terres, et des routes côtières qui relient le tout. Louer une voiture à Maurice est le moyen le plus simple d'explorer l'île à votre rythme, des marchés animés de Port-Louis aux rivages paisibles du Morne.",
+      "paragraph2": "Avec des options de location de voiture à Maurice disponibles dès l'aéroport international SSR, vos vacances commencent dès l'atterrissage. Conduire soi-même vous donne la liberté d'atteindre les attractions les plus prisées — cascades, jardins botaniques, points de vue et plages cachées — selon votre propre rythme, sans dépendre des excursions organisées.",
+      "paragraph3": "Conduire à Maurice est simple pour les visiteurs : les routes sont bien entretenues, les distances sont courtes, et notre équipe est là pour vous conseiller sur les meilleurs itinéraires, routes panoramiques et attractions saisonnières. Pour un court séjour ou des vacances prolongées, une voiture de location transforme le tourisme à Maurice en un véritable road trip personnel.",
+      "cta": "Consulter notre guide de voyage à Maurice"
+    },
     "faqPreviewTitle": "Questions fréquentes",
+    "faqPreviewSubtitle": "Réponses rapides sur la location de voiture à Maurice.",
     "faqPreviewCta": "Voir toutes les questions",
     "reviewsTitle": "Ce que disent nos clients",
     "articlesTitle": "Derniers articles du blog",
+    "articlesSubtitle": "Conseils de voyage, guides de conduite et infos sur Maurice par l'équipe Codexia.",
+    "articlesCta": "Voir tous les articles",
     "newsletterTitle": "Restez informé",
     "newsletterText": "Conseils de voyage et offres de Codexia, directement dans votre boîte mail.",
     "finalCtaTitle": "Prêt à prendre la route ?",
@@ -133,15 +171,18 @@
     "finalCtaButton": "Réserver"
   },
   "search": {
-    "category": "Catégorie",
-    "anyCategory": "Toutes catégories",
-    "pickupLocation": "Lieu de prise en charge",
-    "dropoffLocation": "Lieu de restitution",
-    "pickupDate": "Date et heure de prise en charge",
-    "returnDate": "Date et heure de restitution",
-    "passengers": "Passagers",
-    "submit": "Rechercher une disponibilité"
-  },
+  "category": "Catégorie",
+  "anyCategory": "Toutes catégories",
+  "pickupLocation": "Lieu de prise en charge",
+  "dropoffLocation": "Lieu de restitution",
+  "pickupDate": "Date et heure de départ",
+  "returnDate": "Date et heure de retour",
+  "passengers": "Passagers",
+  "submit": "Rechercher une disponibilité",
+  "searchButton": "Rechercher",
+  "pickupPastError": "La date de départ ne peut pas être antérieure à aujourd'hui.",
+  "returnBeforePickupError": "La date de retour doit être postérieure à la date de départ."
+},
   "vehicleCard": {
     "transmission": { "manual": "Manuelle", "automatic": "Automatique" },
     "fuel": { "petrol": "Essence", "diesel": "Diesel", "hybrid": "Hybride", "electric": "Électrique" },

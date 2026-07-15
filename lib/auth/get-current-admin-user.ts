@@ -1,4 +1,5 @@
 import "server-only";
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
 
@@ -10,7 +11,11 @@ export type CurrentAdminUser = {
   permissions: Set<string>;
 };
 
-export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
+// React.cache() dedupes repeated calls within a single request — the admin
+// layout calls this once for the shell, and nearly every Server Action on
+// the same page load calls requireAdminUser() again; without caching that's
+// a full auth + 2 DB round-trips duplicated on every admin page render.
+export const getCurrentAdminUser = cache(async (): Promise<CurrentAdminUser | null> => {
   const supabase = await createClient();
   const {
     data: { user },
@@ -52,7 +57,7 @@ export async function getCurrentAdminUser(): Promise<CurrentAdminUser | null> {
     roles,
     permissions,
   };
-}
+});
 
 export async function requireAdminUser(): Promise<CurrentAdminUser> {
   const user = await getCurrentAdminUser();

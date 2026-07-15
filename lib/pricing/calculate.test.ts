@@ -23,7 +23,7 @@ describe("daysBetween", () => {
 describe("calculateBookingPrice", () => {
   const baseInput = {
     dailyPriceCents: 3000,
-    currency: "EUR",
+    currency: "MUR",
     pickupAt: new Date("2026-01-01T10:00:00Z"),
     returnAt: new Date("2026-01-04T10:00:00Z"),
     pickupDeliveryFeeCents: 0,
@@ -87,6 +87,6 @@ describe("calculateBookingPrice", () => {
   it("carries the deposit and currency through unchanged", () => {
     const result = calculateBookingPrice(baseInput);
     expect(result.depositCents).toBe(50000);
-    expect(result.currency).toBe("EUR");
+    expect(result.currency).toBe("MUR");
   });
 });

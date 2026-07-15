@@ -37,13 +37,13 @@ export default async function AdminOverviewPage() {
         <StatCard
           icon={Banknote}
           label="Revenue Collected"
-          value={formatMoney(stats.revenueCents, "EUR", "en")}
+          value={formatMoney(stats.revenueCents, "MUR", "en")}
           tone="action"
         />
         <StatCard
           icon={Scale}
           label="Outstanding Balance"
-          value={formatMoney(stats.outstandingCents, "EUR", "en")}
+          value={formatMoney(stats.outstandingCents, "MUR", "en")}
           tone="primary"
         />
         <StatCard
@@ -128,7 +128,7 @@ export default async function AdminOverviewPage() {
                   </td>
                   <td className="px-4 py-2">{(b.vehicles as { name: string } | null)?.name ?? "—"}</td>
                   <td className="px-4 py-2">{STATUS_LABELS[b.status] ?? b.status}</td>
-                  <td className="px-4 py-2">{formatMoney(b.total_cents, "EUR", "en")}</td>
+                  <td className="px-4 py-2">{formatMoney(b.total_cents, "MUR", "en")}</td>
                 </tr>
               ))}
             </tbody>

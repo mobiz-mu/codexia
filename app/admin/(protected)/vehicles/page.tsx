@@ -3,6 +3,7 @@ import Link from "next/link";
 import { listVehiclesAdmin } from "@/lib/actions/admin/vehicles";
 import { formatMoney } from "@/lib/pricing/format";
 import { VehicleRowActions } from "@/components/admin/VehicleRowActions";
+import { StatusPill } from "@/components/admin/StatusPill";
 
 export const metadata: Metadata = { title: "Vehicles" };
 
@@ -13,7 +14,10 @@ export default async function AdminVehiclesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Vehicles</h1>
-        <Link href="/admin/vehicles/new" className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white">
+        <Link
+          href="/admin/vehicles/new"
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+        >
           Add Vehicle
         </Link>
       </div>
@@ -32,16 +36,28 @@ export default async function AdminVehiclesPage() {
           </thead>
           <tbody>
             {vehicles.map((v) => (
-              <tr key={v.id} className="border-b border-border last:border-0">
+              <tr key={v.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/vehicles/${v.id}`} className="font-medium text-action-dark">
+                  <Link href={`/admin/vehicles/${v.id}`} className="font-medium text-primary-dark hover:underline">
                     {v.name}
                   </Link>
                 </td>
                 <td className="px-4 py-2">{v.vehicle_categories?.name_en ?? "—"}</td>
-                <td className="px-4 py-2">{formatMoney(v.daily_price_cents, v.currency, "en")}</td>
-                <td className="px-4 py-2 capitalize">{v.status}</td>
-                <td className="px-4 py-2">{v.is_demo ? "Yes" : "No"}</td>
+                <td className="px-4 py-2 font-medium text-action-dark">
+                  {formatMoney(v.daily_price_cents, v.currency, "en")}
+                </td>
+                <td className="px-4 py-2">
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold capitalize ${
+                      v.status === "active" ? "bg-action-tint text-action-dark" : "bg-surface text-muted"
+                    }`}
+                  >
+                    {v.status}
+                  </span>
+                </td>
+                <td className="px-4 py-2">
+                  <StatusPill active={v.is_demo} />
+                </td>
                 <td className="px-4 py-2">
                   <VehicleRowActions vehicleId={v.id} />
                 </td>
@@ -49,7 +65,7 @@ export default async function AdminVehiclesPage() {
             ))}
             {vehicles.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-muted">
+                <td colSpan={6} className="px-4 py-10 text-center text-muted">
                   No vehicles yet.
                 </td>
               </tr>

@@ -5,14 +5,14 @@ import { Link } from "@/i18n/navigation";
 import { getActiveLocations } from "@/lib/data/locations";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "locations" });
-  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/locations") };
+  return buildPageMetadata({ locale, path: "/locations", title: t("title"), description: t("subtitle") });
 }
 
 export default async function LocationsPage({
@@ -64,7 +64,7 @@ export default async function LocationsPage({
                   {t("deliveryFee")}:{" "}
                   {location.delivery_fee_cents === 0
                     ? t("free")
-                    : formatMoney(location.delivery_fee_cents, "EUR", locale)}
+                    : formatMoney(location.delivery_fee_cents, "MUR", locale)}
                 </p>
               </div>
             </Link>

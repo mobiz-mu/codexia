@@ -20,7 +20,10 @@ export default async function AdminInvoicesPage() {
     <div className="flex flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-ink">Invoices</h1>
-        <Link href="/admin/invoices/new" className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white">
+        <Link
+          href="/admin/invoices/new"
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+        >
           New Invoice
         </Link>
       </div>
@@ -40,24 +43,33 @@ export default async function AdminInvoicesPage() {
           </thead>
           <tbody>
             {invoices.map((inv) => (
-              <tr key={inv.id} className="border-b border-border last:border-0">
+              <tr key={inv.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
                 <td className="px-4 py-2">
-                  <Link href={`/admin/invoices/${inv.id}`} className="font-medium text-action-dark">
+                  <Link href={`/admin/invoices/${inv.id}`} className="font-medium text-primary-dark hover:underline">
                     {inv.number}
                   </Link>
                 </td>
                 <td className="px-4 py-2">{inv.customer_name}</td>
                 <td className="px-4 py-2">{inv.issue_date}</td>
                 <td className="px-4 py-2">{inv.due_date}</td>
-                <td className="px-4 py-2">{formatMoney(inv.total_cents, "EUR", "en")}</td>
-                <td className="px-4 py-2">{formatMoney(inv.total_cents - inv.paid_cents, "EUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-ink">{formatMoney(inv.total_cents, "MUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-action-dark">
+                  {formatMoney(inv.total_cents - inv.paid_cents, "MUR", "en")}
+                </td>
                 <td className="px-4 py-2">
-                  <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_STYLES[inv.status] ?? ""}`}>
+                  <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inv.status] ?? ""}`}>
                     {inv.status}
                   </span>
                 </td>
               </tr>
             ))}
+            {invoices.length === 0 && (
+              <tr>
+                <td colSpan={7} className="px-4 py-10 text-center text-muted">
+                  No invoices yet.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>

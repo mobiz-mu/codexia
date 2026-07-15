@@ -27,15 +27,19 @@ export default async function AdminCustomersPage() {
           </thead>
           <tbody>
             {customers.map((c) => (
-              <tr key={c.email} className="border-b border-border last:border-0">
-                <td className="px-4 py-2">{c.fullName}</td>
+              <tr key={c.email} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
+                <td className="px-4 py-2 font-medium text-ink">{c.fullName}</td>
                 <td className="px-4 py-2">{c.email}</td>
                 <td className="px-4 py-2">{c.phone}</td>
                 <td className="px-4 py-2">{c.country}</td>
-                <td className="px-4 py-2">{c.bookingCount}</td>
-                <td className="px-4 py-2">{formatMoney(c.totalCents, "EUR", "en")}</td>
                 <td className="px-4 py-2">
-                  <Link href={`/admin/bookings`} className="text-action-dark">
+                  <span className="rounded-full bg-primary-tint px-2.5 py-1 text-xs font-semibold text-primary-dark">
+                    {c.bookingCount}
+                  </span>
+                </td>
+                <td className="px-4 py-2 font-medium text-action-dark">{formatMoney(c.totalCents, "MUR", "en")}</td>
+                <td className="px-4 py-2">
+                  <Link href={`/admin/bookings`} className="font-medium text-primary-dark hover:underline">
                     {c.lastReference}
                   </Link>
                 </td>
@@ -43,7 +47,7 @@ export default async function AdminCustomersPage() {
             ))}
             {customers.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-muted">
+                <td colSpan={7} className="px-4 py-10 text-center text-muted">
                   No customers yet.
                 </td>
               </tr>

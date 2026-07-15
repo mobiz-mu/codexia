@@ -59,6 +59,10 @@
 }
 
 @layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
   body {
     background: var(--color-background);
     color: var(--color-body);
@@ -79,6 +83,34 @@
 :focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
+}
+
+.hide-scrollbar {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+@keyframes fade-crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-crossfade {
+  animation: fade-crossfade 1.2s ease-in-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-crossfade {
+    animation: none;
+  }
 }
 
 @keyframes fade-in-up {

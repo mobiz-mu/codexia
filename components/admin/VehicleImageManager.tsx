@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useTransition } from "react";
+import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import {
@@ -23,10 +23,16 @@ export function VehicleImageManager({
   const router = useRouter();
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   function handleUpload(formData: FormData) {
+    setUploadError(null);
     startTransition(async () => {
-      await uploadVehicleImage(vehicleId, formData);
+      const result = await uploadVehicleImage(vehicleId, formData);
+      if (!result.ok) {
+        setUploadError(result.error);
+        return;
+      }
       formRef.current?.reset();
       router.refresh();
     });
@@ -55,15 +61,29 @@ export function VehicleImageManager({
 
   return (
     <div className="flex flex-col gap-4">
-      <form ref={formRef} action={handleUpload} className="flex items-center gap-3">
-        <input type="file" name="image" accept="image/*" required className="text-sm" />
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-        >
-          Upload
-        </button>
+      <form ref={formRef} action={handleUpload} className="flex flex-col gap-2">
+        <div className="flex items-center gap-3">
+          <input
+            type="file"
+            name="image"
+            accept="image/jpeg,image/png,image/webp"
+            required
+            className="text-sm"
+          />
+          <button
+            type="submit"
+            disabled={pending}
+            className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          >
+            {pending ? "Uploading..." : "Upload"}
+          </button>
+        </div>
+        <p className="text-xs text-muted">JPEG, PNG, or WebP. Max 8 MB.</p>
+        {uploadError && (
+          <p className="text-sm text-red-600" role="alert">
+            {uploadError}
+          </p>
+        )}
       </form>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">

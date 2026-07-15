@@ -60,7 +60,7 @@ export function ExtraForm({
           <input
             type="text"
             name="currency"
-            defaultValue={initial?.currency ?? "EUR"}
+            defaultValue={initial?.currency ?? "MUR"}
             maxLength={3}
             required
             className="rounded-lg border border-border px-3 py-2 text-sm"

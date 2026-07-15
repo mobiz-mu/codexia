@@ -108,6 +108,7 @@ export async function createVehicle(_prev: VehicleFormState, formData: FormData)
       status: parsed.data.status,
       featured: parsed.data.featured,
       is_demo: false,
+      currency: "MUR",
     })
     .select("id")
     .single();
@@ -236,37 +237,81 @@ export async function archiveVehicle(id: string) {
   return { ok: true as const };
 }
 
+const MAX_VEHICLE_IMAGE_SIZE = 8 * 1024 * 1024;
+
+const ALLOWED_VEHICLE_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
+
+const VEHICLE_IMAGE_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
 export async function uploadVehicleImage(vehicleId: string, formData: FormData) {
   const user = await requireAdminUser();
   assertPermission(user, "manage_vehicles");
 
-  const file = formData.get("image") as File | null;
-  if (!file || file.size === 0) return { ok: false as const, error: "Please choose an image." };
-  if (file.size > 8 * 1024 * 1024) return { ok: false as const, error: "Image must be under 8MB." };
+  const value = formData.get("image");
+  if (!(value instanceof File) || value.size === 0) {
+    return { ok: false as const, error: "Please choose an image." };
+  }
+
+  const file = value;
+  if (file.size > MAX_VEHICLE_IMAGE_SIZE) {
+    return { ok: false as const, error: "Image must be under 8 MB." };
+  }
+  if (!ALLOWED_VEHICLE_IMAGE_TYPES.has(file.type)) {
+    return { ok: false as const, error: "Image must be JPEG, PNG, or WebP." };
+  }
+
+  const extension = VEHICLE_IMAGE_EXTENSION_BY_MIME_TYPE[file.type];
+  const path = `${vehicleId}/${crypto.randomUUID()}.${extension}`;
 
   const supabase = createAdminClient();
-  const ext = file.name.split(".").pop();
-  const path = `${vehicleId}/${Date.now()}.${ext}`;
 
   const { error: uploadError } = await supabase.storage
     .from("vehicle-images")
-    .upload(path, file, { contentType: file.type });
+    .upload(path, file, {
+      contentType: file.type,
+      cacheControl: "31536000",
+      upsert: false,
+    });
 
   if (uploadError) {
     console.error("uploadVehicleImage failed", uploadError.message);
     return { ok: false as const, error: "Upload failed." };
   }
 
-  const { count } = await supabase
+  const { count, error: countError } = await supabase
     .from("vehicle_images")
     .select("id", { count: "exact", head: true })
     .eq("vehicle_id", vehicleId);
 
-  await supabase.from("vehicle_images").insert({
+  if (countError) {
+    await supabase.storage.from("vehicle-images").remove([path]);
+    console.error("Counting vehicle images failed", countError.message);
+    return { ok: false as const, error: "Could not save the image." };
+  }
+
+  const { error: insertError } = await supabase.from("vehicle_images").insert({
     vehicle_id: vehicleId,
     path,
     display_order: count ?? 0,
     is_main: (count ?? 0) === 0,
+  });
+
+  if (insertError) {
+    await supabase.storage.from("vehicle-images").remove([path]);
+    console.error("Saving vehicle image failed", insertError.message);
+    return { ok: false as const, error: "Could not save the image." };
+  }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "vehicle_image_uploaded",
+    entity: "vehicle_images",
+    entity_id: vehicleId,
+    diff: { path, contentType: file.type, size: file.size },
   });
 
   return { ok: true as const };

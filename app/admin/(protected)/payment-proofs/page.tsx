@@ -40,7 +40,7 @@ export default async function AdminPaymentProofsPage() {
                   <td className="px-4 py-2">{p.transaction_ref}</td>
                   <td className="px-4 py-2">{p.payment_date}</td>
                   <td className="px-4 py-2 font-medium text-ink">
-                    {p.bookings ? formatMoney(p.bookings.total_cents, "EUR", "en") : "—"}
+                    {p.bookings ? formatMoney(p.bookings.total_cents, "MUR", "en") : "—"}
                   </td>
                   <td className="px-4 py-2">
                     {url && (

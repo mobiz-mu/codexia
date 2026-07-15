@@ -3,18 +3,19 @@ import type { Metadata } from "next";
 import { PlaneLanding } from "lucide-react";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "services" });
-  return {
+  return buildPageMetadata({
+    locale,
+    path: "/services/airport-rental",
     title: t("airportRental.title"),
     description: t("airportRental.text"),
-    alternates: buildAlternates(locale, "/services/airport-rental"),
-  };
+  });
 }
 
 export default async function AirportRentalPage({

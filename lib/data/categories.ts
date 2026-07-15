@@ -1,6 +1,10 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getVehicleCategories() {
+// React.cache() dedupes repeated calls within a single request — categories
+// are read from multiple components on the same page (search bar, homepage
+// section, footer nav) in some layouts.
+export const getVehicleCategories = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("vehicle_categories")
@@ -12,7 +16,7 @@ export async function getVehicleCategories() {
     return [];
   }
   return data;
-}
+});
 
 export async function getVehicleCategoryBySlug(slug: string) {
   const supabase = await createClient();

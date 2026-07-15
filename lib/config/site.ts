@@ -34,7 +34,7 @@ export const SITE_DEFAULTS: SiteSettings = {
   email: "dyash21@hotmail.com",
   emergencyPhone: "+230 5253 2101",
   openingHours: "24/7 including public holidays",
-  currency: "EUR",
+  currency: "MUR",
   insuranceExcessCents: 62500,
   deliveryFeeNonAirportCents: 1500,
   minDriverAge: 19,

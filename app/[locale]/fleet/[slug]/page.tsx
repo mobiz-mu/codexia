@@ -16,7 +16,7 @@ import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { trackVehicleView } from "@/lib/analytics/track";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -26,11 +26,19 @@ export async function generateMetadata(props: {
   if (!vehicle) return {};
 
   const description = locale === "fr" ? vehicle.description_fr : vehicle.description_en;
-  return {
+  const images = vehicle.vehicle_images ?? [];
+  const mainImage = images.find((img: { is_main: boolean }) => img.is_main) ?? images[0];
+  const mainImageUrl = publicStorageUrl("vehicle-images", mainImage?.path);
+
+  return buildPageMetadata({
+    locale,
+    path: `/fleet/${slug}`,
     title: vehicle.name,
     description: description ?? undefined,
-    alternates: buildAlternates(locale, `/fleet/${slug}`, vehicle.canonical_path),
-  };
+    canonicalOverride: vehicle.canonical_path,
+    image: mainImageUrl,
+    imageAlt: mainImage?.alt_en ?? vehicle.name,
+  });
 }
 
 export default async function VehicleDetailPage({
@@ -267,7 +275,7 @@ export default async function VehicleDetailPage({
         <div className="mt-16">
           <h2 className="text-2xl font-bold text-ink">{t("faqTitle")}</h2>
           <div className="mt-6">
-            <FaqAccordion entries={faqEntries} />
+            <FaqAccordion entries={faqEntries} groupName={`vehicle-faq-${vehicle.slug}`} />
           </div>
         </div>
       )}

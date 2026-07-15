@@ -5,14 +5,14 @@ import { getActiveLocations } from "@/lib/data/locations";
 import { getBankDetails } from "@/lib/config/get-bank-details";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { BookingWizard } from "@/components/booking/BookingWizard";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "home" });
-  return { title: t("heroCta"), alternates: buildAlternates(locale, "/book") };
+  return buildPageMetadata({ locale, path: "/book", title: t("heroCta") });
 }
 
 export default async function BookPage({

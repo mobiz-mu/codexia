@@ -22,7 +22,7 @@ export default async function AdminBookingDetailPage({
   const { booking, customer, drivers, extras, statusHistory, proofs, vehicle, pickupLoc, dropoffLoc, availableVehiclesInCategory } =
     result;
 
-  const currency = vehicle?.currency ?? "EUR";
+  const currency = vehicle?.currency ?? "MUR";
 
   return (
     <div className="flex flex-col gap-8">

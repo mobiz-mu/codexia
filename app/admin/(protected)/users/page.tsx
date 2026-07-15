@@ -29,8 +29,8 @@ export default async function AdminUsersPage() {
           </thead>
           <tbody>
             {users.map((u) => (
-              <tr key={u.id} className="border-b border-border align-top last:border-0">
-                <td className="px-4 py-3">{u.fullName ?? "—"}</td>
+              <tr key={u.id} className="border-b border-border align-top transition-colors last:border-0 hover:bg-surface">
+                <td className="px-4 py-3 font-medium text-ink">{u.fullName ?? "—"}</td>
                 <td className="px-4 py-3">{u.email}</td>
                 <td className="px-4 py-3">
                   {u.lastSignInAt ? new Date(u.lastSignInAt).toLocaleString("en-GB") : "Never"}

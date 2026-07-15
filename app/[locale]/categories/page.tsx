@@ -4,14 +4,14 @@ import Image from "next/image";
 import { Link } from "@/i18n/navigation";
 import { getVehicleCategories } from "@/lib/data/categories";
 import { publicStorageUrl } from "@/lib/supabase/storage";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "categories" });
-  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/categories") };
+  return buildPageMetadata({ locale, path: "/categories", title: t("title"), description: t("subtitle") });
 }
 
 export default async function CategoriesPage({

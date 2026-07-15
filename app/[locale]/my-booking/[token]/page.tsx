@@ -61,7 +61,7 @@ export default async function MyBookingDetailPage({
   });
 
   const balanceCents = booking.total_cents - booking.paid_cents;
-  const currency = "EUR";
+  const currency = "MUR";
 
   const statusLabel = t(`statusLabels.${booking.status}` as "statusLabels.pending");
 

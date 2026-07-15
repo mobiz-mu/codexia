@@ -4,7 +4,7 @@ import type { ReactNode } from "react";
 import { notFound } from "next/navigation";
 import { getPolicyBySlug } from "@/lib/data/policies";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -14,7 +14,7 @@ export async function generateMetadata(props: {
   if (!result) return {};
 
   const title = locale === "fr" ? result.page.title_fr : result.page.title_en;
-  return { title, alternates: buildAlternates(locale, `/policies/${slug}`) };
+  return buildPageMetadata({ locale, path: `/policies/${slug}`, title });
 }
 
 function renderMarkdownLite(body: string) {

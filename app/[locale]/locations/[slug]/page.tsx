@@ -5,7 +5,8 @@ import { getLocationBySlug } from "@/lib/data/locations";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { Link } from "@/i18n/navigation";
 import { formatMoney } from "@/lib/pricing/format";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { publicStorageUrl } from "@/lib/supabase/storage";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -16,11 +17,15 @@ export async function generateMetadata(props: {
 
   const name = locale === "fr" ? location.name_fr : location.name_en;
   const description = locale === "fr" ? location.description_fr : location.description_en;
-  return {
+  return buildPageMetadata({
+    locale,
+    path: `/locations/${slug}`,
     title: name,
     description: description ?? undefined,
-    alternates: buildAlternates(locale, `/locations/${slug}`, location.canonical_path),
-  };
+    canonicalOverride: location.canonical_path,
+    image: publicStorageUrl("company", location.hero_image_path),
+    imageAlt: name,
+  });
 }
 
 export default async function LocationDetailPage({
@@ -53,7 +58,7 @@ export default async function LocationDetailPage({
 
       <p className="mt-4 text-sm font-medium text-ink">
         {t("deliveryFee")}:{" "}
-        {location.delivery_fee_cents === 0 ? t("free") : formatMoney(location.delivery_fee_cents, "EUR", locale)}
+        {location.delivery_fee_cents === 0 ? t("free") : formatMoney(location.delivery_fee_cents, "MUR", locale)}
       </p>
 
       <Link

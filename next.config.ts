@@ -4,12 +4,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 // script-src needs 'unsafe-inline' for the optional GA4/GTM/Meta Pixel
-// bootstrap snippets (components/site/AnalyticsScripts.tsx) — those are only
-// emitted when the corresponding env var is set. style-src needs it for
-// Tailwind's inline style attributes (e.g. the analytics bar chart).
-// 'unsafe-eval' is added to script-src ONLY in development: React Fast
-// Refresh/HMR and Next's dev-mode source-map tooling rely on eval(), but a
-// production build never needs it and must not ship with it.
+// bootstrap snippets. 'unsafe-eval' is allowed only in development for
+// React Fast Refresh, HMR, and development source maps.
 const isDev = process.env.NODE_ENV === "development";
 
 const CSP = [
@@ -29,12 +25,35 @@ const SECURITY_HEADERS = [
   { key: "Content-Security-Policy", value: CSP },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "DENY" },
-  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
-  { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=()" },
-  { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains; preload" },
+  {
+    key: "Referrer-Policy",
+    value: "strict-origin-when-cross-origin",
+  },
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=()",
+  },
+  {
+    key: "Strict-Transport-Security",
+    value: "max-age=63072000; includeSubDomains; preload",
+  },
 ];
 
 const nextConfig: NextConfig = {
+  /*
+   * Reduce build parallelism for Windows machines with limited available
+   * worker threads. This prevents OS error 1450 during static generation.
+   */
+  experimental: {
+    cpus: 4,
+    staticGenerationMaxConcurrency: 2,
+    staticGenerationMinPagesPerWorker: 20,
+
+    serverActions: {
+      bodySizeLimit: "10mb",
+    },
+  },
+
   images: {
     remotePatterns: [
       {
@@ -43,6 +62,7 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
   async headers() {
     return [
       {

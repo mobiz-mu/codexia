@@ -1,34 +1,5 @@
 {
-  "nav": {
-    "vehicles": {
-      "label": "Vehicles",
-      "fleet": "Full Fleet",
-      "categories": "Categories",
-      "airportRental": "Airport Rental"
-    },
-    "booking": {
-      "label": "Booking",
-      "bookNow": "Book Now",
-      "manageBooking": "Manage Booking"
-    },
-    "mauritius": {
-      "label": "Mauritius",
-      "about": "About Mauritius",
-      "placesToVisit": "Places to Visit",
-      "drivingGuide": "Driving Guide",
-      "airportGuide": "Airport Guide",
-      "travelTips": "Travel Tips",
-      "blog": "Blog"
-    },
-    "company": {
-      "label": "Company",
-      "about": "About Codexia",
-      "services": "Services",
-      "faq": "FAQ",
-      "contact": "Contact"
-    },
-    "bookNowCta": "Book Now"
-  },
+  
   "footer": {
     "companyBlurb": "Mauritius car rental with 10+ years of experience. Unlimited mileage, comprehensive insurance, and 24/7 road assistance on every booking.",
     "columns": {
@@ -78,6 +49,67 @@
     "whatsappCta": "Chat on WhatsApp",
     "callUs": "Call us"
   },
+  "announcementBar": {
+    "airportDelivery": "Free airport delivery and recovery with every eligible Codexia rental",
+    "airportDeliveryMobile": "Free airport delivery",
+    "premiumProtection": "Comprehensive insurance, unlimited mileage and 24/7 assistance included",
+    "premiumProtectionMobile": "Insurance and unlimited mileage",
+    "easyBooking": "Book your Mauritius car online with fast confirmation and premium support",
+    "easyBookingMobile": "Fast and easy online booking"
+  },
+  "nav": {
+    "homeAriaLabel": "Codexia Ltd car rental homepage",
+    "primaryNavigation": "Primary navigation",
+    "mobileNavigation": "Mobile navigation",
+    "openNavigation": "Open navigation menu",
+    "closeNavigation": "Close navigation menu",
+    "aboutUs": "About Us",
+    "blog": "Blog",
+    "contact": "Contact",
+    "bookNowCta": "Book Now",
+    "mobileMenuTrust": "Secure booking · Airport delivery · 24/7 assistance",
+
+    "vehicles": {
+      "label": "Vehicles",
+      "eyebrow": "Find your vehicle",
+      "description": "Explore reliable vehicles for airport arrivals, family trips and island adventures.",
+      "fleet": "Our Fleet",
+      "fleetDescription": "Browse all available Codexia rental vehicles.",
+      "categories": "Vehicle Categories",
+      "categoriesDescription": "Compare economy, SUV, sedan, luxury and family vehicles.",
+      "services": "Rental Services",
+      "servicesDescription": "Explore services designed for a convenient Mauritius journey.",
+      "airportRental": "Airport Car Rental",
+      "airportRentalDescription": "Arrange vehicle delivery and recovery at the airport."
+    },
+
+    "booking": {
+      "label": "Booking",
+      "eyebrow": "Plan your rental",
+      "description": "Book your vehicle, manage an existing reservation or find quick answers.",
+      "bookNow": "Book a Vehicle",
+      "bookNowDescription": "Choose your vehicle, dates, locations and optional extras.",
+      "manageBooking": "Manage My Booking",
+      "manageBookingDescription": "Retrieve and review an existing Codexia reservation.",
+      "faq": "Frequently Asked Questions",
+      "faqDescription": "Read answers about bookings, insurance, payments and driving."
+    },
+    "mauritius": {
+      "label": "Explore Mauritius",
+      "eyebrow": "Discover Mauritius",
+      "description": "Prepare your journey with local driving guidance, travel ideas and airport information.",
+      "aboutMauritius": "About Mauritius",
+      "aboutMauritiusDescription": "Discover useful information about the island before travelling.",
+      "placesToVisit": "Places to Visit",
+      "placesToVisitDescription": "Explore beaches, attractions, villages and unforgettable locations.",
+      "drivingGuide": "Driving Guide",
+      "drivingGuideDescription": "Understand local roads, regulations and safe driving practices.",
+      "airportGuide": "Airport Guide",
+      "airportGuideDescription": "Prepare for your arrival at Sir Seewoosagur Ramgoolam Airport.",
+      "travelTips": "Travel Tips",
+      "travelTipsDescription": "Practical advice for a smooth and enjoyable Mauritius holiday."
+       }
+  },
   "home": {
     "heroTitle": "Drive Mauritius with Confidence",
     "heroSubtitle": "Unlimited mileage, comprehensive insurance, and 24/7 support with every rental.",
@@ -90,8 +122,8 @@
       "support": "24/7 Support",
       "delivery": "Free Airport Delivery"
     },
-    "featuredTitle": "Featured Vehicles",
-    "featuredSubtitle": "A sample of our demonstration fleet — full lineup on the Fleet page.",
+    "featuredTitle": "Our Fleet",
+    "featuredSubtitle": "Explore our modern fleet of reliable rental vehicles in Mauritius, including economy cars, SUVs, family vehicles and comfort models — ready for your next island adventure.",
     "viewAllFleet": "View Full Fleet",
     "whyChooseUsTitle": "Why Choose Codexia",
     "whyChooseUs": {
@@ -116,16 +148,21 @@
     "popularLocationsTitle": "Popular Locations",
     "popularLocationsSubtitle": "Pickup and drop-off across Mauritius.",
     "popularLocationsCta": "View All Locations",
-    "aboutCodexiaTitle": "About Codexia",
-    "aboutCodexiaText": "For over 10 years, Codexia Ltd has provided reliable car rental across Mauritius for locals and travellers alike.",
-    "aboutCodexiaCta": "Learn More",
-    "aboutMauritiusTitle": "Discover Mauritius",
-    "aboutMauritiusText": "From the beaches of Grand Baie to the mountains of Le Morne, explore the island at your own pace.",
-    "aboutMauritiusCta": "Explore Mauritius",
+    "aboutMauritius": {
+      "kicker": "Your Mauritius Travel Guide",
+      "title": "Discover Mauritius by Road",
+      "paragraph1": "Mauritius is an island of contrasts — powder-white beaches along the lagoon, dramatic mountain peaks inland, and coastal roads that connect them all. Renting a car in Mauritius is the easiest way to explore at your own pace, from the buzzing markets of Port Louis to the quiet shores of Le Morne.",
+      "paragraph2": "With car rental Mauritius options available for pickup right at SSR International Airport, your holiday starts the moment you land. Self-driving gives you the freedom to reach popular attractions — waterfalls, botanical gardens, viewpoints and hidden beaches — on your own schedule, without waiting on tours or transfers.",
+      "paragraph3": "Driving in Mauritius is straightforward for visitors: roads are well maintained, distances are short, and our team is on hand with local tips for the best routes, scenic drives and seasonal attractions. Whether it's a short holiday or an extended stay, a rental car turns Mauritius tourism into a personal road trip.",
+      "cta": "Read Our Mauritius Travel Guide"
+    },
     "faqPreviewTitle": "Frequently Asked Questions",
+    "faqPreviewSubtitle": "Quick answers about renting a car in Mauritius.",
     "faqPreviewCta": "View All FAQs",
     "reviewsTitle": "What Our Customers Say",
     "articlesTitle": "Latest from the Blog",
+    "articlesSubtitle": "Travel tips, driving guides and Mauritius insights from the Codexia team.",
+    "articlesCta": "View All Articles",
     "newsletterTitle": "Stay in the Loop",
     "newsletterText": "Travel tips and offers from Codexia, straight to your inbox.",
     "finalCtaTitle": "Ready to hit the road?",
@@ -133,15 +170,18 @@
     "finalCtaButton": "Book Now"
   },
   "search": {
-    "category": "Category",
-    "anyCategory": "Any category",
-    "pickupLocation": "Pickup Location",
-    "dropoffLocation": "Drop-off Location",
-    "pickupDate": "Pickup Date & Time",
-    "returnDate": "Return Date & Time",
-    "passengers": "Passengers",
-    "submit": "Search Availability"
-  },
+  "category": "Category",
+  "anyCategory": "Any category",
+  "pickupLocation": "Pickup Location",
+  "dropoffLocation": "Drop-off Location",
+  "pickupDate": "Pickup Date & Time",
+  "returnDate": "Return Date & Time",
+  "passengers": "Passengers",
+  "submit": "Search Availability",
+  "searchButton": "Search",
+  "pickupPastError": "Pickup date cannot be in the past.",
+  "returnBeforePickupError": "Return date must be after the pickup date."
+ },
   "vehicleCard": {
     "transmission": { "manual": "Manual", "automatic": "Automatic" },
     "fuel": { "petrol": "Petrol", "diesel": "Diesel", "hybrid": "Hybrid", "electric": "Electric" },

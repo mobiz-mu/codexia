@@ -2,14 +2,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { PlaneLanding, Truck, ShieldCheck } from "lucide-react";
 import { Link } from "@/i18n/navigation";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "services" });
-  return { title: t("title"), description: t("intro"), alternates: buildAlternates(locale, "/services") };
+  return buildPageMetadata({ locale, path: "/services", title: t("title"), description: t("intro") });
 }
 
 const SERVICES = [

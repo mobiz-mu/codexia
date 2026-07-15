@@ -196,7 +196,19 @@ export async function reassignVehicle(bookingId: string, vehicleId: string): Pro
   assertPermission(user, "manage_bookings");
 
   const supabase = createAdminClient();
-  const { error } = await supabase.from("bookings").update({ vehicle_id: vehicleId }).eq("id", bookingId);
+  const { data: existing } = await supabase.from("bookings").select("status").eq("id", bookingId).maybeSingle();
+  if (!existing) return { ok: false, error: "Booking not found" };
+
+  const currentStatus = existing.status as BookingStatus;
+  // Assigning a vehicle also advances the booking into the "vehicle_assigned"
+  // status the first time it happens (confirmed/partially_paid/paid -> vehicle_assigned).
+  // A later reassignment (already vehicle_assigned or beyond) only swaps the vehicle.
+  const advancesStatus = canTransition(currentStatus, "vehicle_assigned");
+
+  const { error } = await supabase
+    .from("bookings")
+    .update(advancesStatus ? { vehicle_id: vehicleId, status: "vehicle_assigned" } : { vehicle_id: vehicleId })
+    .eq("id", bookingId);
 
   if (error) {
     if (error.code === "23P01") {
@@ -206,13 +218,15 @@ export async function reassignVehicle(bookingId: string, vehicleId: string): Pro
     return { ok: false, error: "Failed to reassign vehicle." };
   }
 
-  await supabase.from("booking_status_history").insert({
-    booking_id: bookingId,
-    old_status: null,
-    new_status: "vehicle_assigned",
-    actor_id: user.id,
-    internal_note: "Vehicle reassigned",
-  });
+  if (advancesStatus) {
+    await supabase.from("booking_status_history").insert({
+      booking_id: bookingId,
+      old_status: currentStatus,
+      new_status: "vehicle_assigned",
+      actor_id: user.id,
+      internal_note: "Vehicle assigned",
+    });
+  }
 
   await supabase.from("audit_logs").insert({
     actor_id: user.id,
@@ -277,7 +291,7 @@ export async function resendBookingEmail(
     returnAt: new Date(booking.return_at),
     paymentMethod: booking.payment_method ?? "bank_transfer",
     totalCents: booking.total_cents,
-    currency: vehicle?.currency ?? "EUR",
+    currency: vehicle?.currency ?? "MUR",
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     accessToken,
   });

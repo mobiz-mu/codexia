@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
-import { NextIntlClientProvider, hasLocale } from "next-intl";
-import { getTranslations, setRequestLocale } from "next-intl/server";
+import {
+  NextIntlClientProvider,
+  hasLocale,
+} from "next-intl";
+import { setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
+
 import { routing } from "@/i18n/routing";
 import { Header } from "@/components/site/Header";
 import { Footer } from "@/components/site/Footer";
@@ -10,10 +14,9 @@ import { WhatsAppButton } from "@/components/site/WhatsAppButton";
 import { AnalyticsTracker } from "@/components/site/AnalyticsTracker";
 import { AnalyticsScripts } from "@/components/site/AnalyticsScripts";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
+
 import "../globals.css";
 
-// Self-hosted (not next/font/google) so the build never depends on network
-// access to fonts.googleapis.com/gstatic.com.
 const inter = localFont({
   src: "../fonts/Inter-Variable.woff2",
   variable: "--font-inter",
@@ -36,16 +39,102 @@ export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
-  const t = await getTranslations({ locale, namespace: "home" });
+
+  if (!hasLocale(routing.locales, locale)) {
+    return {};
+  }
+
   const settings = await getSiteSettings();
+  const isFrench = locale === "fr";
+
+  const siteUrl =
+    process.env.NEXT_PUBLIC_SITE_URL?.trim().replace(/\/$/, "") ||
+    "https://www.codexia.mu";
+
+  const canonicalUrl = `${siteUrl}/${locale}`;
+
+  const title = isFrench
+    ? `${settings.companyName} | Location de voiture à Maurice`
+    : `${settings.companyName} | Premium Car Rental in Mauritius`;
+
+  const description = isFrench
+    ? "Réservez votre voiture de location à Maurice avec Codexia Ltd. Livraison à l'aéroport, kilométrage illimité, assurance et assistance 24h/24."
+    : "Book a reliable rental car in Mauritius with Codexia Ltd. Enjoy airport delivery, unlimited mileage, comprehensive insurance and 24/7 assistance.";
 
   return {
+    metadataBase: new URL(siteUrl),
+
     title: {
-      default: `${settings.companyName} — ${t("heroTitle")}`,
+      default: title,
       template: `%s | ${settings.companyName}`,
     },
-    description: t("heroSubtitle"),
-    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000"),
+
+    description,
+
+    keywords: isFrench
+      ? [
+          "Codexia Ltd",
+          "location voiture Maurice",
+          "location de voiture à Maurice",
+          "location voiture aéroport Maurice",
+          "location SUV Maurice",
+          "location voiture automatique Maurice",
+          "voiture familiale Maurice",
+          "location véhicule Maurice",
+          "kilométrage illimité Maurice",
+          "location voiture aéroport SSR",
+        ]
+      : [
+          "Codexia Ltd",
+          "Codexia Mauritius",
+          "car rental Mauritius",
+          "Mauritius car hire",
+          "airport car rental Mauritius",
+          "Mauritius airport car hire",
+          "SUV rental Mauritius",
+          "automatic car rental Mauritius",
+          "family car rental Mauritius",
+          "premium car rental Mauritius",
+          "vehicle rental Mauritius",
+          "unlimited mileage car rental Mauritius",
+          "SSR Airport car rental",
+        ],
+
+    alternates: {
+      canonical: canonicalUrl,
+      languages: {
+        en: `${siteUrl}/en`,
+        fr: `${siteUrl}/fr`,
+        "x-default": `${siteUrl}/en`,
+      },
+    },
+
+    openGraph: {
+      type: "website",
+      locale: isFrench ? "fr_MU" : "en_MU",
+      alternateLocale: isFrench ? ["en_MU"] : ["fr_MU"],
+      url: canonicalUrl,
+      siteName: settings.companyName,
+      title,
+      description,
+      images: [
+        {
+          url: "/images/og/codexia-og.jpg",
+          width: 1200,
+          height: 630,
+          alt: isFrench
+            ? "Codexia Ltd, location de voitures à Maurice"
+            : "Codexia Ltd car rental in Mauritius",
+        },
+      ],
+    },
+
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: ["/images/og/codexia-og.jpg"],
+    },
   };
 }
 
@@ -64,8 +153,6 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
-  const settings = await getSiteSettings();
-
   return (
     <html
       lang={locale}
@@ -74,12 +161,16 @@ export default async function LocaleLayout({
     >
       <body className="flex min-h-full flex-col bg-background text-body">
         <AnalyticsScripts />
+
         <NextIntlClientProvider>
           <AnalyticsTracker locale={locale} />
-          <Header phone={settings.phone} whatsappNumber={settings.whatsappNumber} />
+
+          <Header />
+
           <main id="main-content" className="flex-1">
             {children}
           </main>
+
           <Footer />
           <WhatsAppButton />
         </NextIntlClientProvider>

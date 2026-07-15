@@ -310,7 +310,7 @@ export async function regenerateInvoicePdf(invoiceId: string) {
   const { invoice, items } = await getInvoiceAdmin(invoiceId);
   if (!invoice) return { ok: false as const, error: "Invoice not found." };
 
-  const currency = "EUR";
+  const currency = "MUR";
   const path = await generateAndStoreInvoicePdf(invoiceId, {
     number: invoice.number,
     issueDate: invoice.issue_date,

@@ -5,7 +5,7 @@ import Image from "next/image";
 import { getPostBySlug } from "@/lib/data/blog";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
 import { publicStorageUrl } from "@/lib/supabase/storage";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -16,11 +16,15 @@ export async function generateMetadata(props: {
 
   const title = locale === "fr" ? post.title_fr : post.title_en;
   const description = locale === "fr" ? post.excerpt_fr : post.excerpt_en;
-  return {
+  return buildPageMetadata({
+    locale,
+    path: `/blog/${slug}`,
     title,
     description: description ?? undefined,
-    alternates: buildAlternates(locale, `/blog/${slug}`, post.canonical_path),
-  };
+    canonicalOverride: post.canonical_path,
+    image: publicStorageUrl("blog", post.featured_image_path),
+    imageAlt: title,
+  });
 }
 
 export default async function BlogPostPage({

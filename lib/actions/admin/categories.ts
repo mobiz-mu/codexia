@@ -109,3 +109,64 @@ export async function updateCategory(
 
   return { status: "success" };
 }
+
+const MAX_CATEGORY_IMAGE_BYTES = 3 * 1024 * 1024;
+const ALLOWED_CATEGORY_IMAGE_TYPES = ["image/webp", "image/jpeg", "image/png"];
+
+export async function uploadCategoryImage(categoryId: string, formData: FormData) {
+  const user = await requireAdminUser();
+  assertPermission(user, "manage_vehicles");
+
+  const file = formData.get("image") as File | null;
+  if (!file || file.size === 0) return { ok: false as const, error: "Please choose an image." };
+  if (file.size > MAX_CATEGORY_IMAGE_BYTES) return { ok: false as const, error: "Image must be under 3MB." };
+  if (!ALLOWED_CATEGORY_IMAGE_TYPES.includes(file.type)) {
+    return { ok: false as const, error: "Image must be WebP, JPEG, or PNG." };
+  }
+
+  const supabase = createAdminClient();
+  const { data: existing } = await supabase
+    .from("vehicle_categories")
+    .select("image_path")
+    .eq("id", categoryId)
+    .maybeSingle();
+
+  const ext = file.name.split(".").pop();
+  const path = `${categoryId}/${Date.now()}.${ext}`;
+
+  const { error: uploadError } = await supabase.storage
+    .from("category-images")
+    .upload(path, file, { contentType: file.type });
+
+  if (uploadError) {
+    console.error("uploadCategoryImage failed", uploadError.message);
+    return { ok: false as const, error: "Upload failed." };
+  }
+
+  const { error: updateError } = await supabase
+    .from("vehicle_categories")
+    .update({ image_path: path })
+    .eq("id", categoryId);
+
+  if (updateError) {
+    console.error("uploadCategoryImage db update failed", updateError.message);
+    return { ok: false as const, error: "Failed to save image." };
+  }
+
+  if (existing?.image_path) {
+    await supabase.storage.from("category-images").remove([existing.image_path]);
+  }
+
+  return { ok: true as const };
+}
+
+export async function deleteCategoryImage(categoryId: string, path: string) {
+  const user = await requireAdminUser();
+  assertPermission(user, "manage_vehicles");
+
+  const supabase = createAdminClient();
+  await supabase.storage.from("category-images").remove([path]);
+  await supabase.from("vehicle_categories").update({ image_path: null }).eq("id", categoryId);
+
+  return { ok: true as const };
+}

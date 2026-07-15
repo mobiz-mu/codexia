@@ -2,14 +2,14 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
 import { getFaqCategoriesWithEntries } from "@/lib/data/faq";
 import { FaqAccordion } from "@/components/site/FaqAccordion";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "faq" });
-  return { title: t("title"), description: t("subtitle"), alternates: buildAlternates(locale, "/faq") };
+  return buildPageMetadata({ locale, path: "/faq", title: t("title"), description: t("subtitle") });
 }
 
 export default async function FaqPage({
@@ -53,6 +53,7 @@ export default async function FaqPage({
               {locale === "fr" ? category.name_fr : category.name_en}
             </h2>
             <FaqAccordion
+              groupName={`faq-category-${category.id}`}
               entries={category.faq_entries.map((entry) => ({
                 id: entry.id,
                 question: locale === "fr" ? entry.question_fr : entry.question_en,

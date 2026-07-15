@@ -1,10 +1,13 @@
+import { readFileSync } from "fs";
+import { join } from "path";
 import { ImageResponse } from "next/og";
-import { SITE_DEFAULTS } from "@/lib/config/site";
 
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default function OpengraphImage() {
+  const logo = readFileSync(join(process.cwd(), "public/images/codexia-logo.png")).toString("base64");
+
   return new ImageResponse(
     (
       <div
@@ -19,16 +22,8 @@ export default function OpengraphImage() {
           gap: 32,
         }}
       >
-        <svg width="140" height="140" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="32" cy="32" r="30" fill="#1BA8E0" />
-          <path
-            d="M8 38 C18 24 28 34 32 28 C36 34 46 24 56 38 C46 32 36 38 32 33 C28 38 18 32 8 38 Z"
-            fill="#8DB63C"
-          />
-        </svg>
-        <div style={{ display: "flex", fontSize: 64, fontWeight: 700, color: "#1F2937" }}>
-          {SITE_DEFAULTS.companyName}
-        </div>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={`data:image/png;base64,${logo}`} width={360} height={360} alt="" />
         <div style={{ display: "flex", fontSize: 30, color: "#6B7280" }}>
           Mauritius Car Rental — Unlimited Mileage, Full Insurance, 24/7 Support
         </div>

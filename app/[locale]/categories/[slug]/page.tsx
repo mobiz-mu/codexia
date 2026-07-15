@@ -5,7 +5,8 @@ import { getVehicleCategoryBySlug } from "@/lib/data/categories";
 import { getVehicles } from "@/lib/data/vehicles";
 import { VehicleCard } from "@/components/site/VehicleCard";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { publicStorageUrl } from "@/lib/supabase/storage";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; slug: string }>;
@@ -16,11 +17,15 @@ export async function generateMetadata(props: {
 
   const name = locale === "fr" ? category.name_fr : category.name_en;
   const description = locale === "fr" ? category.description_fr : category.description_en;
-  return {
+  return buildPageMetadata({
+    locale,
+    path: `/categories/${slug}`,
     title: name,
     description: description ?? undefined,
-    alternates: buildAlternates(locale, `/categories/${slug}`, category.canonical_path),
-  };
+    canonicalOverride: category.canonical_path,
+    image: publicStorageUrl("category-images", category.image_path),
+    imageAlt: name,
+  });
 }
 
 export default async function CategoryDetailPage({

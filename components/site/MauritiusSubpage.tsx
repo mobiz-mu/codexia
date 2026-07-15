@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { MapPin, Car, PlaneLanding, Lightbulb } from "lucide-react";
 import { Breadcrumbs } from "@/components/site/Breadcrumbs";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 
 type MauritiusSectionKey = "placesToVisit" | "drivingGuide" | "airportGuide" | "travelTips";
 
@@ -25,11 +25,12 @@ export async function getMauritiusSubpageMetadata(
   sectionKey: MauritiusSectionKey
 ): Promise<Metadata> {
   const t = await getTranslations({ locale, namespace: "mauritius" });
-  return {
+  return buildPageMetadata({
+    locale,
+    path: SECTION_PATHS[sectionKey],
     title: t(`${sectionKey}.title`),
     description: t(`${sectionKey}.text`),
-    alternates: buildAlternates(locale, SECTION_PATHS[sectionKey]),
-  };
+  });
 }
 
 export async function MauritiusSubpage({

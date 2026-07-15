@@ -1,6 +1,10 @@
+import { cache } from "react";
 import { createClient } from "@/lib/supabase/server";
 
-export async function getActiveLocations() {
+// React.cache() dedupes repeated calls within a single request — locations
+// are read from multiple components on the same page (search bar, footer,
+// homepage sections) in some layouts.
+export const getActiveLocations = cache(async () => {
   const supabase = await createClient();
   const { data, error } = await supabase
     .from("locations")
@@ -12,7 +16,7 @@ export async function getActiveLocations() {
     return [];
   }
   return data;
-}
+});
 
 export async function getLocationBySlug(slug: string) {
   const supabase = await createClient();

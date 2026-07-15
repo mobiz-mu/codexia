@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getCategoryAdmin, updateCategory } from "@/lib/actions/admin/categories";
 import { CategoryForm } from "@/components/admin/CategoryForm";
+import { CategoryImageManager } from "@/components/admin/CategoryImageManager";
 
 export const metadata: Metadata = { title: "Edit Category" };
 
@@ -15,6 +16,9 @@ export default async function EditCategoryPage({ params }: { params: Promise<{ i
   return (
     <div className="flex flex-col gap-6">
       <h1 className="text-2xl font-bold text-ink">{category.name_en}</h1>
+      <div className="max-w-xl rounded-xl border border-border bg-background p-6">
+        <CategoryImageManager categoryId={category.id} imagePath={category.image_path} />
+      </div>
       <div className="max-w-xl rounded-xl border border-border bg-background p-6">
         <CategoryForm action={boundUpdate} initial={category} submitLabel="Save Changes" />
       </div>
