@@ -15,7 +15,7 @@ export default async function AdminExtrasPage() {
         <h1 className="text-2xl font-bold text-ink">Extras</h1>
         <Link
           href="/admin/extras/new"
-          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
         >
           Add Extra
         </Link>
@@ -28,6 +28,7 @@ export default async function AdminExtrasPage() {
               <th className="px-4 py-2">Name (EN)</th>
               <th className="px-4 py-2">Name (FR)</th>
               <th className="px-4 py-2">Price</th>
+              <th className="px-4 py-2">Currency</th>
               <th className="px-4 py-2">Mode</th>
               <th className="px-4 py-2">Order</th>
               <th className="px-4 py-2">Active</th>
@@ -43,6 +44,17 @@ export default async function AdminExtrasPage() {
                 </td>
                 <td className="px-4 py-2">{e.name_fr}</td>
                 <td className="px-4 py-2 font-medium text-action-dark">{formatMoney(e.price_cents, e.currency, "en")}</td>
+                <td className="px-4 py-2">
+                  {e.currency === "EUR" ? (
+                    <span className="rounded-full bg-action-tint px-2.5 py-1 text-xs font-semibold text-action-dark">
+                      EUR
+                    </span>
+                  ) : (
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800">
+                      {e.currency} — legacy
+                    </span>
+                  )}
+                </td>
                 <td className="px-4 py-2 capitalize">{e.pricing_mode.replace("_", " ")}</td>
                 <td className="px-4 py-2">{e.display_order}</td>
                 <td className="px-4 py-2">

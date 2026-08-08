@@ -8,7 +8,11 @@ export type NotificationType =
   | "new_contact_message"
   | "new_newsletter_subscriber"
   | "failed_email"
-  | "online_payment_received";
+  | "online_payment_received"
+  | "payment_verification_failed"
+  | "payment_refunded"
+  | "payment_disputed"
+  | "compliance_expiry";
 
 export async function createNotification(
   type: NotificationType,

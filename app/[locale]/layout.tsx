@@ -14,6 +14,7 @@ import { WhatsAppButton } from "@/components/site/WhatsAppButton";
 import { AnalyticsTracker } from "@/components/site/AnalyticsTracker";
 import { AnalyticsScripts } from "@/components/site/AnalyticsScripts";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
+import { buildAlternates } from "@/lib/seo/alternates";
 
 import "../globals.css";
 
@@ -100,14 +101,7 @@ export async function generateMetadata(props: {
           "SSR Airport car rental",
         ],
 
-    alternates: {
-      canonical: canonicalUrl,
-      languages: {
-        en: `${siteUrl}/en`,
-        fr: `${siteUrl}/fr`,
-        "x-default": `${siteUrl}/en`,
-      },
-    },
+    alternates: buildAlternates(locale, "/"),
 
     openGraph: {
       type: "website",
@@ -153,6 +147,28 @@ export default async function LocaleLayout({
 
   setRequestLocale(locale);
 
+  const settings = await getSiteSettings();
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: settings.companyName,
+    url: siteUrl,
+    logo: `${siteUrl}/images/codexia-logo.png`,
+    email: settings.email,
+    telephone: settings.phone,
+    address: { "@type": "PostalAddress", addressCountry: "MU" },
+    sameAs: [settings.socials.facebook, settings.socials.instagram].filter(Boolean),
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: settings.phone,
+      email: settings.email,
+      contactType: "customer support",
+      areaServed: "MU",
+      availableLanguage: ["English", "French"],
+    },
+  };
+
   return (
     <html
       lang={locale}
@@ -160,6 +176,10 @@ export default async function LocaleLayout({
       className={`${inter.variable} ${jakarta.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col bg-background text-body">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }}
+        />
         <AnalyticsScripts />
 
         <NextIntlClientProvider>

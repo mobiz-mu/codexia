@@ -2,7 +2,7 @@ import { Users, DoorOpen, Luggage, Cog, Fuel, Snowflake } from "lucide-react";
 import Image from "next/image";
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
-import { publicStorageUrl } from "@/lib/supabase/storage";
+import { vehicleImageUrl } from "@/lib/supabase/vehicle-image-url";
 import { formatMoney } from "@/lib/pricing/format";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 
@@ -17,20 +17,31 @@ type VehicleCardData = {
   transmission: string;
   fuel: string;
   air_conditioning: boolean;
-  vehicle_images?: { path: string; is_main: boolean; alt_en: string | null }[];
+  vehicle_images?: {
+    path: string;
+    is_main: boolean;
+    alt_en: string | null;
+    blur_data_url?: string | null;
+    variants?: unknown;
+  }[];
   vehicle_categories?: { slug: string; name_en: string; name_fr: string } | null;
 };
 
 export async function VehicleCard({
   vehicle,
   locale,
+  priority,
 }: {
   vehicle: VehicleCardData;
   locale: string;
+  /** Set on the first card of a grid with no hero image above it (e.g. /fleet) — it's the LCP candidate there. */
+  priority?: boolean;
 }) {
   const [t, settings] = await Promise.all([getTranslations("vehicleCard"), getSiteSettings()]);
   const mainImage = vehicle.vehicle_images?.find((img) => img.is_main) ?? vehicle.vehicle_images?.[0];
-  const imageUrl = publicStorageUrl("vehicle-images", mainImage?.path);
+  // A fleet-grid card renders around 300-400px wide at most — the "card"
+  // variant (480px) is plenty, instead of downloading a full-size original.
+  const imageUrl = mainImage ? vehicleImageUrl(mainImage, "card") : null;
 
   const specs = [
     { icon: Users, label: vehicle.passengers },
@@ -61,6 +72,10 @@ export async function VehicleCard({
             fill
             className="object-cover"
             sizes="(min-width: 1024px) 25vw, (min-width: 640px) 50vw, 100vw"
+            {...(priority ? { priority: true } : {})}
+            {...(mainImage?.blur_data_url
+              ? { placeholder: "blur" as const, blurDataURL: mainImage.blur_data_url }
+              : {})}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-sm text-muted">
@@ -101,7 +116,7 @@ export async function VehicleCard({
           </Link>
           <Link
             href={`/book?vehicle=${vehicle.slug}`}
-            className="flex-1 rounded-full bg-action px-3 py-2 text-center text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+            className="flex-1 rounded-full bg-action px-3 py-2 text-center text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
           >
             {t("book")}
           </Link>

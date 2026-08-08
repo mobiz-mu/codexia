@@ -28,6 +28,17 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
       emergencyPhone: pick(rows.emergency_phone, SITE_DEFAULTS.emergencyPhone),
       openingHours: pick(rows.opening_hours, SITE_DEFAULTS.openingHours),
       currency: pick(rows.currency, SITE_DEFAULTS.currency),
+      eurExchangeRate: pick(rows.eur_exchange_rate, SITE_DEFAULTS.eurExchangeRate),
+      depositThresholdEurCents: pick(rows.deposit_threshold_eur_cents, SITE_DEFAULTS.depositThresholdEurCents),
+      depositMidTierMaxEurCents: pick(rows.deposit_mid_tier_max_eur_cents, SITE_DEFAULTS.depositMidTierMaxEurCents),
+      depositMidTierAmountEurCents: pick(
+        rows.deposit_mid_tier_amount_eur_cents,
+        SITE_DEFAULTS.depositMidTierAmountEurCents
+      ),
+      depositHighTierAmountEurCents: pick(
+        rows.deposit_high_tier_amount_eur_cents,
+        SITE_DEFAULTS.depositHighTierAmountEurCents
+      ),
       insuranceExcessCents: pick(rows.insurance_excess_cents, SITE_DEFAULTS.insuranceExcessCents),
       deliveryFeeNonAirportCents: pick(
         rows.delivery_fee_non_airport_cents,
@@ -41,6 +52,7 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
         facebook: pick(rows.social_facebook, SITE_DEFAULTS.socials.facebook),
         instagram: pick(rows.social_instagram, SITE_DEFAULTS.socials.instagram),
       },
+      googleMapsUrl: pick(rows.google_maps_url, SITE_DEFAULTS.googleMapsUrl),
     };
   } catch {
     return SITE_DEFAULTS;

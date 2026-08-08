@@ -15,7 +15,6 @@ import {
   Car,
   LayoutGrid,
   ShieldOff,
-  ReceiptText,
   Receipt,
   PackagePlus,
   Users,
@@ -29,6 +28,10 @@ import {
   Settings,
   BarChart3,
   UserCog,
+  MapPin,
+  Wrench,
+  ShieldAlert,
+  Siren,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -44,7 +47,6 @@ const ICON_MAP = {
   Car,
   LayoutGrid,
   ShieldOff,
-  ReceiptText,
   Receipt,
   PackagePlus,
   Users,
@@ -58,18 +60,41 @@ const ICON_MAP = {
   Settings,
   BarChart3,
   UserCog,
+  MapPin,
+  Wrench,
+  ShieldAlert,
+  Siren,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminIconName = keyof typeof ICON_MAP;
 
-type NavLink = { type: "link"; href: string; label: string; icon: AdminIconName; permission?: string | null };
+type NavLink = {
+  type: "link";
+  href: string;
+  label: string;
+  icon: AdminIconName;
+  permission?: string | null;
+  badge?: number;
+};
 type NavGroup = {
   type: "group";
   label: string;
   icon: AdminIconName;
-  items: { href: string; label: string; icon: AdminIconName; permission?: string | null }[];
+  items: { href: string; label: string; icon: AdminIconName; permission?: string | null; badge?: number }[];
 };
 export type AdminNavEntry = NavLink | NavGroup;
+
+function NavBadge({ count }: { count: number }) {
+  if (count <= 0) return null;
+  return (
+    <span
+      className="ml-auto flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white"
+      aria-label={`${count} urgent`}
+    >
+      {count > 99 ? "99+" : count}
+    </span>
+  );
+}
 
 export function AdminNav({
   items,
@@ -119,6 +144,7 @@ export function AdminNav({
                 aria-hidden="true"
               />
               {entry.label}
+              {entry.badge !== undefined && <NavBadge count={entry.badge} />}
             </Link>
           );
         }
@@ -134,7 +160,7 @@ export function AdminNav({
               onClick={() => toggleGroup(entry.label)}
               aria-expanded={open}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                "flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                 groupActive ? "text-primary-dark" : "text-ink hover:bg-surface"
               )}
             >
@@ -144,12 +170,12 @@ export function AdminNav({
               />
               <span className="flex-1 text-left">{entry.label}</span>
               <ChevronDown
-                className={cn("h-3.5 w-3.5 shrink-0 text-muted transition-transform", open && "rotate-180")}
+                className={cn("h-3.5 w-3.5 shrink-0 text-muted transition-transform duration-200", open && "rotate-180")}
                 aria-hidden="true"
               />
             </button>
             {open && (
-              <div className="ml-4 mt-0.5 flex flex-col gap-1 border-l border-border pl-3">
+              <div className="animate-fade-in-up ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-3">
                 {entry.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = ICON_MAP[item.icon];
@@ -159,7 +185,7 @@ export function AdminNav({
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                        "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
                         active ? "bg-primary-tint text-primary-dark" : "text-ink hover:bg-surface"
                       )}
                     >
@@ -168,6 +194,7 @@ export function AdminNav({
                         aria-hidden="true"
                       />
                       {item.label}
+                      {item.badge !== undefined && <NavBadge count={item.badge} />}
                     </Link>
                   );
                 })}

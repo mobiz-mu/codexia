@@ -24,6 +24,7 @@ export function VehicleImageManager({
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, startTransition] = useTransition();
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   function handleUpload(formData: FormData) {
     setUploadError(null);
@@ -46,8 +47,13 @@ export function VehicleImageManager({
   }
 
   function handleDelete(imageId: string, path: string) {
+    setDeleteError(null);
     startTransition(async () => {
-      await deleteVehicleImage(vehicleId, imageId, path);
+      const result = await deleteVehicleImage(vehicleId, imageId, path);
+      if (!result.ok) {
+        setDeleteError(result.error ?? "Failed to delete the image.");
+        return;
+      }
       router.refresh();
     });
   }
@@ -73,7 +79,7 @@ export function VehicleImageManager({
           <button
             type="submit"
             disabled={pending}
-            className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink disabled:opacity-60"
           >
             {pending ? "Uploading..." : "Upload"}
           </button>
@@ -85,6 +91,12 @@ export function VehicleImageManager({
           </p>
         )}
       </form>
+
+      {deleteError && (
+        <p className="text-sm text-red-600" role="alert">
+          {deleteError}
+        </p>
+      )}
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {images.map((img) => {

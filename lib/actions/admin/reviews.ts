@@ -14,7 +14,11 @@ export async function listReviewsAdmin(status?: string) {
   assertPermission(user, "approve_reviews");
 
   const supabase = createAdminClient();
-  let query = supabase.from("reviews").select("*").order("created_at", { ascending: false });
+  let query = supabase
+    .from("reviews")
+    .select("id, name, country, rating, status, body, admin_reply, featured")
+    .order("created_at", { ascending: false })
+    .limit(200);
   if (status) query = query.eq("status", status as "pending" | "approved" | "rejected" | "hidden");
 
   const { data } = await query;

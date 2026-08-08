@@ -25,7 +25,10 @@ export async function listUsersAdmin() {
 
   const supabase = createAdminClient();
   const [{ data: authUsers }, { data: profiles }, { data: userRoles }] = await Promise.all([
-    supabase.auth.admin.listUsers(),
+    // Staff/admin accounts only — bounded to a small handful in practice, but
+    // the Admin Auth API's default page size is 50; ask for more explicitly
+    // so an account past that cutoff doesn't silently disappear from the list.
+    supabase.auth.admin.listUsers({ page: 1, perPage: 200 }),
     supabase.from("profiles").select("id, full_name"),
     supabase.from("user_roles").select("user_id, roles(id, key, name)"),
   ]);
@@ -79,25 +82,25 @@ export async function inviteAdminUser(_prev: UserFormState, formData: FormData):
     return { status: "error", error: error?.message ?? "Failed to invite user." };
   }
 
-  await supabase.from("profiles").update({ full_name: parsed.data.fullName }).eq("id", invited.user.id);
-
-  if (parsed.data.roleIds.length > 0) {
-    await supabase.from("user_roles").insert(
-      parsed.data.roleIds.map((roleId) => ({
-        user_id: invited.user.id,
-        role_id: roleId,
-        assigned_by: user.id,
-      }))
-    );
-  }
-
-  await supabase.from("audit_logs").insert({
-    actor_id: user.id,
-    action: "user_invited",
-    entity: "profiles",
-    entity_id: invited.user.id,
-    diff: { email: parsed.data.email, roleIds: parsed.data.roleIds },
-  });
+  await Promise.all([
+    supabase.from("profiles").update({ full_name: parsed.data.fullName }).eq("id", invited.user.id),
+    parsed.data.roleIds.length > 0
+      ? supabase.from("user_roles").insert(
+          parsed.data.roleIds.map((roleId) => ({
+            user_id: invited.user.id,
+            role_id: roleId,
+            assigned_by: user.id,
+          }))
+        )
+      : Promise.resolve(),
+    supabase.from("audit_logs").insert({
+      actor_id: user.id,
+      action: "user_invited",
+      entity: "profiles",
+      entity_id: invited.user.id,
+      diff: { email: parsed.data.email, roleIds: parsed.data.roleIds },
+    }),
+  ]);
 
   return { status: "success" };
 }

@@ -12,7 +12,7 @@ export async function listCustomers() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("booking_customers")
-    .select("*, bookings(id, reference, status, total_cents, created_at)")
+    .select("*, bookings(id, reference, status, total_cents, currency, created_at)")
     .order("created_at", { ascending: false });
 
   type Row = {
@@ -21,24 +21,34 @@ export async function listCustomers() {
     email: string;
     phone: string;
     country: string;
-    bookings: { id: string; reference: string; status: string; total_cents: number; created_at: string } | null;
+    bookings: { id: string; reference: string; status: string; total_cents: number; currency: string; created_at: string } | null;
   };
 
   const rows = (data ?? []) as unknown as Row[];
 
   const byEmail = new Map<
     string,
-    { fullName: string; email: string; phone: string; country: string; bookingCount: number; totalCents: number; lastBookingAt: string; lastReference: string }
+    {
+      fullName: string;
+      email: string;
+      phone: string;
+      country: string;
+      bookingCount: number;
+      totalCentsByCurrency: Record<string, number>;
+      lastBookingAt: string;
+      lastReference: string;
+    }
   >();
 
   for (const row of rows) {
     const existing = byEmail.get(row.email);
     const totalCents = row.bookings?.total_cents ?? 0;
+    const currency = row.bookings?.currency ?? "EUR";
     const createdAt = row.bookings?.created_at ?? "";
 
     if (existing) {
       existing.bookingCount += 1;
-      existing.totalCents += totalCents;
+      existing.totalCentsByCurrency[currency] = (existing.totalCentsByCurrency[currency] ?? 0) + totalCents;
       if (createdAt > existing.lastBookingAt) {
         existing.lastBookingAt = createdAt;
         existing.lastReference = row.bookings?.reference ?? "";
@@ -50,7 +60,7 @@ export async function listCustomers() {
         phone: row.phone,
         country: row.country,
         bookingCount: 1,
-        totalCents,
+        totalCentsByCurrency: { [currency]: totalCents },
         lastBookingAt: createdAt,
         lastReference: row.bookings?.reference ?? "",
       });

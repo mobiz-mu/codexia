@@ -6,6 +6,7 @@ import { formatMoney } from "@/lib/pricing/format";
 import { BookingStatusForm } from "@/components/admin/BookingStatusForm";
 import { VehicleReassignForm } from "@/components/admin/VehicleReassignForm";
 import { ResendEmailButtons } from "@/components/admin/ResendEmailButtons";
+import { BookingPaymentDetails } from "@/components/admin/BookingPaymentDetails";
 import { createInvoiceFromBookingAndRedirect } from "@/lib/actions/admin/invoices";
 
 export const metadata: Metadata = { title: "Booking Detail" };
@@ -19,10 +20,23 @@ export default async function AdminBookingDetailPage({
   const result = await getBookingDetail(id);
   if (!result) notFound();
 
-  const { booking, customer, drivers, extras, statusHistory, proofs, vehicle, pickupLoc, dropoffLoc, availableVehiclesInCategory } =
-    result;
+  const {
+    booking,
+    customer,
+    drivers,
+    extras,
+    statusHistory,
+    proofs,
+    vehicle,
+    pickupLoc,
+    dropoffLoc,
+    availableVehiclesInCategory,
+    canViewPayments,
+    paymentTransactions,
+    payments,
+  } = result;
 
-  const currency = vehicle?.currency ?? "MUR";
+  const currency = booking.currency;
 
   return (
     <div className="flex flex-col gap-8">
@@ -105,6 +119,16 @@ export default async function AdminBookingDetailPage({
             <p className="text-sm">Paid: {formatMoney(booking.paid_cents, currency, "en")}</p>
             <p className="text-sm">Balance: {formatMoney(booking.balance_cents, currency, "en")}</p>
           </section>
+
+          {canViewPayments && (
+            <BookingPaymentDetails
+              paymentTransactions={paymentTransactions}
+              payments={payments}
+              bookingTotalCents={booking.total_cents}
+              bookingPaidCents={booking.paid_cents}
+              currency={currency}
+            />
+          )}
 
           {proofs.length > 0 && (
             <section className="rounded-xl border border-border bg-background p-4">

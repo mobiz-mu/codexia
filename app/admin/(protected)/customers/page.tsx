@@ -5,6 +5,24 @@ import { formatMoney } from "@/lib/pricing/format";
 
 export const metadata: Metadata = { title: "Customers" };
 
+// EUR is the live business currency; any other currency present (MUR, from
+// bookings created before the EUR-pricing migration) is historical and
+// shown separately rather than being summed into the same total.
+function TotalSpent({ byCurrency }: { byCurrency: Record<string, number> }) {
+  const primary = formatMoney(byCurrency.EUR ?? 0, "EUR", "en");
+  const historical = Object.entries(byCurrency).filter(([currency, cents]) => currency !== "EUR" && cents !== 0);
+  return (
+    <>
+      {primary}
+      {historical.length > 0 && (
+        <span className="ml-1 text-xs text-muted">
+          + {historical.map(([currency, cents]) => formatMoney(cents, currency, "en")).join(", ")}
+        </span>
+      )}
+    </>
+  );
+}
+
 export default async function AdminCustomersPage() {
   const customers = await listCustomers();
 
@@ -37,7 +55,9 @@ export default async function AdminCustomersPage() {
                     {c.bookingCount}
                   </span>
                 </td>
-                <td className="px-4 py-2 font-medium text-action-dark">{formatMoney(c.totalCents, "MUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-action-dark">
+                  <TotalSpent byCurrency={c.totalCentsByCurrency} />
+                </td>
                 <td className="px-4 py-2">
                   <Link href={`/admin/bookings`} className="font-medium text-primary-dark hover:underline">
                     {c.lastReference}

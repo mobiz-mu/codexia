@@ -352,7 +352,7 @@ export function Header() {
       {/* Announcement bar */}
       <div
         className={cn(
-          "relative overflow-hidden text-white",
+          "relative overflow-hidden text-ink",
           BRAND_GRADIENT
         )}
       >
@@ -721,7 +721,7 @@ export function Header() {
                 "group relative inline-flex min-h-10 items-center",
                 "justify-center overflow-hidden rounded-full",
                 BRAND_GRADIENT,
-                "px-5 py-2 text-[13px] font-bold text-white",
+                "px-5 py-2 text-[13px] font-bold text-ink",
                 "shadow-[0_9px_24px_rgba(21,153,199,0.24)]",
                 "transition-all duration-300",
                 "hover:-translate-y-0.5",
@@ -773,6 +773,12 @@ export function Header() {
       <div
         id="mobile-navigation"
         aria-hidden={!mobileOpen}
+        // aria-hidden alone leaves the links inside focusable — a keyboard
+        // user tabbing through the page lands on nav items that are
+        // invisible and marked hidden from assistive tech (Lighthouse
+        // aria-hidden-focus). `inert` removes the closed panel from the tab
+        // order and pointer/AT interaction in one attribute.
+        inert={!mobileOpen}
         className={cn(
           "fixed inset-x-0 bottom-0 top-[104px] z-40",
           "overflow-hidden lg:hidden",
@@ -979,7 +985,7 @@ export function Header() {
                 "mt-3 flex min-h-12 w-full items-center justify-center",
                 "rounded-xl px-5",
                 BRAND_GRADIENT,
-                "text-sm font-bold text-white",
+                "text-sm font-bold text-ink",
                 "shadow-[0_12px_26px_rgba(21,153,199,0.24)]",
                 "transition-transform active:scale-[0.98]"
               )}

@@ -63,7 +63,7 @@ export function BookingStatusForm({ bookingId, currentStatus }: { bookingId: str
       <button
         type="submit"
         disabled={!newStatus || pending}
-        className="self-start rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
+        className="self-start rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:translate-y-0 disabled:opacity-60 disabled:shadow-none"
       >
         {pending ? "Updating..." : "Update Status"}
       </button>

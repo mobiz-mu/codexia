@@ -13,6 +13,11 @@ export interface SiteSettings {
   emergencyPhone: string;
   openingHours: string;
   currency: string;
+  eurExchangeRate: number;
+  depositThresholdEurCents: number;
+  depositMidTierMaxEurCents: number;
+  depositMidTierAmountEurCents: number;
+  depositHighTierAmountEurCents: number;
   insuranceExcessCents: number;
   deliveryFeeNonAirportCents: number;
   minDriverAge: number;
@@ -23,6 +28,7 @@ export interface SiteSettings {
     facebook: string;
     instagram: string;
   };
+  googleMapsUrl: string;
 }
 
 export const SITE_DEFAULTS: SiteSettings = {
@@ -31,10 +37,15 @@ export const SITE_DEFAULTS: SiteSettings = {
   phone: "+230 52811999",
   whatsapp: "+230 52811999",
   whatsappNumber: "23052811999",
-  email: "dyash21@hotmail.com",
+  email: "info@codexia.mu",
   emergencyPhone: "+230 5253 2101",
   openingHours: "24/7 including public holidays",
-  currency: "MUR",
+  currency: "EUR",
+  eurExchangeRate: 47.5,
+  depositThresholdEurCents: 100_00,
+  depositMidTierMaxEurCents: 400_00,
+  depositMidTierAmountEurCents: 100_00,
+  depositHighTierAmountEurCents: 200_00,
   insuranceExcessCents: 62500,
   deliveryFeeNonAirportCents: 1500,
   minDriverAge: 19,
@@ -45,4 +56,5 @@ export const SITE_DEFAULTS: SiteSettings = {
     facebook: "",
     instagram: "",
   },
+  googleMapsUrl: "",
 };

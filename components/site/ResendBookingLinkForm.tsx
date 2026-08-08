@@ -36,7 +36,7 @@ export function ResendBookingLinkForm({
       <button
         type="submit"
         disabled={pending}
-        className="shrink-0 rounded-full bg-action px-6 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+        className="shrink-0 rounded-full bg-action px-6 py-2 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
       >
         {labels.submit}
       </button>

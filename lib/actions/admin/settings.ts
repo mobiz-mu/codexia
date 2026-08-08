@@ -2,6 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
+import { isEurCentsSetting } from "@/lib/config/eur-cents-settings";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {
@@ -27,23 +28,37 @@ export async function updateSettings(_prev: SettingsFormState, formData: FormDat
   const supabase = createAdminClient();
   const { data: settings } = await supabase.from("site_settings").select("key, value_type");
 
+  const invalidKeys: string[] = [];
   const updates = (settings ?? []).map((setting) => {
     const raw = formData.get(setting.key);
     let value: unknown;
     if (setting.value_type === "boolean") {
       value = raw === "true";
+    } else if (setting.value_type === "number" && isEurCentsSetting(setting.key)) {
+      const eur = Number.parseFloat(String(raw ?? ""));
+      if (!Number.isFinite(eur) || eur < 0) {
+        invalidKeys.push(setting.key);
+        value = 0;
+      } else {
+        value = Math.round(eur * 100);
+      }
     } else if (setting.value_type === "number") {
       value = Number(raw ?? 0);
     } else {
       value = String(raw ?? "");
     }
-    return supabase
-      .from("site_settings")
-      .update({ value, updated_by: user.id })
-      .eq("key", setting.key);
+    return { key: setting.key, value };
   });
 
-  const results = await Promise.all(updates);
+  if (invalidKeys.length > 0) {
+    return { status: "error", error: `Invalid EUR amount for: ${invalidKeys.join(", ")}` };
+  }
+
+  const results = await Promise.all(
+    updates.map(({ key, value }) =>
+      supabase.from("site_settings").update({ value, updated_by: user.id }).eq("key", key),
+    ),
+  );
   const failed = results.find((r) => r.error);
   if (failed?.error) {
     console.error("updateSettings failed", failed.error.message);

@@ -5,8 +5,10 @@ import { useRouter } from "next/navigation";
 import {
   duplicateInvoice,
   getInvoiceSignedUrl,
+  getInvoiceWhatsAppLink,
   markInvoiceSent,
   regenerateInvoicePdf,
+  sendInvoiceByEmail,
   voidInvoice,
 } from "@/lib/actions/admin/invoices";
 
@@ -54,6 +56,28 @@ export function InvoiceActionsPanel({
     });
   }
 
+  function handleSendEmail() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await sendInvoiceByEmail(invoiceId);
+      setMessage(result.ok ? "Invoice emailed to the customer." : result.error ?? "Failed to send email.");
+      router.refresh();
+    });
+  }
+
+  function handleSendWhatsApp() {
+    setMessage(null);
+    startTransition(async () => {
+      const result = await getInvoiceWhatsAppLink(invoiceId);
+      if (!result.ok) {
+        setMessage(result.error ?? "Failed to prepare WhatsApp message.");
+        return;
+      }
+      window.open(result.whatsappUrl, "_blank", "noopener,noreferrer");
+      router.refresh();
+    });
+  }
+
   function handleVoid() {
     if (!confirm("Void this invoice? This cannot be undone.")) return;
     setMessage(null);
@@ -93,12 +117,28 @@ export function InvoiceActionsPanel({
             Download PDF
           </button>
         )}
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleSendEmail}
+          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+        >
+          Send by Email
+        </button>
+        <button
+          type="button"
+          disabled={pending}
+          onClick={handleSendWhatsApp}
+          className="rounded-full bg-[#25D366] px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+        >
+          Send by WhatsApp
+        </button>
         {status === "draft" && (
           <button
             type="button"
             disabled={pending}
             onClick={handleMarkSent}
-            className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+            className="rounded-full border border-border px-4 py-2 text-sm font-medium text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
           >
             Mark Sent
           </button>

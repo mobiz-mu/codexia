@@ -49,7 +49,7 @@ export async function listBookings(filters?: { status?: string; search?: string 
   const supabase = createAdminClient();
   let query = supabase
     .from("bookings")
-    .select("*, vehicles(name), booking_customers(full_name, email)")
+    .select("id, reference, status, total_cents, currency, pickup_at, return_at, created_at, vehicles(name), booking_customers(full_name, email)")
     .order("created_at", { ascending: false })
     .limit(100);
 
@@ -68,6 +68,7 @@ export async function listBookings(filters?: { status?: string; search?: string 
     reference: string;
     status: string;
     total_cents: number;
+    currency: string;
     pickup_at: string;
     return_at: string;
     created_at: string;
@@ -99,6 +100,12 @@ export async function getBookingDetail(id: string) {
   const { data: booking } = await supabase.from("bookings").select("*").eq("id", id).maybeSingle();
   if (!booking) return null;
 
+  // Payment records carry PayPal order/capture ids and EUR amounts — gated
+  // separately from the rest of the booking view so a staff member with
+  // manage_bookings but not manage_payments never receives them, without
+  // failing the whole page load.
+  const canViewPayments = user.permissions.has("manage_payments");
+
   const [
     { data: customer },
     { data: drivers },
@@ -109,6 +116,8 @@ export async function getBookingDetail(id: string) {
     { data: pickupLoc },
     { data: dropoffLoc },
     { data: vehicles },
+    { data: paymentTransactions },
+    { data: payments },
   ] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", id).maybeSingle(),
     supabase.from("booking_drivers").select("*").eq("booking_id", id),
@@ -121,6 +130,20 @@ export async function getBookingDetail(id: string) {
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
     supabase.from("vehicles").select("id, name, status").eq("category_id", booking.category_id).eq("status", "active"),
+    canViewPayments
+      ? supabase
+          .from("payment_transactions")
+          .select("id, provider, provider_ref, capture_id, amount_cents, currency, exchange_rate, status, created_at, updated_at")
+          .eq("booking_id", id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
+    canViewPayments
+      ? supabase
+          .from("payments")
+          .select("id, method, amount_cents, currency, status, note, paid_at, created_at")
+          .eq("booking_id", id)
+          .order("created_at", { ascending: false })
+      : Promise.resolve({ data: null }),
   ]);
 
   return {
@@ -134,6 +157,9 @@ export async function getBookingDetail(id: string) {
     pickupLoc,
     dropoffLoc,
     availableVehiclesInCategory: vehicles ?? [],
+    canViewPayments,
+    paymentTransactions: paymentTransactions ?? [],
+    payments: payments ?? [],
   };
 }
 
@@ -163,25 +189,25 @@ export async function updateBookingStatus(
     return { ok: false, error: "Failed to update status." };
   }
 
-  await supabase.from("booking_status_history").insert({
-    booking_id: bookingId,
-    old_status: currentStatus,
-    new_status: newStatus,
-    actor_id: user.id,
-    internal_note: note || null,
-  });
-
-  await supabase.from("audit_logs").insert({
-    actor_id: user.id,
-    action: "booking_status_change",
-    entity: "bookings",
-    entity_id: bookingId,
-    diff: { from: currentStatus, to: newStatus },
-  });
+  await Promise.all([
+    supabase.from("booking_status_history").insert({
+      booking_id: bookingId,
+      old_status: currentStatus,
+      new_status: newStatus,
+      actor_id: user.id,
+      internal_note: note || null,
+    }),
+    supabase.from("audit_logs").insert({
+      actor_id: user.id,
+      action: "booking_status_change",
+      entity: "bookings",
+      entity_id: bookingId,
+      diff: { from: currentStatus, to: newStatus },
+    }),
+  ]);
 
   if (newStatus === "confirmed") {
-    await sendBookingConfirmedEmail(bookingId, locale);
-    await syncBookingCalendarEvent(bookingId);
+    await Promise.all([sendBookingConfirmedEmail(bookingId, locale), syncBookingCalendarEvent(bookingId)]);
   }
 
   if (["cancelled", "rejected", "refunded", "no_show"].includes(newStatus)) {
@@ -218,25 +244,25 @@ export async function reassignVehicle(bookingId: string, vehicleId: string): Pro
     return { ok: false, error: "Failed to reassign vehicle." };
   }
 
-  if (advancesStatus) {
-    await supabase.from("booking_status_history").insert({
-      booking_id: bookingId,
-      old_status: currentStatus,
-      new_status: "vehicle_assigned",
+  await Promise.all([
+    advancesStatus
+      ? supabase.from("booking_status_history").insert({
+          booking_id: bookingId,
+          old_status: currentStatus,
+          new_status: "vehicle_assigned",
+          actor_id: user.id,
+          internal_note: "Vehicle assigned",
+        })
+      : Promise.resolve(),
+    supabase.from("audit_logs").insert({
       actor_id: user.id,
-      internal_note: "Vehicle assigned",
-    });
-  }
-
-  await supabase.from("audit_logs").insert({
-    actor_id: user.id,
-    action: "booking_vehicle_reassigned",
-    entity: "bookings",
-    entity_id: bookingId,
-    diff: { vehicle_id: vehicleId },
-  });
-
-  await syncBookingCalendarEvent(bookingId);
+      action: "booking_vehicle_reassigned",
+      entity: "bookings",
+      entity_id: bookingId,
+      diff: { vehicle_id: vehicleId },
+    }),
+    syncBookingCalendarEvent(bookingId),
+  ]);
 
   return { ok: true };
 }
@@ -261,7 +287,7 @@ export async function resendBookingEmail(
   const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", bookingId).maybeSingle(),
     booking.vehicle_id
-      ? supabase.from("vehicles").select("name, currency").eq("id", booking.vehicle_id).maybeSingle()
+      ? supabase.from("vehicles").select("name").eq("id", booking.vehicle_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
@@ -289,9 +315,9 @@ export async function resendBookingEmail(
     dropoffLocationName: locale === "fr" ? dropoffLoc?.name_fr ?? "" : dropoffLoc?.name_en ?? "",
     pickupAt: new Date(booking.pickup_at),
     returnAt: new Date(booking.return_at),
-    paymentMethod: booking.payment_method ?? "bank_transfer",
+    paymentMethod: "online",
     totalCents: booking.total_cents,
-    currency: vehicle?.currency ?? "MUR",
+    currency: booking.currency,
     siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
     accessToken,
   });

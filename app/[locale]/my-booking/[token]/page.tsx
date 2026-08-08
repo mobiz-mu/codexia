@@ -1,8 +1,8 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { Car, MapPin, CalendarClock, Receipt } from "lucide-react";
 import { getBookingByToken } from "@/lib/actions/my-booking";
-import { PaymentProofUpload } from "@/components/site/PaymentProofUpload";
 import { formatMoney } from "@/lib/pricing/format";
 import { cn } from "@/lib/utils/cn";
 
@@ -27,9 +27,11 @@ function statusTone(status: string) {
 export async function generateMetadata(props: {
   params: Promise<{ locale: string; token: string }>;
 }): Promise<Metadata> {
-  const { locale } = await props.params;
+  const { locale, token } = await props.params;
   const t = await getTranslations({ locale, namespace: "myBooking.detail" });
-  return { title: t("reference"), robots: { index: false, follow: false } };
+  const result = await getBookingByToken(token);
+  const title = result ? `${t("reference")}: ${result.booking.reference}` : t("reference");
+  return { title, robots: { index: false, follow: false } };
 }
 
 export default async function MyBookingDetailPage({
@@ -43,15 +45,9 @@ export default async function MyBookingDetailPage({
 
   const result = await getBookingByToken(token);
 
-  if (!result) {
-    return (
-      <section className="mx-auto max-w-xl px-4 py-16 text-center sm:px-6 lg:px-8">
-        <p className="rounded-xl border border-border bg-surface p-6 text-muted">{t("notFound")}</p>
-      </section>
-    );
-  }
+  if (!result) notFound();
 
-  const { booking, customer, vehicle, pickupLoc, dropoffLoc, proofs } = result;
+  const { booking, customer, vehicle, pickupLoc, dropoffLoc } = result;
   const locationName = (loc: { name_en: string; name_fr: string } | null) =>
     loc ? (locale === "fr" ? loc.name_fr : loc.name_en) : "—";
 
@@ -61,7 +57,7 @@ export default async function MyBookingDetailPage({
   });
 
   const balanceCents = booking.total_cents - booking.paid_cents;
-  const currency = "MUR";
+  const currency = booking.currency;
 
   const statusLabel = t(`statusLabels.${booking.status}` as "statusLabels.pending");
 
@@ -128,43 +124,6 @@ export default async function MyBookingDetailPage({
         )}
       </div>
 
-      {proofs.length > 0 && (
-        <div className="mt-6">
-          <h2 className="mb-2 text-sm font-semibold text-muted">{t("proofsUploaded")}</h2>
-          <ul className="flex flex-col gap-2 text-sm">
-            {proofs.map((proof) => (
-              <li
-                key={proof.id}
-                className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-border bg-background p-3"
-              >
-                <span className="text-ink">
-                  {proof.bank_name} · {proof.transaction_ref}
-                </span>
-                <span className={cn("rounded-full px-2.5 py-1 text-xs font-semibold", statusTone(proof.status))}>
-                  {t(`proofStatus.${proof.status}` as "proofStatus.pending")}
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-
-      {booking.status === "pending" && (
-        <div className="mt-6">
-          <PaymentProofUpload
-            token={token}
-            labels={{
-              title: t("proofTitle"),
-              bankName: t("proofBankName"),
-              transactionRef: t("proofTransactionRef"),
-              date: t("proofDate"),
-              file: t("proofFile"),
-              submit: t("proofSubmit"),
-              submitted: t("proofSubmitted"),
-            }}
-          />
-        </div>
-      )}
     </section>
   );
 }

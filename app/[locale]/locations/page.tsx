@@ -5,6 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { getActiveLocations } from "@/lib/data/locations";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
+import { resolveDeliveryFeeDisplay } from "@/lib/pricing/location-fee";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
 export async function generateMetadata(props: {
@@ -62,9 +63,12 @@ export default async function LocationsPage({
                 </h2>
                 <p className="mt-1 text-sm text-muted">
                   {t("deliveryFee")}:{" "}
-                  {location.delivery_fee_cents === 0
-                    ? t("free")
-                    : formatMoney(location.delivery_fee_cents, "MUR", locale)}
+                  {(() => {
+                    const fee = resolveDeliveryFeeDisplay(location.delivery_fee_cents, location.delivery_fee_currency);
+                    if (fee.kind === "free") return t("free");
+                    if (fee.kind === "priced") return formatMoney(fee.cents, fee.currency, locale);
+                    return t("pricingUnavailable");
+                  })()}
                 </p>
               </div>
             </Link>

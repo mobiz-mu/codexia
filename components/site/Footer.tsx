@@ -106,7 +106,7 @@ export async function Footer() {
       src="/images/codexia-logo.png"
       alt="Codexia Ltd car rental in Mauritius"
       fill
-      priority
+      loading="lazy"
       sizes="250px"
       className="object-contain object-center"
       style={{

@@ -29,7 +29,7 @@ export type BookingCustomer = {
   specialRequests: string;
 };
 
-export type PaymentMethod = "bank_transfer" | "pay_on_arrival" | "online";
+export type PaymentMethod = "online";
 
 export const EMPTY_CUSTOMER: BookingCustomer = {
   fullName: "",

@@ -6,6 +6,7 @@ import BookingReminder from "@/emails/BookingReminder";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { formatMoney } from "@/lib/pricing/format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildEmailBrandProps, getSiteUrl } from "@/lib/email/shared-props";
 
 const SUBJECTS = {
   en: (ref: string) => `Codexia Ltd – Your Pickup Is Coming Up – ${ref}`,
@@ -21,7 +22,7 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
   const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, settings] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", bookingId).maybeSingle(),
     booking.vehicle_id
-      ? supabase.from("vehicles").select("name, currency").eq("id", booking.vehicle_id).maybeSingle()
+      ? supabase.from("vehicles").select("name").eq("id", booking.vehicle_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
     getSiteSettings(),
@@ -37,8 +38,13 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
     .update({ access_token_hash: createHash("sha256").update(accessToken).digest("hex") })
     .eq("id", bookingId);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getSiteUrl();
   const myBookingUrl = `${siteUrl}/${locale}/my-booking/${accessToken}`;
+  const brand = buildEmailBrandProps(
+    settings,
+    siteUrl,
+    `Hi Codexia, I have a question about my booking ${booking.reference}.`
+  );
 
   const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
     dateStyle: "medium",
@@ -52,11 +58,9 @@ export async function sendBookingReminderEmail(bookingId: string, locale: "en" |
     vehicleName: vehicle?.name ?? "",
     pickupLocationName: locale === "fr" ? pickupLoc?.name_fr ?? "" : pickupLoc?.name_en ?? "",
     pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
-    balanceFormatted:
-      booking.balance_cents > 0 ? formatMoney(booking.balance_cents, vehicle?.currency ?? settings.currency, locale) : "",
-    companyPhone: settings.phone,
-    companyEmail: settings.email,
+    balanceFormatted: booking.balance_cents > 0 ? formatMoney(booking.balance_cents, booking.currency, locale) : "",
     myBookingUrl,
+    ...brand,
   };
 
   const subject = SUBJECTS[locale](booking.reference);

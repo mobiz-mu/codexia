@@ -29,7 +29,8 @@ import { RotatingGallery } from "@/components/site/RotatingGallery";
 import { HeroBanner } from "@/components/site/HeroBanner";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { formatMoney } from "@/lib/pricing/format";
-import { buildAlternates } from "@/lib/seo/alternates";
+import { resolveDeliveryFeeDisplay } from "@/lib/pricing/location-fee";
+import { buildPageMetadata } from "@/lib/seo/metadata";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 
 const WHY_CHOOSE_US = [
@@ -120,7 +121,8 @@ export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
-  return { alternates: buildAlternates(locale, "/") };
+  const t = await getTranslations({ locale, namespace: "home" });
+  return buildPageMetadata({ locale, path: "/", title: t("heroTitle"), description: t("heroSubtitle") });
 }
 
 export default async function HomePage({
@@ -154,6 +156,29 @@ export default async function HomePage({
     }));
 
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000").replace(/\/$/, "");
+
+  // Only emitted when real moderated reviews exist for this page — never
+  // fabricated. Sourced from the exact same `reviews` array rendered below
+  // by <ReviewsList>, so the structured data always matches visible content.
+  const aggregateRating =
+    reviews.length > 0
+      ? {
+          "@type": "AggregateRating",
+          ratingValue: (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1),
+          reviewCount: reviews.length,
+        }
+      : undefined;
+  const reviewJsonLd =
+    reviews.length > 0
+      ? reviews.map((r) => ({
+          "@type": "Review",
+          author: { "@type": "Person", name: r.name },
+          reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+          reviewBody: r.body,
+          datePublished: r.created_at,
+        }))
+      : undefined;
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "AutoRental",
@@ -164,7 +189,10 @@ export default async function HomePage({
     telephone: settings.phone,
     email: settings.email,
     areaServed: "MU",
+    address: { "@type": "PostalAddress", addressCountry: "MU" },
     sameAs: [settings.socials.facebook, settings.socials.instagram].filter(Boolean),
+    ...(aggregateRating ? { aggregateRating } : {}),
+    ...(reviewJsonLd ? { review: reviewJsonLd } : {}),
   };
 
   return (
@@ -184,7 +212,7 @@ export default async function HomePage({
           <div className="mt-8 flex flex-wrap gap-3">
             <Link
               href="/book"
-              className="rounded-full bg-action px-7 py-3 text-sm font-semibold text-white shadow-md transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-lg"
+              className="rounded-full bg-action px-7 py-3 text-sm font-semibold text-ink shadow-md transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-lg"
             >
               {t("heroBookNow")}
             </Link>
@@ -310,7 +338,7 @@ export default async function HomePage({
             {HOW_IT_WORKS.map(({ key, icon: Icon }, i) => (
               <div key={key} className="relative flex flex-col items-start gap-3">
                 <div className="flex items-center gap-3">
-                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-white">
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary text-sm font-bold text-ink">
                     {i + 1}
                   </span>
                   <Icon className="h-6 w-6 text-primary" aria-hidden="true" />
@@ -326,7 +354,7 @@ export default async function HomePage({
       <section className="bg-primary-tint py-14">
         <div className="mx-auto flex max-w-7xl flex-col items-start gap-6 px-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:px-8">
           <div className="flex items-start gap-4">
-            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-white">
+            <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-primary text-ink">
               <PlaneLanding className="h-7 w-7" aria-hidden="true" />
             </span>
             <div>
@@ -336,7 +364,7 @@ export default async function HomePage({
           </div>
           <Link
             href="/services/airport-rental"
-            className="shrink-0 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-primary-dark hover:shadow-md"
+            className="shrink-0 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
           >
             {t("airportHighlightCta")}
           </Link>
@@ -359,10 +387,13 @@ export default async function HomePage({
                   >
                     <MapPin className="h-4 w-4 text-primary" aria-hidden="true" />
                     {name}
-                    <span className="rounded-full bg-action-tint px-2 py-0.5 text-[11px] font-semibold text-action-dark">
-                      {location.delivery_fee_cents === 0
-                        ? tLocations("free")
-                        : formatMoney(location.delivery_fee_cents, "MUR", locale)}
+                    <span className="rounded-full bg-action-tint px-2 py-0.5 text-[11px] font-semibold text-ink">
+                      {(() => {
+                        const fee = resolveDeliveryFeeDisplay(location.delivery_fee_cents, location.delivery_fee_currency);
+                        if (fee.kind === "free") return tLocations("free");
+                        if (fee.kind === "priced") return formatMoney(fee.cents, fee.currency, locale);
+                        return tLocations("pricingUnavailable");
+                      })()}
                     </span>
                   </Link>
                 );
@@ -516,7 +547,7 @@ export default async function HomePage({
         <p className="mt-2 text-muted">{t("finalCtaText")}</p>
         <Link
           href="/book"
-          className="mt-6 inline-block rounded-full bg-action px-8 py-3 text-sm font-semibold text-white transition-colors hover:bg-action-dark"
+          className="mt-6 inline-block rounded-full bg-action px-8 py-3 text-sm font-semibold text-ink transition-colors hover:bg-action-dark"
         >
           {t("finalCtaButton")}
         </Link>

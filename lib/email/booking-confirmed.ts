@@ -6,10 +6,12 @@ import BookingConfirmed from "@/emails/BookingConfirmed";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { formatMoney } from "@/lib/pricing/format";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { BOOKING_STATUS_LABELS, type BookingStatus } from "@/lib/booking/status-machine";
+import { buildEmailBrandProps, getSiteUrl } from "@/lib/email/shared-props";
 
 const SUBJECTS = {
-  en: (ref: string) => `Codexia Ltd – Your Car Rental Booking Is Confirmed – ${ref}`,
-  fr: (ref: string) => `Codexia Ltd – Votre réservation de voiture est confirmée – ${ref}`,
+  en: () => "Booking Confirmed",
+  fr: () => "Réservation confirmée",
 };
 
 export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" | "fr") {
@@ -21,7 +23,7 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
   const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }, settings] = await Promise.all([
     supabase.from("booking_customers").select("*").eq("booking_id", bookingId).maybeSingle(),
     booking.vehicle_id
-      ? supabase.from("vehicles").select("name, currency").eq("id", booking.vehicle_id).maybeSingle()
+      ? supabase.from("vehicles").select("name").eq("id", booking.vehicle_id).maybeSingle()
       : Promise.resolve({ data: null }),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
     supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
@@ -30,7 +32,7 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
 
   if (!customer) return;
 
-  // Rotate the access token so Email 2 always carries a working link,
+  // Rotate the access token so this email always carries a working link,
   // even though only the hash from booking creation was ever persisted.
   const accessToken = randomBytes(24).toString("base64url");
   await supabase
@@ -38,13 +40,34 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
     .update({ access_token_hash: createHash("sha256").update(accessToken).digest("hex") })
     .eq("id", bookingId);
 
-  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const siteUrl = getSiteUrl();
   const myBookingUrl = `${siteUrl}/${locale}/my-booking/${accessToken}`;
+  const brand = buildEmailBrandProps(
+    settings,
+    siteUrl,
+    `Hi Codexia, I have a question about my booking ${booking.reference}.`
+  );
 
   const dateFormatter = new Intl.DateTimeFormat(locale === "fr" ? "fr-FR" : "en-GB", {
     dateStyle: "medium",
     timeStyle: "short",
   });
+
+  const currency = booking.currency;
+  const paymentStatusLabel =
+    booking.balance_cents <= 0
+      ? locale === "fr"
+        ? "Payé intégralement"
+        : "Paid in Full"
+      : booking.paid_cents > 0
+        ? locale === "fr"
+          ? "Acompte payé"
+          : "Deposit Paid"
+        : locale === "fr"
+          ? "Non payé"
+          : "Unpaid";
+
+  const bookingStatusLabel = BOOKING_STATUS_LABELS[booking.status as BookingStatus] ?? booking.status;
 
   const emailProps = {
     locale,
@@ -55,13 +78,16 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
     dropoffLocationName: locale === "fr" ? dropoffLoc?.name_fr ?? "" : dropoffLoc?.name_en ?? "",
     pickupAt: dateFormatter.format(new Date(booking.pickup_at)),
     returnAt: dateFormatter.format(new Date(booking.return_at)),
-    balanceFormatted: formatMoney(booking.balance_cents, vehicle?.currency ?? settings.currency, locale),
-    companyPhone: settings.phone,
-    companyEmail: settings.email,
+    bookingTotalFormatted: formatMoney(booking.total_cents, currency, locale),
+    amountPaidFormatted: formatMoney(booking.paid_cents, currency, locale),
+    balanceFormatted: formatMoney(booking.balance_cents, currency, locale),
+    paymentStatusLabel,
+    bookingStatusLabel,
     myBookingUrl,
+    ...brand,
   };
 
-  const subject = SUBJECTS[locale](booking.reference);
+  const subject = SUBJECTS[locale]();
   const override = await getTemplateOverride("booking_confirmed_customer", locale, {
     reference: emailProps.reference,
     customerName: emailProps.customerName,
@@ -70,7 +96,11 @@ export async function sendBookingConfirmedEmail(bookingId: string, locale: "en" 
     dropoffLocationName: emailProps.dropoffLocationName,
     pickupAt: emailProps.pickupAt,
     returnAt: emailProps.returnAt,
+    bookingTotalFormatted: emailProps.bookingTotalFormatted,
+    amountPaidFormatted: emailProps.amountPaidFormatted,
     balanceFormatted: emailProps.balanceFormatted,
+    paymentStatusLabel: emailProps.paymentStatusLabel,
+    bookingStatusLabel: emailProps.bookingStatusLabel,
     myBookingUrl,
   });
 

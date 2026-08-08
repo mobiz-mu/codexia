@@ -11,10 +11,17 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { locale, slug } = await props.params;
   const result = await getPolicyBySlug(slug);
-  if (!result) return {};
+  if (!result) {
+    const t = await getTranslations({ locale, namespace: "notFound" });
+    return { ...(await buildPageMetadata({ locale, path: `/policies/${slug}`, title: t("title"), description: t("description") })), robots: { index: false } };
+  }
 
   const title = locale === "fr" ? result.page.title_fr : result.page.title_en;
-  return buildPageMetadata({ locale, path: `/policies/${slug}`, title });
+  const description =
+    locale === "fr"
+      ? `${title} de Codexia Ltd pour la location de voitures à Maurice.`
+      : `Codexia Ltd's ${title} for car rentals in Mauritius.`;
+  return buildPageMetadata({ locale, path: `/policies/${slug}`, title, description });
 }
 
 function renderMarkdownLite(body: string) {
@@ -79,6 +86,7 @@ export default async function PolicyPage({
 
   const t = await getTranslations("policies");
   const tFooter = await getTranslations("footer");
+  const tCommon = await getTranslations("common");
   const title = locale === "fr" ? result.page.title_fr : result.page.title_en;
   const body = result.version ? (locale === "fr" ? result.version.body_fr : result.version.body_en) : null;
 
@@ -87,7 +95,7 @@ export default async function PolicyPage({
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Home", href: "/" },
+          { label: tCommon("home"), href: "/" },
           { label: tFooter("columns.policies") },
           { label: title },
         ]}

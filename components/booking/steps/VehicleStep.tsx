@@ -71,7 +71,7 @@ export function VehicleStep({
                 {formatMoney(vehicle.daily_price_cents, vehicle.currency, locale)}
                 <span className="text-sm font-normal text-muted"> / day</span>
               </p>
-              <span className="mt-1 self-start rounded-full bg-action px-4 py-1.5 text-xs font-semibold text-white shadow-sm">
+              <span className="mt-1 self-start rounded-full bg-action px-4 py-1.5 text-xs font-semibold text-ink shadow-sm">
                 {tVehicle("select")}
               </span>
             </button>

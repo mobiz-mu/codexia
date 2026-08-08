@@ -6,7 +6,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { sendEmail } from "@/lib/email/send";
 import BookingLinkEmail from "@/emails/BookingLink";
 import { SITE_DEFAULTS } from "@/lib/config/site";
-import { createNotification } from "@/lib/notifications/create";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
+import { buildEmailBrandProps, getSiteUrl } from "@/lib/email/shared-props";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
 
 function hashToken(token: string) {
@@ -25,22 +26,16 @@ export async function getBookingByToken(token: string) {
 
   if (error || !booking) return null;
 
-  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }, { data: proofs }] =
-    await Promise.all([
-      supabase.from("booking_customers").select("*").eq("booking_id", booking.id).maybeSingle(),
-      booking.vehicle_id
-        ? supabase.from("vehicles").select("name, slug").eq("id", booking.vehicle_id).maybeSingle()
-        : Promise.resolve({ data: null }),
-      supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
-      supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
-      supabase
-        .from("payment_proofs")
-        .select("*")
-        .eq("booking_id", booking.id)
-        .order("created_at", { ascending: false }),
-    ]);
+  const [{ data: customer }, { data: vehicle }, { data: pickupLoc }, { data: dropoffLoc }] = await Promise.all([
+    supabase.from("booking_customers").select("*").eq("booking_id", booking.id).maybeSingle(),
+    booking.vehicle_id
+      ? supabase.from("vehicles").select("name, slug").eq("id", booking.vehicle_id).maybeSingle()
+      : Promise.resolve({ data: null }),
+    supabase.from("locations").select("name_en, name_fr").eq("id", booking.pickup_location_id).maybeSingle(),
+    supabase.from("locations").select("name_en, name_fr").eq("id", booking.dropoff_location_id).maybeSingle(),
+  ]);
 
-  return { booking, customer, vehicle, pickupLoc, dropoffLoc, proofs: proofs ?? [] };
+  return { booking, customer, vehicle, pickupLoc, dropoffLoc };
 }
 
 const resendSchema = z.object({ email: z.email() });
@@ -68,25 +63,29 @@ export async function resendBookingLink(
     const mostRecentBookingId = customerRows[customerRows.length - 1].booking_id;
     const newToken = randomBytes(24).toString("base64url");
 
-    await supabase
-      .from("bookings")
-      .update({ access_token_hash: hashToken(newToken) })
-      .eq("id", mostRecentBookingId);
+    const [{ data: booking }, settings] = await Promise.all([
+      supabase
+        .from("bookings")
+        .update({ access_token_hash: hashToken(newToken) })
+        .eq("id", mostRecentBookingId)
+        .select("reference")
+        .single(),
+      getSiteSettings(),
+    ]);
 
-    const { data: booking } = await supabase
-      .from("bookings")
-      .select("reference")
-      .eq("id", mostRecentBookingId)
-      .single();
-
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+    const siteUrl = getSiteUrl();
     const myBookingUrl = `${siteUrl}/en/my-booking/${newToken}`;
+    const brand = buildEmailBrandProps(
+      settings,
+      siteUrl,
+      `Hi Codexia, I have a question about my booking ${booking?.reference ?? ""}.`
+    );
 
     await sendEmail({
       templateKey: "booking_link_resend",
       to: parsed.data.email,
-      subject: `${SITE_DEFAULTS.companyName} – Your Booking Link`,
-      react: BookingLinkEmail({ reference: booking?.reference ?? "", myBookingUrl }),
+      subject: `${SITE_DEFAULTS.companyName} â€“ Your Booking Link`,
+      react: BookingLinkEmail({ locale: "en", reference: booking?.reference ?? "", myBookingUrl, ...brand }),
       bookingId: mostRecentBookingId,
     });
   }
@@ -94,74 +93,4 @@ export async function resendBookingLink(
   // Always return success, regardless of whether the email matched a
   // booking, so this endpoint can't be used to enumerate customer emails.
   return { status: "sent" };
-}
-
-const uploadProofSchema = z.object({
-  bankName: z.string().trim().min(1).max(200),
-  transactionRef: z.string().trim().min(1).max(200),
-  paymentDate: z.string().min(1),
-});
-
-export type UploadProofState = { status: "idle" | "success" | "error"; error?: string };
-
-export async function uploadPaymentProof(
-  token: string,
-  _prev: UploadProofState,
-  formData: FormData
-): Promise<UploadProofState> {
-  const parsed = uploadProofSchema.safeParse({
-    bankName: formData.get("bankName"),
-    transactionRef: formData.get("transactionRef"),
-    paymentDate: formData.get("paymentDate"),
-  });
-  if (!parsed.success) return { status: "error", error: "Please fill in all fields." };
-
-  const file = formData.get("proof") as File | null;
-  if (!file || file.size === 0) return { status: "error", error: "Please select a file to upload." };
-  if (file.size > 10 * 1024 * 1024) return { status: "error", error: "File must be under 10MB." };
-
-  const result = await getBookingByToken(token);
-  if (!result) return { status: "error", error: "Booking not found." };
-
-  const supabase = createAdminClient();
-  const ext = file.name.split(".").pop();
-  const path = `${result.booking.id}/${Date.now()}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("payment-proofs")
-    .upload(path, file, { contentType: file.type });
-
-  if (uploadError) {
-    console.error("uploadPaymentProof storage upload failed", uploadError.message);
-    return { status: "error", error: "Upload failed. Please try again." };
-  }
-
-  await supabase.from("payment_proofs").insert({
-    booking_id: result.booking.id,
-    storage_path: path,
-    bank_name: parsed.data.bankName,
-    transaction_ref: parsed.data.transactionRef,
-    payment_date: parsed.data.paymentDate,
-  });
-
-  await supabase
-    .from("bookings")
-    .update({ status: "payment_proof_submitted" })
-    .eq("id", result.booking.id)
-    .eq("status", "pending");
-
-  await supabase.from("booking_status_history").insert({
-    booking_id: result.booking.id,
-    old_status: result.booking.status,
-    new_status: "payment_proof_submitted",
-    customer_note: "Payment proof uploaded by customer",
-  });
-
-  await createNotification(
-    "new_payment_proof",
-    { reference: result.booking.reference },
-    `/admin/payment-proofs`
-  );
-
-  return { status: "success" };
 }

@@ -4,6 +4,7 @@ import { Search } from "lucide-react";
 import { listBookings } from "@/lib/actions/admin/bookings";
 import { BOOKING_STATUS_LABELS } from "@/lib/booking/status-machine";
 import { formatMoney } from "@/lib/pricing/format";
+import { PageHeader } from "@/components/admin/ui/PageHeader";
 
 const fieldClass =
   "rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
@@ -19,10 +20,8 @@ export default async function AdminBookingsPage({
   const bookings = await listBookings({ status, search: q });
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">Bookings</h1>
-      </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Bookings" />
 
       <form className="flex flex-wrap gap-3">
         <input
@@ -42,14 +41,14 @@ export default async function AdminBookingsPage({
         </select>
         <button
           type="submit"
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark"
+          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-primary-dark"
         >
           <Search className="h-4 w-4" aria-hidden="true" />
           Filter
         </button>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-background">
+      <div className="overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase text-muted">
             <tr>
@@ -83,7 +82,7 @@ export default async function AdminBookingsPage({
                     {BOOKING_STATUS_LABELS[b.status as keyof typeof BOOKING_STATUS_LABELS] ?? b.status}
                   </span>
                 </td>
-                <td className="px-4 py-2 font-medium text-ink">{formatMoney(b.total_cents, "MUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-ink">{formatMoney(b.total_cents, b.currency, "en")}</td>
               </tr>
             ))}
             {bookings.length === 0 && (

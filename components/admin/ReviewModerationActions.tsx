@@ -48,7 +48,7 @@ export function ReviewModerationActions({
             type="button"
             disabled={pending}
             onClick={() => moderate("approved")}
-            className="rounded-full bg-action px-3 py-1 text-xs font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+            className="rounded-full bg-action px-3 py-1 text-xs font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
           >
             Approve
           </button>

@@ -111,7 +111,7 @@ export function ExtrasStep({
         <button
           type="button"
           onClick={onContinue}
-          className="rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+          className="rounded-full bg-action px-6 py-3 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
         >
           {t("continue")}
         </button>

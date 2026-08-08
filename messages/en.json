@@ -47,7 +47,8 @@
     "skipToContent": "Skip to content",
     "languageSwitcher": "Language",
     "whatsappCta": "Chat on WhatsApp",
-    "callUs": "Call us"
+    "callUs": "Call us",
+    "home": "Home"
   },
   "announcementBar": {
     "airportDelivery": "Free airport delivery and recovery with every eligible Codexia rental",
@@ -144,7 +145,7 @@
     },
     "airportHighlightTitle": "Free Airport Delivery",
     "airportHighlightText": "Landing at SSR International Airport? We'll have your car ready at no extra cost, with flight tracking for delayed arrivals.",
-    "airportHighlightCta": "Learn More",
+    "airportHighlightCta": "See Airport Delivery Details",
     "popularLocationsTitle": "Popular Locations",
     "popularLocationsSubtitle": "Pickup and drop-off across Mauritius.",
     "popularLocationsCta": "View All Locations",
@@ -190,13 +191,14 @@
     "view": "View",
     "book": "Book",
     "whatsappEnquiry": "Enquire about",
-    "noImage": "Photo coming soon",
+    "noImage": "No photo available",
     "availableNow": "Available Now"
   },
   "fleet": {
     "title": "Our Fleet",
-    "subtitle": "Demonstration listings — pricing and availability confirmed at booking.",
-    "empty": "No vehicles are available right now. Please check back soon."
+    "subtitle": "Pricing and availability are confirmed at booking.",
+    "empty": "No vehicles are available right now. Please check back soon.",
+    "popularSearches": "Popular Searches"
   },
   "categories": {
     "title": "Vehicle Categories",
@@ -207,7 +209,8 @@
     "title": "Our Locations",
     "subtitle": "Pickup and drop-off across Mauritius.",
     "deliveryFee": "Delivery fee",
-    "free": "Free"
+    "free": "Free",
+    "pricingUnavailable": "Contact us for delivery pricing"
   },
   "blog": {
     "title": "Blog",
@@ -220,16 +223,24 @@
     "subtitle": "Can't find your answer? Contact us on WhatsApp."
   },
   "about": {
+    "kicker": "Over a Decade of Trusted Service",
     "title": "About Codexia",
-    "intro": "Codexia Ltd has been renting cars across Mauritius for over 10 years, serving both local residents and international visitors.",
+    "intro1": "At Codexia, we believe that every memorable journey begins with complete peace of mind.",
+    "intro2": "For more than a decade, we have been providing visitors to Mauritius with reliable, comfortable, and well-maintained rental vehicles backed by exceptional customer care. Since our founding, our focus has remained unchanged: delivering a seamless experience from the moment you book until the day you return your vehicle.",
+    "intro3": "As a locally established company, we understand what travelers need — convenience, flexibility, transparency, and dependable support throughout their stay. Whether you're here for a relaxing holiday, a business trip, or an island adventure, our team is committed to helping you explore Mauritius with confidence.",
+    "intro4": "Our continued growth over the past ten years has been built on the trust and satisfaction of our customers. As we look ahead, we remain dedicated to expanding our fleet, enhancing our services, and creating memorable experiences for every visitor who chooses Codexia.",
     "missionTitle": "Our Mission",
-    "missionText": "To make exploring Mauritius simple, with transparent pricing, well-maintained vehicles, and support around the clock.",
-    "valuesTitle": "Why Renters Choose Us",
+    "missionText1": "Our mission is to provide an outstanding car rental experience that combines reliability, convenience, and genuine Mauritian hospitality.",
+    "missionText2": "We are committed to delivering quality vehicles, transparent service, and personalized customer support, allowing every visitor to explore Mauritius safely, comfortably, and with complete confidence. By putting our customers at the heart of everything we do, we aim to build lasting relationships while continuously growing our fleet and raising the standard of service in the industry.",
+    "valuesTitle": "Our Values",
     "values": {
-      "experience": "10+ years of local experience",
-      "transparency": "Transparent, all-inclusive pricing",
-      "support": "24/7 support, every day of the year",
-      "coverage": "Island-wide delivery and pickup"
+      "customerFirst": { "title": "Customer First", "text": "Every decision we make starts with what's best for the people we drive." },
+      "excellence": { "title": "Excellence", "text": "From our fleet to our service, we hold ourselves to a premium standard." },
+      "trust": { "title": "Trust & Transparency", "text": "Clear pricing and honest communication, with no hidden surprises." },
+      "reliability": { "title": "Reliability", "text": "Well-maintained vehicles and support you can count on, every time." },
+      "safety": { "title": "Safety", "text": "Your safety on Mauritius roads is never an afterthought." },
+      "improvement": { "title": "Continuous Improvement", "text": "We keep raising the bar for our fleet, service, and experience." },
+      "hospitality": { "title": "Mauritian Hospitality", "text": "Genuine island warmth in every interaction, from booking to return." }
     }
   },
   "mauritius": {
@@ -258,7 +269,18 @@
     "bookCta": "Book Now",
     "airportRental": {
       "title": "Airport Rental",
-      "text": "Free delivery and recovery at SSR Airport, with flight tracking for delayed arrivals."
+      "text": "Free delivery and recovery at SSR Airport, with flight tracking for delayed arrivals.",
+      "pageTitle": "Airport Car Rental in Mauritius",
+      "metaDescription": "Rent a car at SSR International Airport in Mauritius with free delivery, flight tracking for delayed arrivals, and a vehicle ready the moment you land.",
+      "intro": "Landing in Mauritius and heading straight to your hotel is far easier with your rental car already waiting. We deliver to SSR International Airport at no extra charge and track your flight, so a delayed arrival never means a missed pickup or an idle vehicle.",
+      "highlight1Title": "Free Airport Delivery & Recovery",
+      "highlight1Text": "No delivery fee at SSR Airport, in either direction — pickup on arrival, drop-off before departure.",
+      "highlight2Title": "Flight Tracking Included",
+      "highlight2Text": "We monitor your flight number and adjust your handover time automatically if it's delayed.",
+      "highlight3Title": "Ready to Drive on Arrival",
+      "highlight3Text": "Paperwork and a quick vehicle walkthrough take minutes, so you're on the road shortly after clearing customs.",
+      "closing": "Not sure which vehicle suits your trip? See our Mauritius Car Rental overview for the full fleet, or check our Airport Guide for what to expect after you land.",
+      "emptyVehicles": "No vehicles are currently listed for airport pickup."
     },
     "delivery": {
       "title": "Island-Wide Delivery",
@@ -267,6 +289,80 @@
     "insurance": {
       "title": "Insurance Options",
       "text": "Comprehensive insurance included, with optional excess reduction for extra peace of mind."
+    }
+  },
+  "carRental": {
+    "viewFullFleet": "View full fleet",
+    "bookCta": "Book Now",
+    "mauritius": {
+      "breadcrumb": "Mauritius Car Rental",
+      "title": "Mauritius Car Rental",
+      "metaDescription": "Rent a car in Mauritius with Codexia — unlimited mileage, comprehensive insurance and free airport delivery. Compare our fleet and book online in minutes.",
+      "intro": "Codexia has been renting cars across Mauritius for over 10 years, from Grand Baie in the north to Le Morne in the south. Whether you're touring the coast, driving to Port Louis for business, or exploring inland towns, our fleet and local support are built around how people actually get around the island.",
+      "highlight1Title": "Island-Wide Coverage",
+      "highlight1Text": "Pick up and drop off across Mauritius, with free delivery and collection at SSR International Airport.",
+      "highlight2Title": "No Hidden Extras",
+      "highlight2Text": "Unlimited mileage and comprehensive insurance are included in every rental, so your quote is your final price.",
+      "highlight3Title": "Local, 10+ Years' Experience",
+      "highlight3Text": "Our team knows Mauritius's roads, driving conventions and peak-season demand, and is available 24/7 if you need help.",
+      "closing": "Most visitors renting a car in Mauritius are driving on the left for the first time and need a vehicle within a day of landing — our Airport Car Rental page covers pickup logistics in detail, and our Driving Guide explains local road rules before you set off.",
+      "emptyVehicles": "Our full fleet listing is being updated."
+    },
+    "suv": {
+      "breadcrumb": "SUV Rental",
+      "title": "SUV Rental in Mauritius",
+      "metaDescription": "Rent an SUV in Mauritius for extra space, higher ground clearance and comfortable long-distance drives. Free airport delivery, unlimited mileage, comprehensive insurance.",
+      "intro": "An SUV gives you more room for luggage, better visibility on winding coastal roads, and confident handling on the odd unpaved stretch near hotels and villas — a popular choice for groups, golf trips and longer island tours.",
+      "highlight1Title": "More Space",
+      "highlight1Text": "Extra boot capacity for luggage, golf bags or diving gear, plus room to stretch out on longer drives.",
+      "highlight2Title": "Confident on Local Roads",
+      "highlight2Text": "Higher ground clearance handles speed bumps and uneven driveways common at resorts and guesthouses.",
+      "highlight3Title": "Same Included Extras",
+      "highlight3Text": "Unlimited mileage, comprehensive insurance and free airport delivery apply to SUVs just like the rest of our fleet.",
+      "closing": "SUV availability varies with the season — check our SUV listings below, or browse the full fleet if you're flexible on model.",
+      "emptyVehicles": "No SUVs are currently listed."
+    },
+    "automatic": {
+      "breadcrumb": "Automatic Cars",
+      "title": "Automatic Car Rental in Mauritius",
+      "metaDescription": "Rent an automatic car in Mauritius — no clutch, no stress, just easy driving on the left. Unlimited mileage and comprehensive insurance included.",
+      "intro": "Driving on the left is unfamiliar enough for most visitors without also managing a manual gearbox — an automatic transmission lets you focus on the road, roundabouts and local driving habits instead of shifting gears.",
+      "highlight1Title": "Easier for First-Time Visitors",
+      "highlight1Text": "One less thing to think about when adjusting to left-hand driving and unfamiliar junctions.",
+      "highlight2Title": "Smoother in Traffic",
+      "highlight2Text": "Automatics make stop-start traffic around Port Louis and coastal towns noticeably less tiring.",
+      "highlight3Title": "Same Included Extras",
+      "highlight3Text": "Every automatic in our fleet comes with unlimited mileage, comprehensive insurance and free airport delivery.",
+      "closing": "Automatic vehicles are in higher demand during peak season — book early if your travel dates are fixed.",
+      "emptyVehicles": "No automatic vehicles are currently listed."
+    },
+    "family": {
+      "breadcrumb": "Family Cars",
+      "title": "Family Car Rental in Mauritius",
+      "metaDescription": "Rent a family car in Mauritius with enough seats and boot space for the whole trip. Child seats available on request, unlimited mileage, comprehensive insurance.",
+      "intro": "Travelling with children means more luggage, more stops, and less patience for a cramped back seat — our family-sized vehicles are chosen for comfortable seating and enough boot space for prams, cases and beach gear.",
+      "highlight1Title": "Room for Everyone",
+      "highlight1Text": "Five-seat vehicles with genuine boot space for family luggage, not just an overnight bag.",
+      "highlight2Title": "Child Seats on Request",
+      "highlight2Text": "Let us know your children's ages when booking and we'll arrange an appropriate child or booster seat.",
+      "highlight3Title": "Free Airport Delivery",
+      "highlight3Text": "Skip the rental-counter queue with young children in tow — we deliver to SSR Airport at no extra charge.",
+      "closing": "Planning a longer family holiday? See our Long-Term Rental page for weekly and monthly rates.",
+      "emptyVehicles": "No family vehicles are currently listed."
+    },
+    "longTerm": {
+      "breadcrumb": "Long-Term Rental",
+      "title": "Long-Term Car Rental in Mauritius",
+      "metaDescription": "Weekly and monthly car rental in Mauritius for extended stays, remote work trips or long-term relocation. Better rates than daily bookings, same full insurance.",
+      "intro": "Staying in Mauritius for a few weeks or longer? Renting by the week or month works out considerably cheaper than a string of daily bookings, with the same unlimited mileage and comprehensive insurance included throughout your stay.",
+      "highlight1Title": "Better Weekly & Monthly Rates",
+      "highlight1Text": "Extended rentals are priced lower per day than short bookings — ask for a quote based on your exact dates.",
+      "highlight2Title": "One Booking, No Renewals",
+      "highlight2Text": "Set your dates once and keep the same vehicle for the length of your stay, instead of re-booking every few days.",
+      "highlight3Title": "Full Cover Throughout",
+      "highlight3Text": "Comprehensive insurance and unlimited mileage apply for the whole rental period, however long it runs.",
+      "closing": "Long-term rentals are subject to availability — contact us with your dates and we'll confirm the best vehicle and rate for your stay.",
+      "emptyVehicles": "No long-term vehicles are currently listed."
     }
   },
   "contact": {
@@ -295,7 +391,6 @@
     "faqTitle": "Frequently Asked Questions",
     "bookCta": "Book This Vehicle",
     "whatsappCta": "Ask on WhatsApp",
-    "demoNotice": "Demonstration listing — final pricing and specifications confirmed by Codexia at booking.",
     "insuranceDepositTitle": "Insurance & Deposit",
     "depositLabel": "Security deposit",
     "depositNote": "Refundable, collected at pickup",
@@ -391,29 +486,22 @@
       "view": "View"
     },
     "paymentStep": {
-      "title": "Payment Method",
-      "bankTransfer": {
-        "title": "Bank Transfer",
-        "text": "Transfer the total amount using the bank details below, then upload your proof of payment from your booking page."
-      },
-      "payOnArrival": {
-        "title": "Pay on Arrival / WhatsApp",
-        "text": "We'll create your booking and open WhatsApp with a summary. Your booking is not confirmed until Codexia approves it."
-      },
-      "online": {
-        "title": "Online Payment (Coming Soon)",
-        "text": "Online payment via MCB is not yet available. Please choose bank transfer or pay on arrival."
-      },
-      "submit": "Submit Booking",
-      "submitting": "Submitting...",
-      "error": "Something went wrong. Please try again."
+      "title": "Payment",
+      "creatingBooking": "Creating your booking…",
+      "createError": "Something went wrong creating your booking. Please try again.",
+      "totalLabel": "Booking total",
+      "payNowLabel": "Pay now",
+      "remainingLabel": "Remaining balance",
+      "fullPaymentNote": "Your booking total is under {threshold}, so it's paid in full now.",
+      "depositNote": "A {amount} deposit secures your booking. The remaining balance is paid when you collect the vehicle.",
+      "eurNote": "Charged in EUR via PayPal.",
+      "confirming": "Confirming your payment…",
+      "error": "Something went wrong confirming your payment. Please try again or contact support."
     },
     "confirmation": {
-      "title": "Booking Request Received",
+      "title": "Booking Confirmed",
       "reference": "Your reference",
-      "notConfirmedNotice": "Your booking is not yet confirmed. Our team will review it and follow up shortly.",
-      "whatsappCta": "Continue on WhatsApp",
-      "bankDetailsTitle": "Bank Transfer Details",
+      "confirmedNotice": "Your payment was received and your booking is confirmed.",
       "myBookingCta": "View My Booking",
       "emailNotice": "A confirmation email with these details has been sent to you.",
       "copyReference": "Copy reference",
@@ -455,20 +543,7 @@
       "total": "Total",
       "paid": "Paid",
       "balance": "Balance due",
-      "notFound": "We couldn't find a booking for this link. It may have expired — request a new one.",
-      "proofTitle": "Upload Payment Proof",
-      "proofBankName": "Bank Name",
-      "proofTransactionRef": "Transaction Reference",
-      "proofDate": "Payment Date",
-      "proofFile": "Proof of Payment (PDF or image)",
-      "proofSubmit": "Upload Proof",
-      "proofSubmitted": "Proof submitted — pending review.",
-      "proofsUploaded": "Uploaded proofs",
-      "proofStatus": {
-        "pending": "Pending review",
-        "approved": "Approved",
-        "rejected": "Rejected"
-      }
+      "notFound": "We couldn't find a booking for this link. It may have expired — request a new one."
     }
   }
 }

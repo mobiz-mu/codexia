@@ -55,7 +55,7 @@ export const policyAcceptanceSchema = z
     message: "All policies must be accepted",
   });
 
-export const paymentMethodSchema = z.enum(["bank_transfer", "pay_on_arrival", "online"]);
+export const paymentMethodSchema = z.enum(["online"]);
 
 export const createBookingSchema = z.object({
   vehicleId: z.uuid(),

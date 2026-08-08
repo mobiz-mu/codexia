@@ -32,7 +32,7 @@ export function FaqAccordion({
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-ink marker:content-none">
             {entry.question}
             <span
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-base font-bold leading-none text-primary transition-all duration-200 group-open:rotate-45 group-open:bg-primary group-open:text-white"
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-surface text-base font-bold leading-none text-primary transition-all duration-200 group-open:rotate-45 group-open:bg-primary group-open:text-ink"
               aria-hidden="true"
             >
               +

@@ -111,15 +111,15 @@ export function InvoiceDocument({ data }: { data: InvoicePdfData }) {
             <Text>-{data.discountFormatted}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabelBold}>Total</Text>
+            <Text style={styles.totalsLabelBold}>Booking Total</Text>
             <Text style={styles.totalsLabelBold}>{data.totalFormatted}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text>Paid</Text>
+            <Text>Amount Paid</Text>
             <Text>{data.paidFormatted}</Text>
           </View>
           <View style={styles.totalsRow}>
-            <Text style={styles.totalsLabelBold}>Balance Due</Text>
+            <Text style={styles.totalsLabelBold}>Remaining Balance</Text>
             <Text style={styles.totalsLabelBold}>{data.balanceFormatted}</Text>
           </View>
         </View>

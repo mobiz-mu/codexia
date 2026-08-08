@@ -13,7 +13,11 @@ const reviewSchema = z.object({
   country: z.string().trim().max(100).optional().or(z.literal("")),
   rating: z.coerce.number().int().min(1).max(5),
   body: z.string().trim().min(1).max(2000),
-  consent: z.coerce.boolean(),
+  // An unchecked checkbox is omitted from FormData entirely — .default(false)
+  // lets parsing succeed so the specific "please confirm consent" message
+  // below is actually reachable, instead of failing earlier with the
+  // generic "check the form" error.
+  consent: z.coerce.boolean().default(false),
   // honeypot: real users never fill this hidden field
   website: z.string().max(0).optional().or(z.literal("")),
 });

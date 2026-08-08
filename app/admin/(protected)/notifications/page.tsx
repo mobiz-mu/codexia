@@ -13,6 +13,7 @@ const TYPE_LABELS: Record<string, string> = {
   new_newsletter_subscriber: "New Newsletter Subscriber",
   failed_email: "Failed Email",
   online_payment_received: "Online Payment Received",
+  compliance_expiry: "Compliance Document Expiring",
 };
 
 export default async function AdminNotificationsPage() {

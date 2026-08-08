@@ -42,7 +42,7 @@ export function NewsletterForm({
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-white hover:bg-action-dark disabled:opacity-60"
+          className="shrink-0 rounded-lg bg-action px-4 py-2 text-sm font-semibold text-ink hover:bg-action-dark disabled:opacity-60"
         >
           {labels.submit}
         </button>

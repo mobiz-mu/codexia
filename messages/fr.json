@@ -101,7 +101,8 @@
     "skipToContent": "Aller au contenu",
     "languageSwitcher": "Langue",
     "whatsappCta": "Discuter sur WhatsApp",
-    "callUs": "Appelez-nous"
+    "callUs": "Appelez-nous",
+    "home": "Accueil"
   },
   "announcementBar": {
   "airportDelivery": "Livraison et récupération gratuites à l'aéroport pour toute location Codexia éligible",
@@ -145,7 +146,7 @@
     },
     "airportHighlightTitle": "Livraison aéroport gratuite",
     "airportHighlightText": "Vous atterrissez à l'aéroport international SSR ? Votre voiture vous attendra sans frais supplémentaires, avec suivi de vol en cas de retard.",
-    "airportHighlightCta": "En savoir plus",
+    "airportHighlightCta": "Voir les détails de livraison",
     "popularLocationsTitle": "Lieux populaires",
     "popularLocationsSubtitle": "Prise en charge et retour partout à Maurice.",
     "popularLocationsCta": "Voir tous les lieux",
@@ -191,13 +192,14 @@
     "view": "Voir",
     "book": "Réserver",
     "whatsappEnquiry": "Renseignement sur",
-    "noImage": "Photo à venir",
+    "noImage": "Photo non disponible",
     "availableNow": "Disponible maintenant"
   },
   "fleet": {
     "title": "Notre flotte",
-    "subtitle": "Annonces de démonstration — prix et disponibilité confirmés lors de la réservation.",
-    "empty": "Aucun véhicule disponible pour le moment. Revenez bientôt."
+    "subtitle": "Prix et disponibilité confirmés lors de la réservation.",
+    "empty": "Aucun véhicule disponible pour le moment. Revenez bientôt.",
+    "popularSearches": "Recherches populaires"
   },
   "categories": {
     "title": "Catégories de véhicules",
@@ -208,7 +210,8 @@
     "title": "Nos lieux",
     "subtitle": "Prise en charge et restitution partout à Maurice.",
     "deliveryFee": "Frais de livraison",
-    "free": "Gratuit"
+    "free": "Gratuit",
+    "pricingUnavailable": "Contactez-nous pour les frais de livraison"
   },
   "blog": {
     "title": "Blog",
@@ -221,16 +224,24 @@
     "subtitle": "Vous ne trouvez pas votre réponse ? Contactez-nous sur WhatsApp."
   },
   "about": {
+    "kicker": "Plus d'une décennie de confiance",
     "title": "À propos de Codexia",
-    "intro": "Codexia Ltd loue des voitures à Maurice depuis plus de 10 ans, au service des résidents et des visiteurs internationaux.",
+    "intro1": "Chez Codexia, nous croyons que tout voyage mémorable commence par une tranquillité d'esprit totale.",
+    "intro2": "Depuis plus d'une décennie, nous offrons aux visiteurs de Maurice des véhicules de location fiables, confortables et bien entretenus, soutenus par un service client d'exception. Depuis notre création, notre objectif reste inchangé : offrir une expérience fluide, de la réservation jusqu'à la restitution du véhicule.",
+    "intro3": "En tant qu'entreprise locale établie, nous comprenons ce dont les voyageurs ont besoin — commodité, flexibilité, transparence et assistance fiable tout au long de leur séjour. Que vous soyez ici pour des vacances reposantes, un voyage d'affaires ou une aventure sur l'île, notre équipe s'engage à vous aider à explorer Maurice en toute confiance.",
+    "intro4": "Notre croissance continue au cours des dix dernières années repose sur la confiance et la satisfaction de nos clients. En regardant vers l'avenir, nous restons déterminés à développer notre flotte, à améliorer nos services et à créer des expériences mémorables pour chaque visiteur qui choisit Codexia.",
     "missionTitle": "Notre mission",
-    "missionText": "Simplifier l'exploration de Maurice grâce à des prix transparents, des véhicules bien entretenus et une assistance permanente.",
-    "valuesTitle": "Pourquoi nous choisir",
+    "missionText1": "Notre mission est d'offrir une expérience de location de voiture exceptionnelle, alliant fiabilité, commodité et véritable hospitalité mauricienne.",
+    "missionText2": "Nous nous engageons à fournir des véhicules de qualité, un service transparent et une assistance client personnalisée, permettant à chaque visiteur d'explorer Maurice en toute sécurité, confortablement et en toute confiance. En plaçant nos clients au cœur de tout ce que nous faisons, nous visons à construire des relations durables tout en développant continuellement notre flotte et en élevant le niveau de service dans le secteur.",
+    "valuesTitle": "Nos valeurs",
     "values": {
-      "experience": "Plus de 10 ans d'expérience locale",
-      "transparency": "Prix transparents et tout inclus",
-      "support": "Assistance 24h/24, tous les jours de l'année",
-      "coverage": "Livraison et récupération sur toute l'île"
+      "customerFirst": { "title": "Le client d'abord", "text": "Chaque décision que nous prenons commence par ce qui est le mieux pour ceux que nous transportons." },
+      "excellence": { "title": "Excellence", "text": "De notre flotte à notre service, nous visons un standard premium." },
+      "trust": { "title": "Confiance et transparence", "text": "Des prix clairs et une communication honnête, sans surprise cachée." },
+      "reliability": { "title": "Fiabilité", "text": "Des véhicules bien entretenus et une assistance sur laquelle vous pouvez compter, à chaque fois." },
+      "safety": { "title": "Sécurité", "text": "Votre sécurité sur les routes de Maurice n'est jamais secondaire." },
+      "improvement": { "title": "Amélioration continue", "text": "Nous élevons constamment le niveau de notre flotte, notre service et votre expérience." },
+      "hospitality": { "title": "Hospitalité mauricienne", "text": "La chaleur authentique de l'île dans chaque interaction, de la réservation à la restitution." }
     }
   },
   "mauritius": {
@@ -259,7 +270,18 @@
     "bookCta": "Réserver",
     "airportRental": {
       "title": "Location à l'aéroport",
-      "text": "Livraison et récupération gratuites à l'aéroport SSR, avec suivi des vols en cas de retard."
+      "text": "Livraison et récupération gratuites à l'aéroport SSR, avec suivi des vols en cas de retard.",
+      "pageTitle": "Location de voiture à l'aéroport de Maurice",
+      "metaDescription": "Louez une voiture à l'aéroport international SSR de Maurice avec livraison gratuite, suivi des vols en cas de retard, et un véhicule prêt dès votre atterrissage.",
+      "intro": "Atterrir à Maurice et se rendre directement à l'hôtel est bien plus simple lorsque votre voiture de location vous attend déjà. Nous livrons à l'aéroport international SSR sans frais supplémentaires et suivons votre numéro de vol, afin qu'un retard ne signifie jamais une prise en charge manquée ou un véhicule qui attend inutilement.",
+      "highlight1Title": "Livraison et récupération gratuites à l'aéroport",
+      "highlight1Text": "Aucun frais de livraison à l'aéroport SSR, dans les deux sens — prise en charge à l'arrivée, restitution avant le départ.",
+      "highlight2Title": "Suivi des vols inclus",
+      "highlight2Text": "Nous surveillons votre numéro de vol et ajustons automatiquement l'heure de remise en cas de retard.",
+      "highlight3Title": "Prêt à conduire dès l'arrivée",
+      "highlight3Text": "Les formalités et une brève vérification du véhicule ne prennent que quelques minutes, vous êtes donc sur la route peu après le passage en douane.",
+      "closing": "Vous ne savez pas quel véhicule choisir pour votre séjour ? Consultez notre page Location de voiture à Maurice pour voir toute la flotte, ou notre Guide de l'aéroport pour savoir à quoi vous attendre après l'atterrissage.",
+      "emptyVehicles": "Aucun véhicule n'est actuellement disponible pour la prise en charge à l'aéroport."
     },
     "delivery": {
       "title": "Livraison sur toute l'île",
@@ -268,6 +290,80 @@
     "insurance": {
       "title": "Options d'assurance",
       "text": "Assurance complète incluse, avec réduction de franchise en option pour plus de tranquillité."
+    }
+  },
+  "carRental": {
+    "viewFullFleet": "Voir toute la flotte",
+    "bookCta": "Réserver",
+    "mauritius": {
+      "breadcrumb": "Location de voiture à Maurice",
+      "title": "Location de voiture à Maurice",
+      "metaDescription": "Louez une voiture à Maurice avec Codexia — kilométrage illimité, assurance complète et livraison gratuite à l'aéroport. Comparez notre flotte et réservez en ligne en quelques minutes.",
+      "intro": "Codexia loue des voitures à travers Maurice depuis plus de 10 ans, de Grand Baie au nord au Morne au sud. Que vous découvriez la côte, rouliez vers Port-Louis pour affaires, ou exploriez les villages de l'intérieur, notre flotte et notre équipe locale sont pensées pour la façon dont on se déplace réellement sur l'île.",
+      "highlight1Title": "Couverture de toute l'île",
+      "highlight1Text": "Prise en charge et restitution partout à Maurice, avec livraison et récupération gratuites à l'aéroport international SSR.",
+      "highlight2Title": "Aucun frais caché",
+      "highlight2Text": "Kilométrage illimité et assurance complète sont inclus dans chaque location, votre devis est donc votre prix final.",
+      "highlight3Title": "Une équipe locale, plus de 10 ans d'expérience",
+      "highlight3Text": "Notre équipe connaît les routes de Maurice, les usages de conduite locaux et la forte demande en haute saison, et reste disponible 24h/24.",
+      "closing": "La plupart des visiteurs louant une voiture à Maurice conduisent à gauche pour la première fois et ont besoin d'un véhicule dès leur arrivée — notre page Location à l'aéroport détaille la prise en charge, et notre Guide de conduite explique les règles de circulation locales avant de prendre la route.",
+      "emptyVehicles": "Notre liste complète de véhicules est en cours de mise à jour."
+    },
+    "suv": {
+      "breadcrumb": "Location de SUV",
+      "title": "Location de SUV à Maurice",
+      "metaDescription": "Louez un SUV à Maurice pour plus d'espace, une garde au sol plus élevée et des trajets longue distance confortables. Livraison gratuite à l'aéroport, kilométrage illimité, assurance complète.",
+      "intro": "Un SUV offre plus de place pour les bagages, une meilleure visibilité sur les routes côtières sinueuses, et une conduite plus sereine sur les quelques tronçons non pavés près des hôtels et villas — un choix apprécié pour les groupes, les séjours golf et les longs circuits sur l'île.",
+      "highlight1Title": "Plus d'espace",
+      "highlight1Text": "Un coffre plus grand pour les bagages, les sacs de golf ou le matériel de plongée, avec de la place pour se détendre sur les longs trajets.",
+      "highlight2Title": "À l'aise sur les routes locales",
+      "highlight2Text": "Une garde au sol plus élevée gère bien les dos d'âne et les allées irrégulières fréquentes près des hôtels et guesthouses.",
+      "highlight3Title": "Les mêmes avantages inclus",
+      "highlight3Text": "Kilométrage illimité, assurance complète et livraison gratuite à l'aéroport s'appliquent aux SUV comme au reste de notre flotte.",
+      "closing": "La disponibilité des SUV varie selon la saison — consultez nos SUV ci-dessous, ou parcourez toute la flotte si vous êtes flexible sur le modèle.",
+      "emptyVehicles": "Aucun SUV n'est actuellement disponible."
+    },
+    "automatic": {
+      "breadcrumb": "Voitures automatiques",
+      "title": "Location de voiture automatique à Maurice",
+      "metaDescription": "Louez une voiture automatique à Maurice — pas d'embrayage, pas de stress, juste une conduite simple à gauche. Kilométrage illimité et assurance complète inclus.",
+      "intro": "Conduire à gauche est déjà déroutant pour la plupart des visiteurs, inutile d'y ajouter la gestion d'une boîte manuelle — une transmission automatique vous permet de vous concentrer sur la route, les ronds-points et les habitudes de conduite locales plutôt que sur les vitesses.",
+      "highlight1Title": "Plus simple pour les primo-visiteurs",
+      "highlight1Text": "Une préoccupation en moins lorsqu'on s'habitue à la conduite à gauche et aux carrefours inconnus.",
+      "highlight2Title": "Plus confortable dans les embouteillages",
+      "highlight2Text": "Les automatiques rendent la circulation dense autour de Port-Louis et des villes côtières nettement moins fatigante.",
+      "highlight3Title": "Les mêmes avantages inclus",
+      "highlight3Text": "Chaque automatique de notre flotte inclut kilométrage illimité, assurance complète et livraison gratuite à l'aéroport.",
+      "closing": "Les véhicules automatiques sont très demandés en haute saison — réservez tôt si vos dates de voyage sont fixées.",
+      "emptyVehicles": "Aucun véhicule automatique n'est actuellement disponible."
+    },
+    "family": {
+      "breadcrumb": "Voitures familiales",
+      "title": "Location de voiture familiale à Maurice",
+      "metaDescription": "Louez une voiture familiale à Maurice avec suffisamment de places et de coffre pour tout le voyage. Sièges enfant disponibles sur demande, kilométrage illimité, assurance complète.",
+      "intro": "Voyager avec des enfants signifie plus de bagages, plus d'arrêts, et moins de patience pour une banquette arrière exiguë — nos véhicules familiaux sont choisis pour leur confort et un coffre suffisant pour les poussettes, valises et affaires de plage.",
+      "highlight1Title": "De la place pour tout le monde",
+      "highlight1Text": "Des véhicules cinq places avec un véritable coffre pour les bagages familiaux, pas seulement un sac de nuit.",
+      "highlight2Title": "Sièges enfant sur demande",
+      "highlight2Text": "Indiquez-nous l'âge de vos enfants lors de la réservation et nous organiserons un siège enfant ou réhausseur adapté.",
+      "highlight3Title": "Livraison gratuite à l'aéroport",
+      "highlight3Text": "Évitez la file au comptoir de location avec de jeunes enfants — nous livrons à l'aéroport SSR sans frais supplémentaires.",
+      "closing": "Vous préparez un long séjour en famille ? Consultez notre page Location longue durée pour les tarifs à la semaine et au mois.",
+      "emptyVehicles": "Aucun véhicule familial n'est actuellement disponible."
+    },
+    "longTerm": {
+      "breadcrumb": "Location longue durée",
+      "title": "Location de voiture longue durée à Maurice",
+      "metaDescription": "Location de voiture à la semaine et au mois à Maurice pour les séjours prolongés, le télétravail ou une installation de longue durée. Meilleurs tarifs que les réservations journalières, même assurance complète.",
+      "intro": "Vous restez à Maurice plusieurs semaines ou plus ? Louer à la semaine ou au mois revient nettement moins cher qu'une succession de réservations journalières, avec le même kilométrage illimité et la même assurance complète tout au long de votre séjour.",
+      "highlight1Title": "De meilleurs tarifs à la semaine et au mois",
+      "highlight1Text": "Les locations prolongées sont facturées moins cher par jour que les réservations courtes — demandez un devis selon vos dates exactes.",
+      "highlight2Title": "Une seule réservation, sans renouvellement",
+      "highlight2Text": "Fixez vos dates une fois et gardez le même véhicule pendant toute la durée de votre séjour, sans avoir à re-réserver régulièrement.",
+      "highlight3Title": "Couverture complète durant tout le séjour",
+      "highlight3Text": "Assurance complète et kilométrage illimité s'appliquent pendant toute la durée de la location, quelle qu'elle soit.",
+      "closing": "Les locations longue durée sont soumises à disponibilité — contactez-nous avec vos dates et nous confirmerons le meilleur véhicule et tarif pour votre séjour.",
+      "emptyVehicles": "Aucun véhicule longue durée n'est actuellement disponible."
     }
   },
   "contact": {
@@ -296,7 +392,6 @@
     "faqTitle": "Questions fréquentes",
     "bookCta": "Réserver ce véhicule",
     "whatsappCta": "Demander sur WhatsApp",
-    "demoNotice": "Annonce de démonstration — prix et caractéristiques finaux confirmés par Codexia lors de la réservation.",
     "insuranceDepositTitle": "Assurance et dépôt",
     "depositLabel": "Dépôt de garantie",
     "depositNote": "Remboursable, collecté à la prise en charge",
@@ -392,29 +487,22 @@
       "view": "Voir"
     },
     "paymentStep": {
-      "title": "Méthode de paiement",
-      "bankTransfer": {
-        "title": "Virement bancaire",
-        "text": "Effectuez le virement du montant total avec les coordonnées ci-dessous, puis téléversez votre preuve de paiement depuis votre page de réservation."
-      },
-      "payOnArrival": {
-        "title": "Paiement à l'arrivée / WhatsApp",
-        "text": "Nous créons votre réservation et ouvrons WhatsApp avec un résumé. Votre réservation n'est pas confirmée tant que Codexia ne l'a pas approuvée."
-      },
-      "online": {
-        "title": "Paiement en ligne (bientôt disponible)",
-        "text": "Le paiement en ligne via MCB n'est pas encore disponible. Veuillez choisir le virement bancaire ou le paiement à l'arrivée."
-      },
-      "submit": "Envoyer la réservation",
-      "submitting": "Envoi en cours...",
-      "error": "Une erreur est survenue. Veuillez réessayer."
+      "title": "Paiement",
+      "creatingBooking": "Création de votre réservation…",
+      "createError": "Une erreur est survenue lors de la création de votre réservation. Veuillez réessayer.",
+      "totalLabel": "Total de la réservation",
+      "payNowLabel": "À payer maintenant",
+      "remainingLabel": "Solde restant",
+      "fullPaymentNote": "Le total de votre réservation est inférieur à {threshold}, il est donc payé intégralement maintenant.",
+      "depositNote": "Un acompte de {amount} garantit votre réservation. Le solde restant est payé lors de la prise en charge du véhicule.",
+      "eurNote": "Facturé en EUR via PayPal.",
+      "confirming": "Confirmation de votre paiement…",
+      "error": "Une erreur est survenue lors de la confirmation de votre paiement. Veuillez réessayer ou contacter le support."
     },
     "confirmation": {
-      "title": "Demande de réservation reçue",
+      "title": "Réservation confirmée",
       "reference": "Votre référence",
-      "notConfirmedNotice": "Votre réservation n'est pas encore confirmée. Notre équipe l'examinera et vous contactera bientôt.",
-      "whatsappCta": "Continuer sur WhatsApp",
-      "bankDetailsTitle": "Coordonnées bancaires",
+      "confirmedNotice": "Votre paiement a été reçu et votre réservation est confirmée.",
       "myBookingCta": "Voir ma réservation",
       "emailNotice": "Un e-mail de confirmation avec ces détails vous a été envoyé.",
       "copyReference": "Copier la référence",
@@ -456,20 +544,7 @@
       "total": "Total",
       "paid": "Payé",
       "balance": "Solde dû",
-      "notFound": "Nous n'avons pas trouvé de réservation pour ce lien. Il a peut-être expiré — demandez-en un nouveau.",
-      "proofTitle": "Téléverser la preuve de paiement",
-      "proofBankName": "Nom de la banque",
-      "proofTransactionRef": "Référence de transaction",
-      "proofDate": "Date de paiement",
-      "proofFile": "Preuve de paiement (PDF ou image)",
-      "proofSubmit": "Téléverser la preuve",
-      "proofSubmitted": "Preuve envoyée — en attente de vérification.",
-      "proofsUploaded": "Preuves téléversées",
-      "proofStatus": {
-        "pending": "En attente de vérification",
-        "approved": "Approuvée",
-        "rejected": "Rejetée"
-      }
+      "notFound": "Nous n'avons pas trouvé de réservation pour ce lien. Il a peut-être expiré — demandez-en un nouveau."
     }
   }
 }

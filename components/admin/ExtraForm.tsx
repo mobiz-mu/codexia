@@ -46,7 +46,7 @@ export function ExtraForm({
           />
         </div>
         <div className="flex flex-col gap-1">
-          <label className="text-sm font-medium text-ink">Price (cents)</label>
+          <label className="text-sm font-medium text-ink">Price (EUR cents)</label>
           <input
             type="number"
             name="priceCents"
@@ -57,15 +57,28 @@ export function ExtraForm({
         </div>
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-ink">Currency</label>
-          <input
-            type="text"
-            name="currency"
-            defaultValue={initial?.currency ?? "MUR"}
-            maxLength={3}
-            required
-            className="rounded-lg border border-border px-3 py-2 text-sm"
-          />
+          {/* Display-only — never submitted. New extras are always EUR
+              (set server-side); an existing extra's currency only changes
+              via the explicit repricing checkbox below, also enforced
+              server-side, never from a client-submitted value. */}
+          <p className="rounded-lg border border-border bg-surface px-3 py-2 text-sm text-muted">
+            {initial?.currency ?? "EUR"}
+          </p>
         </div>
+
+        {initial && initial.currency && initial.currency !== "EUR" && (
+          <div className="sm:col-span-2 flex flex-col gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
+            <p>
+              This extra is still priced in <strong>{initial.currency}</strong> (legacy) and will not appear on
+              the public site until it is priced in EUR. The price field above has NOT been converted — re-enter
+              it in real EUR cents before checking the box below.
+            </p>
+            <label className="flex items-center gap-2 font-medium">
+              <input type="checkbox" name="confirmEurRepricing" value="true" />
+              I have re-entered the price above in EUR — mark this extra as EUR-priced
+            </label>
+          </div>
+        )}
         <div className="flex flex-col gap-1">
           <label className="text-sm font-medium text-ink">Pricing Mode</label>
           <select
@@ -103,7 +116,7 @@ export function ExtraForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-action px-6 py-2.5 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-6 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
       >
         {pending ? "Saving..." : submitLabel}
       </button>

@@ -55,7 +55,7 @@ export function UserRolesEditor({
         type="button"
         disabled={pending}
         onClick={save}
-        className="self-start rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition-colors hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-60"
+        className="self-start rounded-full bg-primary px-3 py-1.5 text-xs font-semibold text-ink shadow-sm transition-colors hover:bg-primary-dark disabled:pointer-events-none disabled:opacity-60"
       >
         {pending ? "Saving..." : "Save Roles"}
       </button>

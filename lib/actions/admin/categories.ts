@@ -23,7 +23,10 @@ export async function listCategoriesAdmin() {
   assertPermission(user, "manage_vehicles");
 
   const supabase = createAdminClient();
-  const { data } = await supabase.from("vehicle_categories").select("*").order("display_order", { ascending: true });
+  const { data } = await supabase
+    .from("vehicle_categories")
+    .select("id, name_en, name_fr, display_order, active, featured")
+    .order("display_order", { ascending: true });
   return data ?? [];
 }
 
@@ -42,8 +45,10 @@ const categorySchema = z.object({
   descriptionEn: z.string().trim().max(1000).optional().or(z.literal("")),
   descriptionFr: z.string().trim().max(1000).optional().or(z.literal("")),
   displayOrder: z.coerce.number().int().min(0),
-  active: z.coerce.boolean(),
-  featured: z.coerce.boolean(),
+  // Unchecked checkboxes are omitted from FormData entirely, not sent as
+  // "false" — .default(false) covers the key being absent.
+  active: z.coerce.boolean().default(false),
+  featured: z.coerce.boolean().default(false),
 });
 
 export type CategoryFormState = { status: "idle" | "success" | "error"; error?: string };
@@ -58,21 +63,32 @@ export async function createCategory(_prev: CategoryFormState, formData: FormDat
   const supabase = createAdminClient();
   const slug = `${slugify(parsed.data.nameEn)}-${Date.now().toString(36)}`;
 
-  const { error } = await supabase.from("vehicle_categories").insert({
-    slug,
-    name_en: parsed.data.nameEn,
-    name_fr: parsed.data.nameFr,
-    description_en: parsed.data.descriptionEn || null,
-    description_fr: parsed.data.descriptionFr || null,
-    display_order: parsed.data.displayOrder,
-    active: parsed.data.active,
-    featured: parsed.data.featured,
-  });
+  const { data, error } = await supabase
+    .from("vehicle_categories")
+    .insert({
+      slug,
+      name_en: parsed.data.nameEn,
+      name_fr: parsed.data.nameFr,
+      description_en: parsed.data.descriptionEn || null,
+      description_fr: parsed.data.descriptionFr || null,
+      display_order: parsed.data.displayOrder,
+      active: parsed.data.active,
+      featured: parsed.data.featured,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error("createCategory failed", error.message);
     return { status: "error", error: "Failed to create category." };
   }
+
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "category_created",
+    entity: "vehicle_categories",
+    entity_id: data.id,
+  });
 
   return { status: "success" };
 }
@@ -107,11 +123,23 @@ export async function updateCategory(
     return { status: "error", error: "Failed to update category." };
   }
 
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "category_updated",
+    entity: "vehicle_categories",
+    entity_id: id,
+  });
+
   return { status: "success" };
 }
 
 const MAX_CATEGORY_IMAGE_BYTES = 3 * 1024 * 1024;
 const ALLOWED_CATEGORY_IMAGE_TYPES = ["image/webp", "image/jpeg", "image/png"];
+const CATEGORY_IMAGE_EXTENSION_BY_MIME_TYPE: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
 
 export async function uploadCategoryImage(categoryId: string, formData: FormData) {
   const user = await requireAdminUser();
@@ -125,18 +153,13 @@ export async function uploadCategoryImage(categoryId: string, formData: FormData
   }
 
   const supabase = createAdminClient();
-  const { data: existing } = await supabase
-    .from("vehicle_categories")
-    .select("image_path")
-    .eq("id", categoryId)
-    .maybeSingle();
+  const extension = CATEGORY_IMAGE_EXTENSION_BY_MIME_TYPE[file.type];
+  const path = `${categoryId}/${crypto.randomUUID()}.${extension}`;
 
-  const ext = file.name.split(".").pop();
-  const path = `${categoryId}/${Date.now()}.${ext}`;
-
-  const { error: uploadError } = await supabase.storage
-    .from("category-images")
-    .upload(path, file, { contentType: file.type });
+  const [{ data: existing }, { error: uploadError }] = await Promise.all([
+    supabase.from("vehicle_categories").select("image_path").eq("id", categoryId).maybeSingle(),
+    supabase.storage.from("category-images").upload(path, file, { contentType: file.type }),
+  ]);
 
   if (uploadError) {
     console.error("uploadCategoryImage failed", uploadError.message);
@@ -157,6 +180,14 @@ export async function uploadCategoryImage(categoryId: string, formData: FormData
     await supabase.storage.from("category-images").remove([existing.image_path]);
   }
 
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "category_image_uploaded",
+    entity: "vehicle_categories",
+    entity_id: categoryId,
+    diff: { path, contentType: file.type, size: file.size },
+  });
+
   return { ok: true as const };
 }
 
@@ -165,8 +196,18 @@ export async function deleteCategoryImage(categoryId: string, path: string) {
   assertPermission(user, "manage_vehicles");
 
   const supabase = createAdminClient();
-  await supabase.storage.from("category-images").remove([path]);
-  await supabase.from("vehicle_categories").update({ image_path: null }).eq("id", categoryId);
+  await Promise.all([
+    supabase.storage.from("category-images").remove([path]),
+    supabase.from("vehicle_categories").update({ image_path: null }).eq("id", categoryId),
+  ]);
+
+  await supabase.from("audit_logs").insert({
+    actor_id: user.id,
+    action: "category_image_deleted",
+    entity: "vehicle_categories",
+    entity_id: categoryId,
+    diff: { path },
+  });
 
   return { ok: true as const };
 }

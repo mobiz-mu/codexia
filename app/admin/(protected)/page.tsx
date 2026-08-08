@@ -1,8 +1,39 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Car, Banknote, Scale, ReceiptText, Star, MailWarning, CalendarClock, type LucideIcon } from "lucide-react";
+import { redirect } from "next/navigation";
+import { getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
+import {
+  Car,
+  Banknote,
+  Scale,
+  ShoppingCart,
+  Star,
+  MailWarning,
+  CalendarClock,
+  CalendarPlus,
+  TrendingUp,
+  CheckCircle2,
+  BookmarkCheck,
+  Wrench,
+  Gauge,
+  MessageCircleQuestion,
+  ShieldAlert,
+  FileWarning,
+  FileX2,
+  CarFront,
+  Siren,
+  AlertOctagon,
+} from "lucide-react";
 import { getOverviewStats } from "@/lib/actions/admin/overview";
+import { getComplianceDashboardStats, getComplianceAlerts } from "@/lib/actions/admin/compliance";
+import { getIncidentDashboardStats, getOpenIncidentsList } from "@/lib/actions/admin/incidents";
+import { DOCUMENT_TYPE_LABELS } from "@/lib/compliance/schema";
+import { INCIDENT_TYPE_LABELS } from "@/lib/incidents/schema";
+import { ComplianceStatusBadge } from "@/components/admin/ComplianceStatusBadge";
+import { SeverityBadge, RepairStatusBadge } from "@/components/admin/IncidentBadges";
 import { formatMoney } from "@/lib/pricing/format";
+import { KpiCard, KpiSection } from "@/components/admin/ui/KpiCard";
+import { EmptyState } from "@/components/admin/ui/EmptyState";
 
 export const metadata: Metadata = { title: "Overview" };
 
@@ -25,48 +56,237 @@ const STATUS_LABELS: Record<string, string> = {
   rejected: "Rejected",
 };
 
+// EUR is the live business currency, always shown as the headline figure.
+// Any other currency present (MUR, from bookings created before the
+// EUR-pricing migration) is historical and shown as a secondary note rather
+// than being added into the EUR total — they are not the same unit.
+function primaryAndHistorical(byCurrency: Record<string, number>) {
+  const primary = formatMoney(byCurrency.EUR ?? 0, "EUR", "en");
+  const historical = Object.entries(byCurrency).filter(([currency, cents]) => currency !== "EUR" && cents !== 0);
+  return { primary, historical };
+}
+
+function StatValue({ byCurrency }: { byCurrency: Record<string, number> }) {
+  const { primary, historical } = primaryAndHistorical(byCurrency);
+  return (
+    <>
+      <p className="mt-0.5 text-xl font-bold text-ink">{primary}</p>
+      {historical.length > 0 && (
+        <p className="mt-0.5 truncate text-[11px] text-muted">
+          + {historical.map(([currency, cents]) => formatMoney(cents, currency, "en")).join(", ")} (historical)
+        </p>
+      )}
+    </>
+  );
+}
+
 export default async function AdminOverviewPage() {
-  const stats = await getOverviewStats();
+  // Same check the layout already performs (React.cache()-deduped, so this
+  // is a cache hit when authenticated — zero extra queries). The layout's
+  // own redirect doesn't reliably run before this page's data-fetching
+  // starts, so an anonymous visit would otherwise throw the generic "Not
+  // authenticated" error out of getOverviewStats() before the layout's
+  // redirect resolves. Checking here means the redirect always wins first.
+  const user = await getCurrentAdminUser();
+  if (!user || user.roles.length === 0) redirect("/admin/login");
+
+  const [stats, complianceStats, complianceAlerts, incidentStats, openIncidents] = await Promise.all([
+    getOverviewStats(),
+    getComplianceDashboardStats(),
+    getComplianceAlerts(10),
+    getIncidentDashboardStats(),
+    getOpenIncidentsList(10),
+  ]);
 
   return (
-    <div className="flex flex-col gap-8">
-      <h1 className="text-2xl font-bold text-ink">Overview</h1>
+    <div className="flex flex-col gap-7">
+      <h1 className="text-xl font-bold text-ink sm:text-2xl">Overview</h1>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <StatCard icon={Car} label="Active Rentals" value={String(stats.activeRentalsCount)} tone="primary" />
-        <StatCard
-          icon={Banknote}
-          label="Revenue Collected"
-          value={formatMoney(stats.revenueCents, "MUR", "en")}
-          tone="action"
+      <KpiSection title="Bookings" icon={CalendarClock}>
+        <KpiCard icon={CalendarPlus} label="Today's Bookings" value={String(stats.todayBookingsCount)} tone="action" />
+        <KpiCard icon={Car} label="Active Rentals" value={String(stats.activeRentalsCount)} tone="primary" />
+        <KpiCard
+          icon={ShoppingCart}
+          label="Pending Bookings"
+          value={String(stats.unpaidPendingCount)}
+          tone={stats.unpaidPendingCount > 0 ? "warning" : "primary"}
         />
-        <StatCard
-          icon={Scale}
-          label="Outstanding Balance"
-          value={formatMoney(stats.outstandingCents, "MUR", "en")}
-          tone="primary"
-        />
-        <StatCard
-          icon={ReceiptText}
-          label="Pending Payment Proofs"
-          value={String(stats.pendingProofsCount)}
-          tone="primary"
-        />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <StatCard icon={Star} label="Pending Reviews" value={String(stats.pendingReviewsCount)} tone="primary" />
-        <StatCard icon={MailWarning} label="Failed Emails" value={String(stats.failedEmailsCount)} tone="primary" />
-        <StatCard
+        <KpiCard
           icon={CalendarClock}
-          label="Bookings (all time)"
+          label="Bookings (All Time)"
           value={String(Object.values(stats.byStatus).reduce((a, b) => a + b, 0))}
           tone="action"
         />
+      </KpiSection>
+
+      <KpiSection title="Fleet" icon={Car}>
+        <KpiCard icon={CarFront} label="Total Vehicles" value={String(stats.fleetSize)} tone="primary" />
+        <KpiCard icon={CheckCircle2} label="Available" value={String(stats.vehiclesAvailableCount)} tone="primary" />
+        <KpiCard icon={BookmarkCheck} label="Reserved" value={String(stats.vehiclesReservedCount)} tone="primary" />
+        <KpiCard
+          icon={Wrench}
+          label="Unavailable / Maintenance"
+          value={String(stats.vehiclesMaintenanceCount)}
+          tone={stats.vehiclesMaintenanceCount > 0 ? "warning" : "primary"}
+        />
+        <KpiCard icon={Gauge} label="Fleet Utilisation" value={`${stats.fleetUtilizationPct}%`} tone="action" />
+      </KpiSection>
+
+      <div>
+        <KpiSection title="Compliance" icon={ShieldAlert}>
+          <KpiCard
+            icon={FileWarning}
+            label="Expiring Within 30 Days"
+            value={String(complianceStats.expiringWithin30)}
+            tone={complianceStats.expiringWithin30 > 0 ? "warning" : "primary"}
+          />
+          <KpiCard
+            icon={ShieldAlert}
+            label="Expiring Within 7 Days"
+            value={String(complianceStats.expiringWithin7)}
+            tone={complianceStats.expiringWithin7 > 0 ? "danger" : "primary"}
+          />
+          <KpiCard
+            icon={FileX2}
+            label="Documents Expired"
+            value={String(complianceStats.expired)}
+            tone={complianceStats.expired > 0 ? "danger" : "primary"}
+          />
+          <KpiCard
+            icon={CarFront}
+            label="Vehicles With a Compliance Issue"
+            value={String(complianceStats.vehiclesWithProblem)}
+            tone={complianceStats.vehiclesWithProblem > 0 ? "danger" : "primary"}
+          />
+        </KpiSection>
+
+        {complianceAlerts.length > 0 && (
+          <div className="mt-3 rounded-xl border border-red-200 bg-red-50 p-4">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-red-800">
+              <ShieldAlert className="h-4 w-4" aria-hidden="true" />
+              Documents Requiring Attention
+            </h3>
+            <ul className="flex flex-col divide-y divide-red-200">
+              {complianceAlerts.map((a) => (
+                <li key={a.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <Link href={`/admin/compliance/${a.id}`} className="font-medium text-ink hover:underline">
+                      {a.vehicleName}
+                    </Link>
+                    <span className="text-muted">
+                      {" — "}
+                      {a.documentType === "other"
+                        ? a.customType ?? "Other"
+                        : DOCUMENT_TYPE_LABELS[a.documentType as keyof typeof DOCUMENT_TYPE_LABELS] ?? a.documentType}
+                      {" — expires "}
+                      {new Date(a.expiryDate).toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
+                  <ComplianceStatusBadge status={a.status} daysRemaining={a.daysRemaining} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-ink">Bookings by Status</h2>
+        <KpiSection title="Incidents" icon={Siren}>
+          <KpiCard
+            icon={AlertOctagon}
+            label="Open Cases"
+            value={String(incidentStats.openCases)}
+            tone={incidentStats.openCases > 0 ? "warning" : "primary"}
+          />
+          <KpiCard
+            icon={Wrench}
+            label="Vehicles Under Repair"
+            value={String(incidentStats.vehiclesUnderRepair)}
+            tone={incidentStats.vehiclesUnderRepair > 0 ? "action" : "primary"}
+          />
+          <KpiCard
+            icon={Siren}
+            label="Major Incidents"
+            value={String(incidentStats.majorIncidents)}
+            tone={incidentStats.majorIncidents > 0 ? "danger" : "primary"}
+          />
+          <KpiCard
+            icon={Banknote}
+            label="Repair Cost This Month"
+            value={formatMoney(incidentStats.repairCostThisMonthCents, "EUR", "en")}
+            tone="action"
+          />
+        </KpiSection>
+
+        {openIncidents.length > 0 && (
+          <div className="mt-3 rounded-xl border border-border bg-background p-4 shadow-sm">
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-ink">
+              <Siren className="h-4 w-4" aria-hidden="true" />
+              Open Incidents
+            </h3>
+            <ul className="flex flex-col divide-y divide-border">
+              {openIncidents.map((i) => (
+                <li key={i.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                  <div className="min-w-0">
+                    <Link href={`/admin/incidents/${i.id}`} className="font-medium text-ink hover:underline">
+                      {i.vehicleName}
+                    </Link>
+                    <span className="text-muted">
+                      {" — "}
+                      {i.incidentType === "other"
+                        ? i.customType ?? "Other"
+                        : INCIDENT_TYPE_LABELS[i.incidentType as keyof typeof INCIDENT_TYPE_LABELS] ?? i.incidentType}
+                      {" — "}
+                      {new Date(i.incidentDate).toLocaleDateString("en-GB")}
+                    </span>
+                  </div>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <SeverityBadge severity={i.severity} />
+                    <RepairStatusBadge status={i.repairStatus as Parameters<typeof RepairStatusBadge>[0]["status"]} />
+                  </div>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+
+      <KpiSection title="Finance" icon={Banknote}>
+        <KpiCard
+          icon={TrendingUp}
+          label="Revenue This Month"
+          value={<StatValue byCurrency={stats.monthBookingRevenueByCurrency} />}
+          tone="action"
+        />
+        <KpiCard
+          icon={Banknote}
+          label="Paid This Month"
+          value={<StatValue byCurrency={stats.monthRevenueByCurrency} />}
+          tone="action"
+        />
+        <KpiCard
+          icon={Scale}
+          label="Outstanding Balance"
+          value={<StatValue byCurrency={stats.outstandingByCurrency} />}
+          tone={Object.values(stats.outstandingByCurrency).some((v) => v > 0) ? "warning" : "primary"}
+        />
+        <KpiCard
+          icon={Banknote}
+          label="Revenue Collected (All Time)"
+          value={<StatValue byCurrency={stats.revenueByCurrency} />}
+          tone="action"
+        />
+      </KpiSection>
+
+      <KpiSection title="Operations" icon={Gauge}>
+        <KpiCard icon={CalendarPlus} label="Today's Revenue" value={<StatValue byCurrency={stats.todayRevenueByCurrency} />} tone="action" />
+        <KpiCard icon={MessageCircleQuestion} label="Pending Enquiries" value={String(stats.pendingEnquiriesCount)} tone="primary" />
+        <KpiCard icon={Star} label="Pending Reviews" value={String(stats.pendingReviewsCount)} tone="primary" />
+        <KpiCard icon={MailWarning} label="Failed Emails" value={String(stats.failedEmailsCount)} tone={stats.failedEmailsCount > 0 ? "danger" : "primary"} />
+      </KpiSection>
+
+      <div>
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-dark">Bookings by Status</h2>
         <div className="flex flex-wrap gap-2">
           {Object.entries(stats.byStatus).map(([status, count]) => (
             <span
@@ -81,7 +301,7 @@ export default async function AdminOverviewPage() {
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-ink">Upcoming Pickups (7 days)</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-dark">Upcoming Pickups (7 days)</h2>
           <BookingMiniList
             items={stats.upcomingPickups.map((b) => ({
               id: b.id,
@@ -93,7 +313,7 @@ export default async function AdminOverviewPage() {
           />
         </div>
         <div>
-          <h2 className="mb-3 text-lg font-semibold text-ink">Upcoming Drop-offs (7 days)</h2>
+          <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-dark">Upcoming Drop-offs (7 days)</h2>
           <BookingMiniList
             items={stats.upcomingDropoffs.map((b) => ({
               id: b.id,
@@ -107,8 +327,8 @@ export default async function AdminOverviewPage() {
       </div>
 
       <div>
-        <h2 className="mb-3 text-lg font-semibold text-ink">Recent Bookings</h2>
-        <div className="overflow-x-auto rounded-xl border border-border bg-background">
+        <h2 className="mb-3 text-sm font-bold uppercase tracking-wide text-primary-dark">Recent Bookings</h2>
+        <div className="overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
           <table className="w-full text-left text-sm">
             <thead className="border-b border-border text-xs uppercase text-muted">
               <tr>
@@ -128,42 +348,19 @@ export default async function AdminOverviewPage() {
                   </td>
                   <td className="px-4 py-2">{(b.vehicles as { name: string } | null)?.name ?? "—"}</td>
                   <td className="px-4 py-2">{STATUS_LABELS[b.status] ?? b.status}</td>
-                  <td className="px-4 py-2">{formatMoney(b.total_cents, "MUR", "en")}</td>
+                  <td className="px-4 py-2">{formatMoney(b.total_cents, b.currency, "en")}</td>
                 </tr>
               ))}
+              {stats.recentBookings.length === 0 && (
+                <tr>
+                  <td colSpan={4} className="px-4 py-10 text-center text-muted">
+                    No bookings yet.
+                  </td>
+                </tr>
+              )}
             </tbody>
           </table>
         </div>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
-  icon: Icon,
-  label,
-  value,
-  tone,
-}: {
-  icon: LucideIcon;
-  label: string;
-  value: string;
-  tone: "primary" | "action";
-}) {
-  return (
-    <div className="flex items-start gap-3 rounded-xl border border-border bg-background p-4 shadow-sm">
-      <span
-        className={
-          tone === "primary"
-            ? "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-tint text-primary-dark"
-            : "flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-action-tint text-action-dark"
-        }
-      >
-        <Icon className="h-5 w-5" aria-hidden="true" />
-      </span>
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
-        <p className="mt-1 text-2xl font-bold text-ink">{value}</p>
       </div>
     </div>
   );
@@ -177,14 +374,14 @@ function BookingMiniList({
   empty: string;
 }) {
   if (items.length === 0) {
-    return <p className="rounded-lg border border-border bg-surface p-3 text-sm text-muted">{empty}</p>;
+    return <EmptyState message={empty} />;
   }
   return (
     <ul className="flex flex-col gap-2">
       {items.map((item) => (
         <li
           key={item.id}
-          className="rounded-lg border border-border bg-background p-3 text-sm transition-colors hover:bg-surface"
+          className="rounded-lg border border-border bg-background p-3 text-sm shadow-sm transition-colors hover:bg-surface"
         >
           <Link href={`/admin/bookings/${item.id}`} className="font-medium text-primary-dark hover:underline">
             {item.reference}

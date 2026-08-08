@@ -39,27 +39,26 @@ export async function submitContactMessage(
   }
 
   const supabase = createAdminClient();
-  const { data, error } = await supabase
-    .from("contact_messages")
-    .insert({
-      name: parsed.data.name,
-      email: parsed.data.email,
-      phone: parsed.data.phone || null,
-      subject: parsed.data.subject || null,
-      message: parsed.data.message,
-    })
-    .select("id")
-    .single();
+  const { error } = await supabase.from("contact_messages").insert({
+    name: parsed.data.name,
+    email: parsed.data.email,
+    phone: parsed.data.phone || null,
+    subject: parsed.data.subject || null,
+    message: parsed.data.message,
+  });
 
   if (error) {
     console.error("submitContactMessage failed", error.message);
     return { status: "error" };
   }
 
+  // The Contact Messages admin module is a flat list with no per-message
+  // detail route (unlike bookings/compliance) — link to the list, matching
+  // the same list-only pattern used by new_review/new_newsletter_subscriber.
   await createNotification(
     "new_contact_message",
     { name: parsed.data.name, subject: parsed.data.subject || null },
-    `/admin/messages/${data.id}`
+    `/admin/messages`
   );
 
   return { status: "success" };

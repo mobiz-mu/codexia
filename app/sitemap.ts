@@ -23,6 +23,13 @@ const STATIC_PATHS = [
   "/blog",
   "/faq",
   "/book",
+  "/my-booking",
+  "/photo-credits",
+  "/car-rental/mauritius",
+  "/car-rental/suv",
+  "/car-rental/automatic",
+  "/car-rental/family",
+  "/car-rental/long-term",
 ];
 
 function entry(siteUrl: string, path: string, lastModified?: string): MetadataRoute.Sitemap[number] {

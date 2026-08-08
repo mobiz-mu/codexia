@@ -4,7 +4,7 @@ import { useState } from "react";
 import Image from "next/image";
 import { cn } from "@/lib/utils/cn";
 
-type GalleryImage = { url: string; alt: string };
+type GalleryImage = { url: string; alt: string; blurDataUrl?: string | null };
 
 export function VehicleGallery({ images, emptyLabel }: { images: GalleryImage[]; emptyLabel: string }) {
   const [activeIndex, setActiveIndex] = useState(0);
@@ -22,6 +22,7 @@ export function VehicleGallery({ images, emptyLabel }: { images: GalleryImage[];
             className="animate-fade-in-up object-cover"
             priority
             sizes="(min-width: 1024px) 50vw, 100vw"
+            {...(active.blurDataUrl ? { placeholder: "blur" as const, blurDataURL: active.blurDataUrl } : {})}
           />
         ) : (
           <div className="flex h-full items-center justify-center text-muted">{emptyLabel}</div>

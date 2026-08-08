@@ -13,7 +13,7 @@ export default async function AdminInvoiceDetailPage({ params }: { params: Promi
   const { invoice, items, payments } = await getInvoiceAdmin(id);
   if (!invoice) notFound();
 
-  const currency = "MUR";
+  const currency = invoice.currency;
   const editable = invoice.status !== "void";
   const balance = invoice.total_cents - invoice.paid_cents;
 

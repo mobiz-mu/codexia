@@ -17,7 +17,9 @@ export async function listFaqAdmin() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("faq_categories")
-    .select("*, faq_entries(*)")
+    .select(
+      "id, name_en, faq_entries(id, question_en, question_fr, answer_en, answer_fr, active, display_order)"
+    )
     .order("display_order", { ascending: true });
 
   return (data ?? []) as unknown as {

@@ -140,7 +140,7 @@ export function InvoiceItemsEditor({
           <button
             type="submit"
             disabled={pending}
-            className="col-span-2 rounded-full bg-action px-4 py-1.5 text-sm font-semibold text-white disabled:opacity-60 sm:col-span-6 sm:w-fit"
+            className="col-span-2 rounded-full bg-action px-4 py-1.5 text-sm font-semibold text-ink disabled:opacity-60 sm:col-span-6 sm:w-fit"
           >
             {pending ? "Adding..." : "Add Line Item"}
           </button>

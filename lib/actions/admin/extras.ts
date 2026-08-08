@@ -32,10 +32,15 @@ const extraSchema = z.object({
   nameEn: z.string().trim().min(1).max(100),
   nameFr: z.string().trim().min(1).max(100),
   priceCents: z.coerce.number().int().min(0),
-  currency: z.string().trim().min(3).max(3),
   pricingMode: z.enum(["per_day", "flat"]),
   displayOrder: z.coerce.number().int().min(0),
-  active: z.coerce.boolean(),
+  // Unchecked checkboxes are omitted from FormData entirely, not sent as
+  // "false" — .default(false) covers the key being absent.
+  active: z.coerce.boolean().default(false),
+  // Explicit, one-way confirmation gate for migrating a legacy MUR extra to
+  // EUR — never a currency picker. Only present (and only ever true) on the
+  // edit form for an extra that isn't EUR-priced yet.
+  confirmEurRepricing: z.coerce.boolean().default(false),
 });
 
 export type ExtraFormState = { status: "idle" | "success" | "error"; error?: string };
@@ -52,7 +57,7 @@ export async function createExtra(_prev: ExtraFormState, formData: FormData): Pr
     name_en: parsed.data.nameEn,
     name_fr: parsed.data.nameFr,
     price_cents: parsed.data.priceCents,
-    currency: parsed.data.currency.toUpperCase(),
+    currency: "EUR",
     pricing_mode: parsed.data.pricingMode,
     display_order: parsed.data.displayOrder,
     active: parsed.data.active,
@@ -74,16 +79,23 @@ export async function updateExtra(id: string, _prev: ExtraFormState, formData: F
   if (!parsed.success) return { status: "error", error: "Please check the form for errors." };
 
   const supabase = createAdminClient();
+
+  // currency is never taken from the submitted form — only ever set here
+  // when the admin explicitly checked the repricing-confirmation box, so a
+  // tampered/replayed request can't silently flip (or preserve the wrong)
+  // currency for this row.
+  const currencyUpdate = parsed.data.confirmEurRepricing ? { currency: "EUR" as const } : {};
+
   const { error } = await supabase
     .from("extras")
     .update({
       name_en: parsed.data.nameEn,
       name_fr: parsed.data.nameFr,
       price_cents: parsed.data.priceCents,
-      currency: parsed.data.currency.toUpperCase(),
       pricing_mode: parsed.data.pricingMode,
       display_order: parsed.data.displayOrder,
       active: parsed.data.active,
+      ...currencyUpdate,
     })
     .eq("id", id);
 

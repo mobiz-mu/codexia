@@ -16,8 +16,9 @@ export async function listNewsletterSubscribers() {
   const supabase = createAdminClient();
   const { data } = await supabase
     .from("newsletter_subscribers")
-    .select("*")
-    .order("created_at", { ascending: false });
+    .select("id, email, locale, source, status")
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   return data ?? [];
 }

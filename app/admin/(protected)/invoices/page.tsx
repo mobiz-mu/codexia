@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { listInvoicesAdmin } from "@/lib/actions/admin/invoices";
 import { formatMoney } from "@/lib/pricing/format";
+import { PageHeader, PageHeaderAction } from "@/components/admin/ui/PageHeader";
 
 export const metadata: Metadata = { title: "Invoices" };
 
@@ -17,18 +18,10 @@ export default async function AdminInvoicesPage() {
   const invoices = await listInvoicesAdmin();
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">Invoices</h1>
-        <Link
-          href="/admin/invoices/new"
-          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
-        >
-          New Invoice
-        </Link>
-      </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Invoices" action={<PageHeaderAction href="/admin/invoices/new">New Invoice</PageHeaderAction>} />
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-background">
+      <div className="overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase text-muted">
             <tr>
@@ -52,9 +45,9 @@ export default async function AdminInvoicesPage() {
                 <td className="px-4 py-2">{inv.customer_name}</td>
                 <td className="px-4 py-2">{inv.issue_date}</td>
                 <td className="px-4 py-2">{inv.due_date}</td>
-                <td className="px-4 py-2 font-medium text-ink">{formatMoney(inv.total_cents, "MUR", "en")}</td>
+                <td className="px-4 py-2 font-medium text-ink">{formatMoney(inv.total_cents, inv.currency, "en")}</td>
                 <td className="px-4 py-2 font-medium text-action-dark">
-                  {formatMoney(inv.total_cents - inv.paid_cents, "MUR", "en")}
+                  {formatMoney(inv.total_cents - inv.paid_cents, inv.currency, "en")}
                 </td>
                 <td className="px-4 py-2">
                   <span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${STATUS_STYLES[inv.status] ?? ""}`}>

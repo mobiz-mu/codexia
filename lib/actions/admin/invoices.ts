@@ -6,6 +6,10 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
 import { generateAndStoreInvoicePdf } from "@/lib/pdf/generate-invoice-pdf";
 import { formatMoney } from "@/lib/pricing/format";
+import { sendEmail } from "@/lib/email/send";
+import InvoiceEmail from "@/emails/InvoiceEmail";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
+import { buildEmailBrandProps, getSiteUrl } from "@/lib/email/shared-props";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {
@@ -18,7 +22,11 @@ export async function listInvoicesAdmin() {
   assertPermission(user, "create_invoices");
 
   const supabase = createAdminClient();
-  const { data } = await supabase.from("invoices").select("*").order("created_at", { ascending: false });
+  const { data } = await supabase
+    .from("invoices")
+    .select("id, number, customer_name, issue_date, due_date, total_cents, paid_cents, currency, status")
+    .order("created_at", { ascending: false })
+    .limit(100);
   return data ?? [];
 }
 
@@ -38,7 +46,10 @@ export async function getInvoiceAdmin(id: string) {
 
 async function recalculateInvoiceTotals(invoiceId: string) {
   const supabase = createAdminClient();
-  const { data: items } = await supabase.from("invoice_items").select("*").eq("invoice_id", invoiceId);
+  const [{ data: items }, { data: invoice }] = await Promise.all([
+    supabase.from("invoice_items").select("*").eq("invoice_id", invoiceId),
+    supabase.from("invoices").select("paid_cents, status").eq("id", invoiceId).single(),
+  ]);
 
   const subtotalCents = (items ?? []).reduce((sum, item) => sum + item.quantity * item.unit_price_cents, 0);
   const taxCents = (items ?? []).reduce(
@@ -48,7 +59,6 @@ async function recalculateInvoiceTotals(invoiceId: string) {
   const discountCents = (items ?? []).reduce((sum, item) => sum + item.discount_cents, 0);
   const totalCents = subtotalCents + taxCents - discountCents;
 
-  const { data: invoice } = await supabase.from("invoices").select("paid_cents, status").eq("id", invoiceId).single();
   const paidCents = invoice?.paid_cents ?? 0;
 
   let status = invoice?.status ?? "draft";
@@ -129,6 +139,7 @@ export async function createInvoiceFromBooking(bookingId: string) {
       customer_address: customer.address,
       due_date: new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10),
       created_by: user.id,
+      currency: booking.currency,
     })
     .select("id")
     .single();
@@ -262,10 +273,11 @@ export async function duplicateInvoice(id: string) {
   assertPermission(user, "create_invoices");
 
   const supabase = createAdminClient();
-  const { data: original } = await supabase.from("invoices").select("*").eq("id", id).single();
+  const [{ data: original }, { data: items }] = await Promise.all([
+    supabase.from("invoices").select("*").eq("id", id).single(),
+    supabase.from("invoice_items").select("*").eq("invoice_id", id),
+  ]);
   if (!original) return { ok: false as const, error: "Invoice not found." };
-
-  const { data: items } = await supabase.from("invoice_items").select("*").eq("invoice_id", id);
 
   const { data: created, error } = await supabase
     .from("invoices")
@@ -310,7 +322,7 @@ export async function regenerateInvoicePdf(invoiceId: string) {
   const { invoice, items } = await getInvoiceAdmin(invoiceId);
   if (!invoice) return { ok: false as const, error: "Invoice not found." };
 
-  const currency = "MUR";
+  const currency = invoice.currency;
   const path = await generateAndStoreInvoicePdf(invoiceId, {
     number: invoice.number,
     issueDate: invoice.issue_date,
@@ -346,6 +358,80 @@ export async function getInvoiceSignedUrl(storagePath: string) {
   const supabase = createAdminClient();
   const { data } = await supabase.storage.from("invoices").createSignedUrl(storagePath, 3600);
   return data?.signedUrl ?? null;
+}
+
+async function ensureInvoicePdfPath(invoiceId: string): Promise<string | null> {
+  const supabase = createAdminClient();
+  const { data: existing } = await supabase.from("invoices").select("storage_path").eq("id", invoiceId).single();
+  if (existing?.storage_path) return existing.storage_path;
+
+  const result = await regenerateInvoicePdf(invoiceId);
+  return result.ok ? result.path : null;
+}
+
+export async function sendInvoiceByEmail(invoiceId: string) {
+  const user = await requireAdminUser();
+  assertPermission(user, "send_invoices");
+
+  const { invoice } = await getInvoiceAdmin(invoiceId);
+  if (!invoice) return { ok: false as const, error: "Invoice not found." };
+  if (!invoice.customer_email) return { ok: false as const, error: "This invoice has no customer email." };
+
+  const [path, settings] = await Promise.all([ensureInvoicePdfPath(invoiceId), getSiteSettings()]);
+  if (!path) return { ok: false as const, error: "Failed to generate the invoice PDF." };
+
+  const supabase = createAdminClient();
+  const { data: signed } = await supabase.storage.from("invoices").createSignedUrl(path, 7 * 24 * 60 * 60);
+  if (!signed?.signedUrl) return { ok: false as const, error: "Failed to create a download link." };
+
+  const currency = invoice.currency;
+  const siteUrl = getSiteUrl();
+  const brand = buildEmailBrandProps(settings, siteUrl, `Hi Codexia, I have a question about invoice ${invoice.number}.`);
+
+  await sendEmail({
+    templateKey: "invoice_email",
+    to: invoice.customer_email,
+    subject: `Invoice ${invoice.number} — ${settings.companyName}`,
+    react: InvoiceEmail({
+      locale: "en",
+      invoiceNumber: invoice.number,
+      customerName: invoice.customer_name,
+      bookingTotalFormatted: formatMoney(invoice.total_cents, currency, "en"),
+      amountPaidFormatted: formatMoney(invoice.paid_cents, currency, "en"),
+      balanceFormatted: formatMoney(invoice.total_cents - invoice.paid_cents, currency, "en"),
+      downloadUrl: signed.signedUrl,
+      ...brand,
+    }),
+  });
+
+  if (invoice.status === "draft") {
+    await supabase.from("invoices").update({ status: "sent" }).eq("id", invoiceId);
+  }
+
+  return { ok: true as const };
+}
+
+export async function getInvoiceWhatsAppLink(invoiceId: string) {
+  const user = await requireAdminUser();
+  assertPermission(user, "send_invoices");
+
+  const { invoice } = await getInvoiceAdmin(invoiceId);
+  if (!invoice) return { ok: false as const, error: "Invoice not found." };
+
+  const path = await ensureInvoicePdfPath(invoiceId);
+  if (!path) return { ok: false as const, error: "Failed to generate the invoice PDF." };
+
+  const supabase = createAdminClient();
+  const { data: signed } = await supabase.storage.from("invoices").createSignedUrl(path, 7 * 24 * 60 * 60);
+  if (!signed?.signedUrl) return { ok: false as const, error: "Failed to create a download link." };
+
+  const message = `Hi ${invoice.customer_name}, here is your invoice ${invoice.number} from Codexia Ltd: ${signed.signedUrl}`;
+
+  if (invoice.status === "draft") {
+    await supabase.from("invoices").update({ status: "sent" }).eq("id", invoiceId);
+  }
+
+  return { ok: true as const, whatsappUrl: `https://wa.me/?text=${encodeURIComponent(message)}` };
 }
 
 export async function markInvoiceSent(id: string) {

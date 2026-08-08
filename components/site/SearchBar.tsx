@@ -356,7 +356,7 @@ export function SearchBar({
                 "items-center justify-center gap-2",
                 "overflow-hidden rounded-xl px-4",
                 BRAND_GRADIENT,
-                "text-[14px] font-bold text-white",
+                "text-[14px] font-bold text-ink",
                 "shadow-[0_10px_24px_rgba(21,153,199,0.25)]",
                 "transition-all duration-300",
                 "hover:-translate-y-0.5",

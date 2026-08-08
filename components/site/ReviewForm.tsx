@@ -114,7 +114,7 @@ export function ReviewForm({
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-action px-5 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-5 py-2 text-sm font-semibold text-ink disabled:opacity-60"
       >
         {pending ? "..." : labels.submit}
       </button>

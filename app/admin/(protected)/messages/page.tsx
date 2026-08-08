@@ -1,17 +1,69 @@
 import type { Metadata } from "next";
 import { listContactMessages } from "@/lib/actions/admin/messages";
 import { ContactMessageActions } from "@/components/admin/ContactMessageActions";
+import { PageHeader } from "@/components/admin/ui/PageHeader";
+import { EmptyState } from "@/components/admin/ui/EmptyState";
+import { Pagination } from "@/components/admin/ui/Pagination";
 
 export const metadata: Metadata = { title: "Contact Messages" };
 
-export default async function AdminMessagesPage() {
-  const messages = await listContactMessages();
+const STATUS_TABS = [
+  { value: "", label: "All" },
+  { value: "new", label: "New" },
+  { value: "read", label: "Read" },
+  { value: "replied", label: "Replied" },
+  { value: "archived", label: "Archived" },
+] as const;
+
+const STATUS_TONE: Record<string, string> = {
+  new: "bg-primary-tint text-primary-dark",
+  read: "bg-surface text-muted",
+  replied: "bg-action-tint text-action-dark",
+  archived: "bg-surface text-muted",
+};
+
+export default async function AdminMessagesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ status?: string; page?: string }>;
+}) {
+  const params = await searchParams;
+  const { messages, total, page, pageSize } = await listContactMessages(params);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  function pageHref(targetPage: number) {
+    const qs = new URLSearchParams();
+    if (params.status) qs.set("status", params.status);
+    qs.set("page", String(targetPage));
+    return `/admin/messages?${qs.toString()}`;
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <h1 className="text-2xl font-bold text-ink">Contact Messages</h1>
+    <div className="flex flex-col gap-5">
+      <PageHeader title="Contact Messages" />
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-wrap gap-1.5">
+        {STATUS_TABS.map((tab) => {
+          const active = (params.status ?? "") === tab.value;
+          const qs = new URLSearchParams();
+          if (tab.value) qs.set("status", tab.value);
+          return (
+            <a
+              key={tab.value || "all"}
+              href={`/admin/messages${qs.toString() ? `?${qs.toString()}` : ""}`}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors ${
+                active
+                  ? "border-primary bg-primary-tint text-primary-dark"
+                  : "border-border text-muted hover:border-primary hover:text-primary-dark"
+              }`}
+            >
+              {tab.label}
+            </a>
+          );
+        })}
+      </div>
+
+      <div className="flex flex-col gap-3">
         {messages.map((m) => (
           <div
             key={m.id}
@@ -22,13 +74,7 @@ export default async function AdminMessagesPage() {
                 {m.name} · {m.email} {m.phone ? `· ${m.phone}` : ""}
               </p>
               <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${
-                  m.status === "replied"
-                    ? "bg-action-tint text-action-dark"
-                    : m.status === "archived"
-                      ? "bg-surface text-muted"
-                      : "bg-primary-tint text-primary-dark"
-                }`}
+                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold uppercase ${STATUS_TONE[m.status] ?? "bg-surface text-muted"}`}
               >
                 {m.status}
               </span>
@@ -41,10 +87,10 @@ export default async function AdminMessagesPage() {
             </div>
           </div>
         ))}
-        {messages.length === 0 && (
-          <p className="rounded-xl border border-border bg-surface p-6 text-center text-muted">No messages yet.</p>
-        )}
+        {messages.length === 0 && <EmptyState message="No messages found." />}
       </div>
+
+      <Pagination page={page} totalPages={totalPages} total={total} itemLabel="message" pageHref={pageHref} />
     </div>
   );
 }

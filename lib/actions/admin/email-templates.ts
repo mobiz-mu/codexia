@@ -15,7 +15,7 @@ export async function listEmailTemplateOverrides() {
   assertPermission(user, "manage_content");
 
   const supabase = createAdminClient();
-  const { data } = await supabase.from("email_templates").select("*");
+  const { data } = await supabase.from("email_templates").select("key, locale, subject, body");
   return data ?? [];
 }
 

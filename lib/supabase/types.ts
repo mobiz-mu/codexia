@@ -119,6 +119,7 @@ export type Database = {
         pickup_location_id: string;
         dropoff_location_id: string;
         status: "draft" | "pending" | "awaiting_payment" | "payment_proof_submitted" | "payment_under_review" | "confirmed" | "partially_paid" | "paid" | "vehicle_assigned" | "ready_for_pickup" | "active" | "completed" | "cancelled" | "no_show" | "refunded" | "rejected";
+        currency: string;
         pricing: unknown;
         total_cents: number;
         paid_cents: number;
@@ -270,6 +271,7 @@ export type Database = {
         issue_date: string;
         due_date: string;
         status: "draft" | "sent" | "paid" | "partially_paid" | "void";
+        currency: string;
         terms: string | null;
         notes: string | null;
         subtotal_cents: number;
@@ -291,6 +293,7 @@ export type Database = {
         description_fr: string | null;
         hero_image_path: string | null;
         delivery_fee_cents: number;
+        delivery_fee_currency: string;
         latitude: number | null;
         longitude: number | null;
         meta_title_en: string | null;
@@ -341,9 +344,11 @@ export type Database = {
         booking_id: string;
         provider: string;
         provider_ref: string | null;
+        capture_id: string | null;
         amount_cents: number;
         currency: string;
-        status: "pending" | "succeeded" | "failed" | "cancelled";
+        exchange_rate: number | null;
+        status: "created" | "pending" | "succeeded" | "failed" | "denied" | "cancelled" | "refunded" | "reversed" | "disputed";
         webhook_payload: unknown;
         idempotency_key: string;
         created_at: string;
@@ -411,6 +416,10 @@ export type Database = {
         reminder_type: "seven_day" | "tomorrow";
         sent_at: string;
       }>;
+      review_request_logs: Table<{
+        booking_id: string;
+        sent_at: string;
+      }>;
       reviews: Table<{
         id: string;
         target_type: "vehicle" | "post" | "homepage";
@@ -463,7 +472,7 @@ export type Database = {
         id: string;
         vehicle_id: string;
         period: string;
-        type: "maintenance" | "internal";
+        type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident";
         note: string | null;
         created_by: string | null;
         created_at: string;
@@ -490,6 +499,53 @@ export type Database = {
         updated_at: string;
         deleted_at: string | null;
       }>;
+      vehicle_compliance_alert_logs: Table<{
+        id: string;
+        compliance_record_id: string;
+        alert_date: string;
+        status_at_alert: "warning" | "urgent" | "expires_today" | "expired";
+        created_at: string;
+      }>;
+      vehicle_compliance_attachments: Table<{
+        id: string;
+        compliance_record_id: string;
+        storage_path: string;
+        file_name: string;
+        mime_type: string;
+        size_bytes: number;
+        uploaded_by: string | null;
+        created_at: string;
+      }>;
+      vehicle_compliance_current: Table<{
+        id: string;
+        vehicle_id: string;
+        document_type: "road_tax" | "insurance" | "psvl" | "fitness" | "other";
+        custom_type: string | null;
+        reference_number: string | null;
+        provider: string | null;
+        issued_date: string | null;
+        expiry_date: string;
+        cost_cents: number | null;
+        remarks: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      vehicle_compliance_records: Table<{
+        id: string;
+        vehicle_id: string;
+        document_type: "road_tax" | "insurance" | "psvl" | "fitness" | "other";
+        custom_type: string | null;
+        reference_number: string | null;
+        provider: string | null;
+        issued_date: string | null;
+        expiry_date: string;
+        cost_cents: number | null;
+        remarks: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
       vehicle_images: Table<{
         id: string;
         vehicle_id: string;
@@ -498,7 +554,111 @@ export type Database = {
         is_main: boolean;
         alt_en: string | null;
         alt_fr: string | null;
+        content_hash: string | null;
+        variants: unknown;
+        blur_data_url: string | null;
         created_at: string;
+      }>;
+      vehicle_incident_attachments: Table<{
+        id: string;
+        incident_id: string;
+        category: "photo" | "police_report" | "insurance_document" | "repair_quotation" | "other";
+        storage_path: string;
+        file_name: string;
+        mime_type: string;
+        size_bytes: number;
+        uploaded_by: string | null;
+        created_at: string;
+      }>;
+      vehicle_incident_records: Table<{
+        id: string;
+        vehicle_id: string;
+        booking_id: string | null;
+        availability_block_id: string | null;
+        incident_date: string;
+        incident_time: string | null;
+        location: string | null;
+        driver_customer_name: string | null;
+        incident_type:
+          | "collision"
+          | "parking_damage"
+          | "windscreen"
+          | "tyre_wheel"
+          | "vandalism"
+          | "theft_attempt"
+          | "weather_damage"
+          | "mechanical_damage"
+          | "other";
+        custom_type: string | null;
+        accident_description: string | null;
+        damage_description: string | null;
+        affected_areas: string | null;
+        police_report_reference: string | null;
+        insurance_claim_reference: string | null;
+        third_party_details: string | null;
+        estimated_repair_cost_cents: number | null;
+        actual_repair_cost_cents: number | null;
+        vehicle_operational_status: "operational" | "limited_operation" | "not_operational";
+        repair_status:
+          | "reported"
+          | "under_assessment"
+          | "awaiting_insurance"
+          | "approved_for_repair"
+          | "under_repair"
+          | "repaired"
+          | "closed";
+        severity: "minor" | "moderate" | "major" | "write_off";
+        date_reported: string | null;
+        date_repair_started: string | null;
+        date_repaired: string | null;
+        downtime_start: string | null;
+        downtime_end: string | null;
+        remarks: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      vehicle_maintenance_attachments: Table<{
+        id: string;
+        maintenance_record_id: string;
+        storage_path: string;
+        file_name: string;
+        mime_type: string;
+        size_bytes: number;
+        uploaded_by: string | null;
+        created_at: string;
+      }>;
+      vehicle_maintenance_records: Table<{
+        id: string;
+        vehicle_id: string;
+        maintenance_date: string;
+        maintenance_type:
+          | "scheduled_service"
+          | "repair"
+          | "tyre_change"
+          | "battery_change"
+          | "oil_filter_change"
+          | "brake_work"
+          | "suspension_work"
+          | "electrical_work"
+          | "other";
+        custom_type: string | null;
+        repairs_performed: string | null;
+        parts_changed: string | null;
+        tyre_changes: string | null;
+        battery_changes: string | null;
+        servicing_details: string | null;
+        oil_filter_changes: string | null;
+        brake_work: string | null;
+        suspension_work: string | null;
+        electrical_work: string | null;
+        mileage_km: number | null;
+        service_provider: string | null;
+        cost_cents: number;
+        remarks: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
       }>;
       vehicles: Table<{
         id: string;
@@ -542,9 +702,31 @@ export type Database = {
         meta_description_fr: string | null;
         og_image_path: string | null;
         canonical_path: string | null;
+        vin: string | null;
+        engine_number: string | null;
+        // LEGACY (0021), superseded by vehicle_compliance_records (0027) —
+        // not written by any current code path; not dropped, for a future
+        // cleanup migration to decide.
+        insurance_expiry: string | null;
+        road_tax_expiry: string | null;
+        fitness_expiry: string | null;
+        last_service_date: string | null;
+        next_service_date: string | null;
+        current_mileage_km: number | null;
+        weekly_price_cents: number | null;
+        monthly_price_cents: number | null;
         created_at: string;
         updated_at: string;
         deleted_at: string | null;
+      }>;
+      webhook_events: Table<{
+        id: string;
+        provider: string;
+        event_id: string;
+        event_type: string;
+        payload: unknown;
+        processed_at: string | null;
+        created_at: string;
       }>;
     };
     Views: {

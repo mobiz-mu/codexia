@@ -2,8 +2,6 @@ import { setRequestLocale, getTranslations } from "next-intl/server";
 import type { Metadata } from "next";
 import { getVehicleCategories } from "@/lib/data/categories";
 import { getActiveLocations } from "@/lib/data/locations";
-import { getBankDetails } from "@/lib/config/get-bank-details";
-import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { BookingWizard } from "@/components/booking/BookingWizard";
 import { buildPageMetadata } from "@/lib/seo/metadata";
 
@@ -11,8 +9,13 @@ export async function generateMetadata(props: {
   params: Promise<{ locale: string }>;
 }): Promise<Metadata> {
   const { locale } = await props.params;
-  const t = await getTranslations({ locale, namespace: "home" });
-  return buildPageMetadata({ locale, path: "/book", title: t("heroCta") });
+  const t = await getTranslations({ locale, namespace: "nav.booking" });
+  return buildPageMetadata({
+    locale,
+    path: "/book",
+    title: t("bookNow"),
+    description: t("bookNowDescription"),
+  });
 }
 
 export default async function BookPage({
@@ -26,12 +29,7 @@ export default async function BookPage({
   const search = await searchParams;
   setRequestLocale(locale);
 
-  const [categories, locations, bankDetails, settings] = await Promise.all([
-    getVehicleCategories(),
-    getActiveLocations(),
-    getBankDetails(),
-    getSiteSettings(),
-  ]);
+  const [categories, locations] = await Promise.all([getVehicleCategories(), getActiveLocations()]);
 
   const getParam = (key: string) => {
     const value = search[key];
@@ -60,8 +58,6 @@ export default async function BookPage({
           passengers: Number(getParam("passengers") ?? 1),
         }}
         initialVehicleSlug={getParam("vehicle") ?? ""}
-        bankDetails={bankDetails}
-        whatsappNumber={settings.whatsappNumber}
       />
     </section>
   );

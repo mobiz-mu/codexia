@@ -1272,6 +1272,227 @@ update payment_transactions set currency = 'MUR' where currency = 'EUR';
 
 update site_settings set value = '"MUR"' where key = 'currency' and value = '"EUR"';
 
+-- ---- 0018_paypal_payments.sql ----
+-- PayPal is now the only online payment method. The site displays prices in
+-- MUR, but PayPal does not settle in MUR, so we keep a single admin-editable
+-- exchange rate (MUR per 1 EUR) to convert the booking total into the EUR
+-- amount actually charged for the deposit/full payment.
+insert into site_settings (key, value, value_type, description)
+values ('eur_exchange_rate', '47.5', 'number', 'MUR per 1 EUR, used to convert booking totals into the EUR amount charged via PayPal. Update to the current rate before go-live.')
+on conflict (key) do nothing;
+
+-- ---- 0019_paypal_verification.sql ----
+-- Server-side PayPal verification: track the PayPal capture id separately
+-- from the order id (they are different identifiers), persist the exchange
+-- rate actually applied to each payment for auditing, widen payment status
+-- to cover the full PayPal capture lifecycle, and add a webhook_events table
+-- so webhook deliveries can be deduped and verified independently of the
+-- direct capture flow.
+
+alter table payment_transactions
+  add column capture_id text unique,
+  add column exchange_rate numeric;
+
+alter table payment_transactions
+  drop constraint payment_transactions_status_check,
+  add constraint payment_transactions_status_check
+    check (status in ('created', 'pending', 'succeeded', 'failed', 'denied', 'cancelled', 'refunded', 'reversed', 'disputed'));
+
+alter table payment_transactions
+  alter column provider set default 'paypal';
+
+create table webhook_events (
+  id uuid primary key default gen_random_uuid(),
+  provider text not null,
+  event_id text not null unique,
+  event_type text not null,
+  payload jsonb not null,
+  processed_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create index webhook_events_provider_idx on webhook_events (provider);
+
+alter table webhook_events enable row level security;
+
+create policy webhook_events_staff_select on webhook_events
+  for select using (has_permission(auth.uid(), 'manage_payments'));
+
+-- ---- 0020_review_requests.sql ----
+-- Dedup log for the automated post-rental review-request email: one row per
+-- booking, inserted before the email is sent so a concurrent cron run can't
+-- double-send (same insert-first pattern as reminder_logs).
+
+create table review_request_logs (
+  booking_id uuid primary key references bookings (id) on delete cascade,
+  sent_at timestamptz not null default now()
+);
+
+alter table review_request_logs enable row level security;
+
+create policy review_request_logs_staff_select on review_request_logs
+  for select using (has_permission(auth.uid(), 'view_analytics'));
+
+-- ---- 0021_fleet_operational_fields.sql ----
+-- Real fleet-management data: compliance/service dates, VIN/engine number,
+-- mileage, and optional weekly/monthly rates. Registration number, fuel,
+-- transmission, seats, doors, luggage, air conditioning, GPS, bluetooth, and
+-- child-seat availability already exist on vehicles — not duplicated here.
+--
+-- Vehicle operational status (Available/Reserved/Preparing/.../Maintenance)
+-- is deliberately NOT a stored column: it's derived at query time from the
+-- vehicle's current booking + vehicle_blocks state (see
+-- lib/vehicles/operational-status.ts), so it can never go stale the way a
+-- manually-maintained status field would.
+
+alter table vehicles
+  add column vin text,
+  add column engine_number text,
+  add column insurance_expiry date,
+  add column road_tax_expiry date,
+  add column fitness_expiry date,
+  add column last_service_date date,
+  add column next_service_date date,
+  add column current_mileage_km integer check (current_mileage_km >= 0),
+  add column weekly_price_cents integer check (weekly_price_cents >= 0),
+  add column monthly_price_cents integer check (monthly_price_cents >= 0);
+
+-- Turnaround states (preparing/cleaning) join the existing maintenance/
+-- internal block types so admins can mark a vehicle unavailable between
+-- bookings without inventing a separate mechanism.
+alter table vehicle_blocks
+  drop constraint vehicle_blocks_type_check,
+  add constraint vehicle_blocks_type_check
+    check (type in ('maintenance', 'internal', 'preparing', 'cleaning'));
+
+-- ---- 0022_vehicle_image_variants.sql ----
+-- Upload-time image pipeline: content_hash lets uploadVehicleImage reject an
+-- exact duplicate photo for the same vehicle before it ever hits storage;
+-- variants holds the generated WebP/AVIF thumb/card/hero/gallery paths
+-- (jsonb rather than one column per size x format, since the format set can
+-- grow — e.g. adding AVIF-only fallback logic — without another migration);
+-- blur_data_url is a tiny base64 placeholder for next/image's blur-up effect.
+-- The original upload is untouched and still referenced by `path`.
+
+alter table vehicle_images
+  add column content_hash text,
+  add column variants jsonb,
+  add column blur_data_url text;
+
+create index vehicle_images_content_hash_idx on vehicle_images (vehicle_id, content_hash);
+
+-- ---- 0023_google_maps_setting.sql ----
+-- Admin-editable Google Maps link for the office/counter location, used in
+-- the standardized email footer. Left empty by default rather than
+-- fabricating an address — the footer's Maps button only renders once an
+-- admin sets a real value in Settings.
+insert into site_settings (key, value, value_type, description)
+values ('google_maps_url', '""', 'string', 'Google Maps link to the Codexia office/counter, shown in email footers. Leave empty to hide the Maps button.')
+on conflict (key) do nothing;
+
+-- ---- 0024_eur_pricing.sql ----
+-- Migrate the platform from MUR-primary/EUR-converted-at-PayPal-time to a
+-- fully EUR-native pricing architecture, on both locales. See the standalone
+-- migration file for the full strategy rationale.
+
+alter table vehicles alter column currency set default 'EUR';
+alter table extras alter column currency set default 'EUR';
+alter table payments alter column currency set default 'EUR';
+alter table payment_transactions alter column currency set default 'EUR';
+
+alter table bookings add column if not exists currency text;
+
+update bookings b
+set currency = v.currency
+from vehicles v
+where b.vehicle_id = v.id
+  and b.currency is null;
+
+update bookings set currency = 'MUR' where currency is null;
+
+alter table bookings alter column currency set not null;
+alter table bookings alter column currency set default 'EUR';
+
+alter table invoices add column if not exists currency text;
+
+update invoices i
+set currency = b.currency
+from bookings b
+where i.booking_id = b.id
+  and i.currency is null;
+
+update invoices set currency = 'MUR' where currency is null;
+
+alter table invoices alter column currency set not null;
+alter table invoices alter column currency set default 'EUR';
+
+alter table locations add column if not exists delivery_fee_currency text;
+
+update locations set delivery_fee_currency = 'MUR' where delivery_fee_currency is null;
+
+alter table locations alter column delivery_fee_currency set not null;
+alter table locations alter column delivery_fee_currency set default 'EUR';
+
+update site_settings set value = '"EUR"' where key = 'currency' and value = '"MUR"';
+
+insert into site_settings (key, value, value_type, description)
+values (
+  'deposit_threshold_eur_cents',
+  '10000',
+  'number',
+  'Booking totals at or below this EUR amount (in cents) are paid in full via PayPal instead of a partial deposit.'
+)
+on conflict (key) do nothing;
+
+insert into site_settings (key, value, value_type, description)
+values (
+  'deposit_amount_eur_cents',
+  '10000',
+  'number',
+  'Fixed EUR deposit (in cents) charged via PayPal when the booking total exceeds the deposit threshold.'
+)
+on conflict (key) do nothing;
+
+update site_settings
+set description = 'LEGACY: MUR per 1 EUR. Used only to display/reconcile historical MUR bookings created before the EUR-native migration — no longer read by the live booking or PayPal flow.'
+where key = 'eur_exchange_rate';
+
+-- ---- 0025_tiered_deposits.sql ----
+-- Replace the flat "≤€100 full payment, else fixed €100 deposit" rule from
+-- migration 0024 with a three-tier rule. deposit_threshold_eur_cents keeps
+-- its exact meaning from 0024 — only three new settings are added.
+
+insert into site_settings (key, value, value_type, description)
+values (
+  'deposit_mid_tier_max_eur_cents',
+  '40000',
+  'number',
+  'Upper bound (in EUR cents) of the mid-tier deposit band — bookings from deposit_threshold_eur_cents up to and including this amount pay deposit_mid_tier_amount_eur_cents.'
+)
+on conflict (key) do nothing;
+
+insert into site_settings (key, value, value_type, description)
+values (
+  'deposit_mid_tier_amount_eur_cents',
+  '10000',
+  'number',
+  'Fixed EUR deposit (in cents) for bookings in the mid tier (from deposit_threshold_eur_cents up to deposit_mid_tier_max_eur_cents).'
+)
+on conflict (key) do nothing;
+
+insert into site_settings (key, value, value_type, description)
+values (
+  'deposit_high_tier_amount_eur_cents',
+  '20000',
+  'number',
+  'Fixed EUR deposit (in cents) for bookings above deposit_mid_tier_max_eur_cents.'
+)
+on conflict (key) do nothing;
+
+update site_settings
+set description = 'LEGACY: superseded by deposit_mid_tier_amount_eur_cents — the flat single-tier deposit amount is no longer read by the live booking or PayPal flow.'
+where key = 'deposit_amount_eur_cents';
+
 -- ---- seed.sql ----
 -- ============================================================================
 -- Codexia Ltd — seed data. Vehicles/pricing below are clearly-marked demo
@@ -1357,10 +1578,16 @@ insert into site_settings (key, value, value_type, description) values
   ('phone', '"+230 52811999"', 'string', 'Primary phone number'),
   ('whatsapp', '"+230 52811999"', 'string', 'Displayed WhatsApp contact number (formatted)'),
   ('whatsapp_number', '"23052811999"', 'string', 'WhatsApp number, digits only for wa.me links'),
-  ('email', '"dyash21@hotmail.com"', 'string', 'Primary contact / reply-to email'),
+  ('email', '"info@codexia.mu"', 'string', 'Primary contact / reply-to email'),
   ('emergency_phone', '"+230 5253 2101"', 'string', 'Emergency contact number'),
   ('opening_hours', '"24/7 including public holidays"', 'string', 'Opening hours'),
   ('currency', '"EUR"', 'string', 'Default currency'),
+  ('eur_exchange_rate', '47.5', 'number', 'LEGACY: MUR per 1 EUR. Used only to display/reconcile historical MUR bookings created before the EUR-native migration — no longer read by the live booking or PayPal flow.'),
+  ('deposit_threshold_eur_cents', '10000', 'number', 'Booking totals below this EUR amount (in cents) are paid in full via PayPal instead of a partial deposit.'),
+  ('deposit_mid_tier_max_eur_cents', '40000', 'number', 'Upper bound (in EUR cents) of the mid-tier deposit band — bookings from deposit_threshold_eur_cents up to and including this amount pay deposit_mid_tier_amount_eur_cents.'),
+  ('deposit_mid_tier_amount_eur_cents', '10000', 'number', 'Fixed EUR deposit (in cents) for bookings in the mid tier (from deposit_threshold_eur_cents up to deposit_mid_tier_max_eur_cents).'),
+  ('deposit_high_tier_amount_eur_cents', '20000', 'number', 'Fixed EUR deposit (in cents) for bookings above deposit_mid_tier_max_eur_cents.'),
+  ('deposit_amount_eur_cents', '10000', 'number', 'LEGACY: superseded by deposit_mid_tier_amount_eur_cents — the flat single-tier deposit amount is no longer read by the live booking or PayPal flow.'),
   ('tax_rate_percent', '0', 'number', 'Default tax rate percentage'),
   ('insurance_excess_cents', '62500', 'number', 'Standard insurance excess'),
   ('delivery_fee_non_airport_cents', '1500', 'number', 'Non-airport delivery/recovery fee'),
@@ -1371,10 +1598,6 @@ insert into site_settings (key, value, value_type, description) values
   ('invoice_prefix', '"CDX-INV-"', 'string', 'Invoice number prefix'),
   ('booking_reference_prefix', '"CDX-"', 'string', 'Booking reference prefix'),
   ('calendar_behavior_on_cancel', '"annotate"', 'string', 'delete | annotate — what happens to the Google Calendar event on cancellation'),
-  ('bank_name', '""', 'string', 'Bank transfer: bank name'),
-  ('bank_account_name', '""', 'string', 'Bank transfer: account holder name'),
-  ('bank_account_number', '""', 'string', 'Bank transfer: account number'),
-  ('bank_swift', '""', 'string', 'Bank transfer: SWIFT/BIC code'),
   ('social_facebook', '""', 'string', 'Facebook URL'),
   ('social_instagram', '""', 'string', 'Instagram URL')
 on conflict (key) do nothing;
@@ -1480,35 +1703,35 @@ from (values
     'Provide your flight number when booking — we monitor arrivals and adjust your pickup time accordingly.',
     'Indiquez votre numéro de vol lors de la réservation — nous suivons les arrivées et ajustons l''heure de prise en charge en conséquence.', 2),
   ('airport-delivery', 'How much does non-airport delivery cost?', 'Quel est le coût de la livraison hors aéroport ?',
-    'Delivery or recovery outside the airport costs EUR 15.',
-    'La livraison ou la récupération hors aéroport coûte 15 EUR.', 3),
+    'Delivery or recovery outside the airport costs Rs 15.',
+    'La livraison ou la récupération hors aéroport coûte Rs 15.', 3),
   ('airport-delivery', 'Can I get a SIM card with internet?', 'Puis-je obtenir une carte SIM avec internet ?',
     'Yes, a local internet SIM card can be added as an extra.',
     'Oui, une carte SIM locale avec internet peut être ajoutée en extra.', 4),
   ('insurance-mileage', 'Is insurance included?', 'L''assurance est-elle incluse ?',
-    'Yes, comprehensive insurance is included with a standard excess of EUR 625. Extra insurance to reduce the excess is available.',
-    'Oui, une assurance complète est incluse avec une franchise standard de 625 EUR. Une assurance supplémentaire pour réduire la franchise est disponible.', 1),
+    'Yes, comprehensive insurance is included with a standard excess of Rs 625. Extra insurance to reduce the excess is available.',
+    'Oui, une assurance complète est incluse avec une franchise standard de Rs 625. Une assurance supplémentaire pour réduire la franchise est disponible.', 1),
   ('insurance-mileage', 'Is mileage unlimited?', 'Le kilométrage est-il illimité ?',
     'Yes, every rental includes unlimited mileage.',
     'Oui, chaque location inclut un kilométrage illimité.', 2),
   ('insurance-mileage', 'What happens in case of an accident?', 'Que se passe-t-il en cas d''accident ?',
     'Contact us immediately via our 24/7 emergency line and follow the instructions in your rental agreement.',
     'Contactez-nous immédiatement via notre ligne d''urgence 24h/24 et suivez les instructions de votre contrat de location.', 3),
-  ('payment-booking', 'Can I pay by bank transfer?', 'Puis-je payer par virement bancaire ?',
-    'Yes — bank details are provided at checkout, and you upload proof of payment for our team to confirm.',
-    'Oui — les coordonnées bancaires sont fournies lors de la commande, et vous téléversez la preuve de paiement pour confirmation par notre équipe.', 1),
-  ('payment-booking', 'Can I pay on arrival?', 'Puis-je payer à l''arrivée ?',
-    'Yes — choose "Pay on Arrival" at checkout. Your booking is pending until confirmed by Codexia.',
-    'Oui — choisissez "Payer à l''arrivée" lors de la commande. Votre réservation est en attente jusqu''à confirmation par Codexia.', 2),
+  ('payment-booking', 'How do I pay for my booking?', 'Comment puis-je payer ma réservation ?',
+    'You pay securely online via PayPal (card or PayPal balance) at checkout. Bookings totalling €100 or less are paid in full; larger bookings pay a fixed €100 deposit online, with the remaining balance settled in cash or by card when you collect the vehicle.',
+    'Vous payez en toute sécurité en ligne via PayPal (carte ou solde PayPal) lors de la réservation. Les réservations totalisant 100 € ou moins sont payées intégralement ; les réservations plus importantes règlent un acompte fixe de 100 € en ligne, le solde restant étant réglé en espèces ou par carte à la prise en charge du véhicule.', 1),
+  ('payment-booking', 'What if I have a remaining balance?', 'Que se passe-t-il si un solde reste à payer ?',
+    'Any balance beyond your online deposit is settled in cash or by card when you collect the vehicle. Your booking confirmation email shows exactly how much is due.',
+    'Tout solde au-delà de votre acompte en ligne est réglé en espèces ou par carte à la prise en charge du véhicule. Votre e-mail de confirmation de réservation indique exactement le montant dû.', 2),
   ('payment-booking', 'What is your cancellation policy?', 'Quelle est votre politique d''annulation ?',
     'See our Cancellation Policy page for full details on notice periods and any applicable charges.',
     'Consultez notre page Politique d''annulation pour tous les détails sur les délais de préavis et les frais éventuels.', 3),
   ('payment-booking', 'What if I return the car late?', 'Que se passe-t-il si je rends la voiture en retard ?',
     'A 60-minute grace period applies. Beyond that, late-return fees may apply as per your rental agreement.',
     'Une période de grâce de 60 minutes s''applique. Au-delà, des frais de retard peuvent s''appliquer selon votre contrat.', 4),
-  ('payment-booking', 'Online payment (MCB)?', 'Paiement en ligne (MCB) ?',
-    'Online payment via MCB is coming soon. For now, please use bank transfer or pay on arrival.',
-    'Le paiement en ligne via MCB arrive bientôt. Pour l''instant, utilisez le virement bancaire ou le paiement à l''arrivée.', 5),
+  ('payment-booking', 'Is my online payment secure?', 'Mon paiement en ligne est-il sécurisé ?',
+    'Yes — payments are processed entirely by PayPal. Codexia never sees or stores your card details.',
+    'Oui — les paiements sont traités entièrement par PayPal. Codexia ne voit ni ne conserve jamais les détails de votre carte.', 5),
   ('driving-mauritius', 'Which side of the road do you drive on?', 'De quel côté de la route conduit-on ?',
     'Mauritius drives on the left, as in the UK.',
     'À Maurice, on conduit à gauche, comme au Royaume-Uni.', 1),
@@ -1542,11 +1765,11 @@ insert into policy_versions (policy_page_id, version, body_en, body_fr)
 select p.id, 1, v.body_en, v.body_fr
 from (values
   ('general-rental-conditions',
-   E'## Inclusions\n- Unlimited mileage\n- Comprehensive insurance\n- Local taxes\n- 24h road assistance\n- First additional driver free\n- Free airport delivery/recovery\n\n## Exclusions\n- Fines\n- Fuel\n- Cancellation charges\n- Late-return fees\n- Lost keys/documents\n\n## Delivery & Recovery\nFree at SSR Airport. EUR 15 for non-airport delivery or recovery.\n\n## Documents & Eligibility\nDriver age 19–70, licence held at least 1 year, valid ID/passport.\n\n## Vehicle Group vs Model\nA specific make/model/fuel type may be replaced by a similar or upgraded vehicle depending on availability.\n\n## Additional Drivers\nThe first additional driver is included free of charge; further drivers may incur a fee.\n\n## Amendments & Extensions\nAmendments and extensions are subject to vehicle availability.\n\n## Insurance & Excess\nComprehensive insurance is included with an excess of EUR 625. Extra insurance is available to reduce this excess. Exclusions apply as detailed in the Insurance Policy.\n\n## Cancellation\nSee the Cancellation Policy for notice periods and charges. No-shows may forfeit any deposit paid.\n\n## Payment\nCard pre-authorization may be required. Amounts may be subject to exchange rate variation.\n\n## Vehicle Use\nVehicles are limited to paved public roads. Mauritius drives on the left.\n\n## Accidents, Damages & Liability\nAny accident or damage must be reported immediately via the 24h emergency line.\n\n## Mechanical Issues & Maintenance\nReport any mechanical issue immediately; do not attempt repairs yourself.\n\n## Fuel Policy\nThe vehicle must be returned with the same fuel level as at pickup.\n\n## Hours & Emergency Contact\nWe operate 24/7 including public holidays. Emergency contact: +230 5253 2101.\n\n## Late Pickup, Early Dropoff & Late Return\nA 60-minute grace period applies to returns; late-return fees may apply beyond this.',
-   E'## Inclusions\n- Kilométrage illimité\n- Assurance complète\n- Taxes locales incluses\n- Assistance routière 24h/24\n- Premier conducteur supplémentaire gratuit\n- Livraison/récupération aéroport gratuite\n\n## Exclusions\n- Amendes\n- Carburant\n- Frais d''annulation\n- Frais de retard\n- Perte de clés/documents\n\n## Livraison et récupération\nGratuite à l''aéroport SSR. 15 EUR pour la livraison ou récupération hors aéroport.\n\n## Documents et éligibilité\nÂge du conducteur 19–70 ans, permis détenu depuis au moins 1 an, pièce d''identité/passeport valide.\n\n## Groupe de véhicule vs modèle\nUne marque/modèle/carburant spécifique peut être remplacé par un véhicule similaire ou supérieur selon disponibilité.\n\n## Conducteurs supplémentaires\nLe premier conducteur supplémentaire est inclus gratuitement ; des frais peuvent s''appliquer au-delà.\n\n## Modifications et prolongations\nLes modifications et prolongations sont soumises à disponibilité du véhicule.\n\n## Assurance et franchise\nUne assurance complète est incluse avec une franchise de 625 EUR. Une assurance supplémentaire est disponible pour réduire cette franchise.\n\n## Annulation\nConsultez la Politique d''annulation pour les délais de préavis et frais applicables.\n\n## Paiement\nUne pré-autorisation par carte peut être requise. Les montants peuvent varier selon le taux de change.\n\n## Utilisation du véhicule\nLes véhicules sont limités aux routes publiques pavées. On conduit à gauche à Maurice.\n\n## Accidents, dommages et responsabilité\nTout accident ou dommage doit être signalé immédiatement via la ligne d''urgence 24h/24.\n\n## Problèmes mécaniques et entretien\nSignalez immédiatement tout problème mécanique ; n''essayez pas de réparer vous-même.\n\n## Politique de carburant\nLe véhicule doit être restitué avec le même niveau de carburant qu''au départ.\n\n## Horaires et contact d''urgence\nNous sommes disponibles 24h/24 et 7j/7, y compris les jours fériés. Contact d''urgence : +230 5253 2101.\n\n## Retard de prise en charge, restitution anticipée et retard\nUne période de grâce de 60 minutes s''applique aux retours ; des frais de retard peuvent s''appliquer au-delà.'),
+   E'## Inclusions\n- Unlimited mileage\n- Comprehensive insurance\n- Local taxes\n- 24h road assistance\n- First additional driver free\n- Free airport delivery/recovery\n\n## Exclusions\n- Fines\n- Fuel\n- Cancellation charges\n- Late-return fees\n- Lost keys/documents\n\n## Delivery & Recovery\nFree at SSR Airport. Rs 15 for non-airport delivery or recovery.\n\n## Documents & Eligibility\nDriver age 19–70, licence held at least 1 year, valid ID/passport.\n\n## Vehicle Group vs Model\nA specific make/model/fuel type may be replaced by a similar or upgraded vehicle depending on availability.\n\n## Additional Drivers\nThe first additional driver is included free of charge; further drivers may incur a fee.\n\n## Amendments & Extensions\nAmendments and extensions are subject to vehicle availability.\n\n## Insurance & Excess\nComprehensive insurance is included with an excess of Rs 625. Extra insurance is available to reduce this excess. Exclusions apply as detailed in the Insurance Policy.\n\n## Cancellation\nSee the Cancellation Policy for notice periods and charges. No-shows may forfeit any deposit paid.\n\n## Payment\nCard pre-authorization may be required. Amounts may be subject to exchange rate variation.\n\n## Vehicle Use\nVehicles are limited to paved public roads. Mauritius drives on the left.\n\n## Accidents, Damages & Liability\nAny accident or damage must be reported immediately via the 24h emergency line.\n\n## Mechanical Issues & Maintenance\nReport any mechanical issue immediately; do not attempt repairs yourself.\n\n## Fuel Policy\nThe vehicle must be returned with the same fuel level as at pickup.\n\n## Hours & Emergency Contact\nWe operate 24/7 including public holidays. Emergency contact: +230 5253 2101.\n\n## Late Pickup, Early Dropoff & Late Return\nA 60-minute grace period applies to returns; late-return fees may apply beyond this.',
+   E'## Inclusions\n- Kilométrage illimité\n- Assurance complète\n- Taxes locales incluses\n- Assistance routière 24h/24\n- Premier conducteur supplémentaire gratuit\n- Livraison/récupération aéroport gratuite\n\n## Exclusions\n- Amendes\n- Carburant\n- Frais d''annulation\n- Frais de retard\n- Perte de clés/documents\n\n## Livraison et récupération\nGratuite à l''aéroport SSR. Rs 15 pour la livraison ou récupération hors aéroport.\n\n## Documents et éligibilité\nÂge du conducteur 19–70 ans, permis détenu depuis au moins 1 an, pièce d''identité/passeport valide.\n\n## Groupe de véhicule vs modèle\nUne marque/modèle/carburant spécifique peut être remplacé par un véhicule similaire ou supérieur selon disponibilité.\n\n## Conducteurs supplémentaires\nLe premier conducteur supplémentaire est inclus gratuitement ; des frais peuvent s''appliquer au-delà.\n\n## Modifications et prolongations\nLes modifications et prolongations sont soumises à disponibilité du véhicule.\n\n## Assurance et franchise\nUne assurance complète est incluse avec une franchise de Rs 625. Une assurance supplémentaire est disponible pour réduire cette franchise.\n\n## Annulation\nConsultez la Politique d''annulation pour les délais de préavis et frais applicables.\n\n## Paiement\nUne pré-autorisation par carte peut être requise. Les montants peuvent varier selon le taux de change.\n\n## Utilisation du véhicule\nLes véhicules sont limités aux routes publiques pavées. On conduit à gauche à Maurice.\n\n## Accidents, dommages et responsabilité\nTout accident ou dommage doit être signalé immédiatement via la ligne d''urgence 24h/24.\n\n## Problèmes mécaniques et entretien\nSignalez immédiatement tout problème mécanique ; n''essayez pas de réparer vous-même.\n\n## Politique de carburant\nLe véhicule doit être restitué avec le même niveau de carburant qu''au départ.\n\n## Horaires et contact d''urgence\nNous sommes disponibles 24h/24 et 7j/7, y compris les jours fériés. Contact d''urgence : +230 5253 2101.\n\n## Retard de prise en charge, restitution anticipée et retard\nUne période de grâce de 60 minutes s''applique aux retours ; des frais de retard peuvent s''appliquer au-delà.'),
   ('privacy',
-   E'## What We Collect\nBooking details, contact information, and payment references necessary to fulfil your rental.\n\n## How We Use It\nTo process bookings, communicate with you, and comply with legal obligations.\n\n## Sharing\nWe do not sell personal data. Data is shared only with service providers necessary to deliver the rental (e.g. insurance, payment verification).\n\n## Your Rights\nYou may request access to, correction of, or deletion of your personal data by contacting dyash21@hotmail.com.',
-   E'## Ce que nous collectons\nDétails de réservation, coordonnées et références de paiement nécessaires à la location.\n\n## Utilisation\nPour traiter les réservations, communiquer avec vous et respecter nos obligations légales.\n\n## Partage\nNous ne vendons pas de données personnelles. Les données sont partagées uniquement avec les prestataires nécessaires à la location (assurance, vérification de paiement).\n\n## Vos droits\nVous pouvez demander l''accès, la correction ou la suppression de vos données personnelles en contactant dyash21@hotmail.com.'),
+   E'## What We Collect\nBooking details, contact information, and payment references necessary to fulfil your rental.\n\n## How We Use It\nTo process bookings, communicate with you, and comply with legal obligations.\n\n## Sharing\nWe do not sell personal data. Data is shared only with service providers necessary to deliver the rental (e.g. insurance, payment verification).\n\n## Your Rights\nYou may request access to, correction of, or deletion of your personal data by contacting info@codexia.mu.',
+   E'## Ce que nous collectons\nDétails de réservation, coordonnées et références de paiement nécessaires à la location.\n\n## Utilisation\nPour traiter les réservations, communiquer avec vous et respecter nos obligations légales.\n\n## Partage\nNous ne vendons pas de données personnelles. Les données sont partagées uniquement avec les prestataires nécessaires à la location (assurance, vérification de paiement).\n\n## Vos droits\nVous pouvez demander l''accès, la correction ou la suppression de vos données personnelles en contactant info@codexia.mu.'),
   ('cookie',
    E'## Cookies We Use\nEssential cookies for site function, and privacy-friendly analytics cookies to understand site usage.\n\n## Your Choices\nYou can manage cookie preferences via your browser settings or our cookie consent banner.',
    E'## Cookies utilisés\nCookies essentiels au fonctionnement du site et cookies d''analyse respectueux de la vie privée.\n\n## Vos choix\nVous pouvez gérer vos préférences via les paramètres de votre navigateur ou notre bandeau de consentement.'),
@@ -1554,11 +1777,11 @@ from (values
    E'## Notice Periods\nCancellation charges depend on how far in advance you cancel before pickup. Contact us as early as possible.\n\n## No-Shows\nNo-shows may forfeit any deposit paid.',
    E'## Délais de préavis\nLes frais d''annulation dépendent du délai avant la prise en charge. Contactez-nous le plus tôt possible.\n\n## Absence au rendez-vous\nToute absence peut entraîner la perte du dépôt versé.'),
   ('insurance',
-   E'## Coverage\nComprehensive insurance is included with every rental, with a standard excess of EUR 625.\n\n## Extra Insurance\nExtra insurance is available to reduce the excess amount, priced per day.\n\n## Exclusions\nInsurance excludes damage from unauthorized use, unpaved roads, or driving under the influence.',
-   E'## Couverture\nUne assurance complète est incluse avec chaque location, avec une franchise standard de 625 EUR.\n\n## Assurance supplémentaire\nUne assurance supplémentaire est disponible pour réduire la franchise, facturée par jour.\n\n## Exclusions\nL''assurance exclut les dommages résultant d''une utilisation non autorisée, de routes non pavées, ou de conduite sous influence.'),
+   E'## Coverage\nComprehensive insurance is included with every rental, with a standard excess of Rs 625.\n\n## Extra Insurance\nExtra insurance is available to reduce the excess amount, priced per day.\n\n## Exclusions\nInsurance excludes damage from unauthorized use, unpaved roads, or driving under the influence.',
+   E'## Couverture\nUne assurance complète est incluse avec chaque location, avec une franchise standard de Rs 625.\n\n## Assurance supplémentaire\nUne assurance supplémentaire est disponible pour réduire la franchise, facturée par jour.\n\n## Exclusions\nL''assurance exclut les dommages résultant d''une utilisation non autorisée, de routes non pavées, ou de conduite sous influence.'),
   ('payment',
-   E'## Accepted Methods\nBank transfer, pay on arrival, or online payment (MCB — coming soon).\n\n## Pre-Authorization\nA card pre-authorization may be required at pickup to cover the insurance excess.\n\n## Currency\nAll prices are shown in EUR; amounts may be subject to exchange rate variation.',
-   E'## Méthodes acceptées\nVirement bancaire, paiement à l''arrivée, ou paiement en ligne (MCB — bientôt disponible).\n\n## Pré-autorisation\nUne pré-autorisation par carte peut être requise à la prise en charge pour couvrir la franchise d''assurance.\n\n## Devise\nTous les prix sont affichés en EUR ; les montants peuvent varier selon le taux de change.'),
+   E'## Accepted Methods\nOnline payment via PayPal (card or PayPal balance). Bookings totalling €100 or less are paid in full at booking; larger bookings pay a fixed €100 deposit online, with the remaining balance settled in cash or by card at vehicle collection.\n\n## Pre-Authorization\nA card pre-authorization may be required at pickup to cover the insurance excess.\n\n## Currency\nBooking totals are shown in MUR (Rs); the online deposit is charged in EUR via PayPal at the exchange rate applicable at the time of payment.',
+   E'## Méthodes acceptées\nPaiement en ligne via PayPal (carte ou solde PayPal). Les réservations totalisant 100 € ou moins sont payées intégralement lors de la réservation ; les réservations plus importantes règlent un acompte fixe de 100 € en ligne, le solde restant étant réglé en espèces ou par carte à la prise en charge du véhicule.\n\n## Pré-autorisation\nUne pré-autorisation par carte peut être requise à la prise en charge pour couvrir la franchise d''assurance.\n\n## Devise\nLes montants de réservation sont affichés en MUR (Rs) ; l''acompte en ligne est facturé en EUR via PayPal, au taux de change applicable au moment du paiement.'),
   ('fuel',
    E'## Fuel Policy\nThe vehicle is provided with a full tank and must be returned at the same fuel level. Refuelling charges apply if returned with less fuel.',
    E'## Politique de carburant\nLe véhicule est fourni avec le plein et doit être restitué au même niveau. Des frais de ravitaillement s''appliquent en cas de retour avec moins de carburant.'),
@@ -1568,5 +1791,336 @@ from (values
 ) as v(slug, body_en, body_fr)
 join policy_pages p on p.slug = v.slug
 on conflict (policy_page_id, version) do nothing;
+
+-- ---- 0026_vehicle_maintenance.sql ----
+
+create table vehicle_maintenance_records (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id uuid not null references vehicles (id) on delete cascade,
+  maintenance_date date not null,
+  maintenance_type text not null check (
+    maintenance_type in (
+      'scheduled_service',
+      'repair',
+      'tyre_change',
+      'battery_change',
+      'oil_filter_change',
+      'brake_work',
+      'suspension_work',
+      'electrical_work',
+      'other'
+    )
+  ),
+  custom_type text,
+  repairs_performed text,
+  parts_changed text,
+  tyre_changes text,
+  battery_changes text,
+  servicing_details text,
+  oil_filter_changes text,
+  brake_work text,
+  suspension_work text,
+  electrical_work text,
+  mileage_km integer check (mileage_km is null or mileage_km >= 0),
+  service_provider text,
+  cost_cents integer not null default 0 check (cost_cents >= 0),
+  remarks text,
+  created_by uuid references profiles (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint vehicle_maintenance_records_custom_type_required
+    check (maintenance_type <> 'other' or (custom_type is not null and length(trim(custom_type)) > 0))
+);
+
+create index vehicle_maintenance_records_vehicle_id_idx on vehicle_maintenance_records (vehicle_id);
+create index vehicle_maintenance_records_maintenance_date_idx on vehicle_maintenance_records (maintenance_date);
+create index vehicle_maintenance_records_maintenance_type_idx on vehicle_maintenance_records (maintenance_type);
+
+create trigger vehicle_maintenance_records_set_updated_at
+  before update on vehicle_maintenance_records
+  for each row execute function set_updated_at();
+
+create table vehicle_maintenance_attachments (
+  id uuid primary key default gen_random_uuid(),
+  maintenance_record_id uuid not null references vehicle_maintenance_records (id) on delete cascade,
+  storage_path text not null,
+  file_name text not null,
+  mime_type text not null,
+  size_bytes integer not null check (size_bytes >= 0),
+  uploaded_by uuid references profiles (id),
+  created_at timestamptz not null default now()
+);
+
+create index vehicle_maintenance_attachments_record_id_idx on vehicle_maintenance_attachments (maintenance_record_id);
+
+insert into permissions (key, description) values
+  ('view_maintenance', 'View vehicle maintenance records'),
+  ('manage_maintenance', 'Create, edit, and delete vehicle maintenance records');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id
+from roles r, permissions p
+where r.key in ('super_admin', 'administrator', 'fleet_manager')
+  and p.key in ('view_maintenance', 'manage_maintenance');
+
+alter table vehicle_maintenance_records enable row level security;
+alter table vehicle_maintenance_attachments enable row level security;
+
+create policy vehicle_maintenance_records_staff_select on vehicle_maintenance_records
+  for select using (has_permission(auth.uid(), 'view_maintenance'));
+create policy vehicle_maintenance_records_staff_insert on vehicle_maintenance_records
+  for insert with check (has_permission(auth.uid(), 'manage_maintenance'));
+create policy vehicle_maintenance_records_staff_update on vehicle_maintenance_records
+  for update using (has_permission(auth.uid(), 'manage_maintenance'))
+  with check (has_permission(auth.uid(), 'manage_maintenance'));
+create policy vehicle_maintenance_records_staff_delete on vehicle_maintenance_records
+  for delete using (has_permission(auth.uid(), 'manage_maintenance'));
+
+create policy vehicle_maintenance_attachments_staff_select on vehicle_maintenance_attachments
+  for select using (has_permission(auth.uid(), 'view_maintenance'));
+create policy vehicle_maintenance_attachments_staff_insert on vehicle_maintenance_attachments
+  for insert with check (has_permission(auth.uid(), 'manage_maintenance'));
+create policy vehicle_maintenance_attachments_staff_delete on vehicle_maintenance_attachments
+  for delete using (has_permission(auth.uid(), 'manage_maintenance'));
+
+insert into storage.buckets (id, name, public)
+values ('maintenance-documents', 'maintenance-documents', false)
+on conflict (id) do nothing;
+
+create policy storage_maintenance_documents_staff on storage.objects
+  for all using (bucket_id = 'maintenance-documents' and has_permission(auth.uid(), 'manage_maintenance'))
+  with check (bucket_id = 'maintenance-documents' and has_permission(auth.uid(), 'manage_maintenance'));
+
+-- ---- 0027_vehicle_compliance.sql ----
+
+create table vehicle_compliance_records (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id uuid not null references vehicles (id) on delete cascade,
+  document_type text not null check (document_type in ('road_tax', 'insurance', 'psvl', 'fitness', 'other')),
+  custom_type text,
+  reference_number text,
+  provider text,
+  issued_date date,
+  expiry_date date not null,
+  cost_cents integer check (cost_cents is null or cost_cents >= 0),
+  remarks text,
+  created_by uuid references profiles (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint vehicle_compliance_records_custom_type_required
+    check (document_type <> 'other' or (custom_type is not null and length(trim(custom_type)) > 0)),
+  constraint vehicle_compliance_records_issued_before_expiry
+    check (issued_date is null or issued_date <= expiry_date)
+);
+
+create index vehicle_compliance_records_vehicle_type_expiry_idx
+  on vehicle_compliance_records (vehicle_id, document_type, expiry_date desc);
+create index vehicle_compliance_records_type_expiry_idx
+  on vehicle_compliance_records (document_type, expiry_date);
+create index vehicle_compliance_records_expiry_idx
+  on vehicle_compliance_records (expiry_date);
+
+create trigger vehicle_compliance_records_set_updated_at
+  before update on vehicle_compliance_records
+  for each row execute function set_updated_at();
+
+create view vehicle_compliance_current
+  with (security_invoker = true) as
+select distinct on (vehicle_id, document_type, coalesce(custom_type, ''))
+  id, vehicle_id, document_type, custom_type, reference_number, provider,
+  issued_date, expiry_date, cost_cents, remarks, created_by, created_at, updated_at
+from vehicle_compliance_records
+order by vehicle_id, document_type, coalesce(custom_type, ''), expiry_date desc, created_at desc;
+
+create table vehicle_compliance_attachments (
+  id uuid primary key default gen_random_uuid(),
+  compliance_record_id uuid not null references vehicle_compliance_records (id) on delete cascade,
+  storage_path text not null,
+  file_name text not null,
+  mime_type text not null,
+  size_bytes integer not null check (size_bytes >= 0),
+  uploaded_by uuid references profiles (id),
+  created_at timestamptz not null default now()
+);
+
+create index vehicle_compliance_attachments_record_id_idx on vehicle_compliance_attachments (compliance_record_id);
+
+create table vehicle_compliance_alert_logs (
+  id uuid primary key default gen_random_uuid(),
+  compliance_record_id uuid not null references vehicle_compliance_records (id) on delete cascade,
+  alert_date date not null,
+  status_at_alert text not null check (status_at_alert in ('warning', 'urgent', 'expires_today', 'expired')),
+  created_at timestamptz not null default now(),
+  unique (compliance_record_id, alert_date)
+);
+
+insert into permissions (key, description) values
+  ('view_compliance', 'View vehicle compliance/document records'),
+  ('manage_compliance', 'Create, edit, and delete vehicle compliance/document records');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id
+from roles r, permissions p
+where r.key in ('super_admin', 'administrator', 'fleet_manager')
+  and p.key in ('view_compliance', 'manage_compliance');
+
+alter table vehicle_compliance_records enable row level security;
+alter table vehicle_compliance_attachments enable row level security;
+alter table vehicle_compliance_alert_logs enable row level security;
+
+create policy vehicle_compliance_records_staff_select on vehicle_compliance_records
+  for select using (has_permission(auth.uid(), 'view_compliance'));
+create policy vehicle_compliance_records_staff_insert on vehicle_compliance_records
+  for insert with check (has_permission(auth.uid(), 'manage_compliance'));
+create policy vehicle_compliance_records_staff_update on vehicle_compliance_records
+  for update using (has_permission(auth.uid(), 'manage_compliance'))
+  with check (has_permission(auth.uid(), 'manage_compliance'));
+create policy vehicle_compliance_records_staff_delete on vehicle_compliance_records
+  for delete using (has_permission(auth.uid(), 'manage_compliance'));
+
+create policy vehicle_compliance_attachments_staff_select on vehicle_compliance_attachments
+  for select using (has_permission(auth.uid(), 'view_compliance'));
+create policy vehicle_compliance_attachments_staff_insert on vehicle_compliance_attachments
+  for insert with check (has_permission(auth.uid(), 'manage_compliance'));
+create policy vehicle_compliance_attachments_staff_delete on vehicle_compliance_attachments
+  for delete using (has_permission(auth.uid(), 'manage_compliance'));
+
+create policy vehicle_compliance_alert_logs_staff_select on vehicle_compliance_alert_logs
+  for select using (has_permission(auth.uid(), 'view_compliance'));
+
+insert into storage.buckets (id, name, public)
+values ('compliance-documents', 'compliance-documents', false)
+on conflict (id) do nothing;
+
+create policy storage_compliance_documents_staff on storage.objects
+  for all using (bucket_id = 'compliance-documents' and has_permission(auth.uid(), 'manage_compliance'))
+  with check (bucket_id = 'compliance-documents' and has_permission(auth.uid(), 'manage_compliance'));
+
+-- ---- 0028_vehicle_incidents.sql ----
+
+create table vehicle_incident_records (
+  id uuid primary key default gen_random_uuid(),
+  vehicle_id uuid not null references vehicles (id) on delete cascade,
+  booking_id uuid references bookings (id) on delete set null,
+  availability_block_id uuid references vehicle_blocks (id) on delete set null,
+  incident_date date not null,
+  incident_time text,
+  location text,
+  driver_customer_name text,
+  incident_type text not null check (
+    incident_type in (
+      'collision', 'parking_damage', 'windscreen', 'tyre_wheel', 'vandalism',
+      'theft_attempt', 'weather_damage', 'mechanical_damage', 'other'
+    )
+  ),
+  custom_type text,
+  accident_description text,
+  damage_description text,
+  affected_areas text,
+  police_report_reference text,
+  insurance_claim_reference text,
+  third_party_details text,
+  estimated_repair_cost_cents integer check (estimated_repair_cost_cents is null or estimated_repair_cost_cents >= 0),
+  actual_repair_cost_cents integer check (actual_repair_cost_cents is null or actual_repair_cost_cents >= 0),
+  vehicle_operational_status text not null check (vehicle_operational_status in ('operational', 'limited_operation', 'not_operational')),
+  repair_status text not null default 'reported' check (
+    repair_status in (
+      'reported', 'under_assessment', 'awaiting_insurance', 'approved_for_repair',
+      'under_repair', 'repaired', 'closed'
+    )
+  ),
+  severity text not null check (severity in ('minor', 'moderate', 'major', 'write_off')),
+  date_reported date,
+  date_repair_started date,
+  date_repaired date,
+  downtime_start date,
+  downtime_end date,
+  remarks text,
+  created_by uuid references profiles (id),
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint vehicle_incident_records_custom_type_required
+    check (incident_type <> 'other' or (custom_type is not null and length(trim(custom_type)) > 0)),
+  constraint vehicle_incident_records_reported_not_before_incident
+    check (date_reported is null or date_reported >= incident_date),
+  constraint vehicle_incident_records_repair_started_not_before_incident
+    check (date_repair_started is null or date_repair_started >= incident_date),
+  constraint vehicle_incident_records_repaired_not_before_incident
+    check (date_repaired is null or date_repaired >= incident_date),
+  constraint vehicle_incident_records_repaired_not_before_started
+    check (date_repaired is null or date_repair_started is null or date_repaired >= date_repair_started),
+  constraint vehicle_incident_records_downtime_start_not_before_incident
+    check (downtime_start is null or downtime_start >= incident_date),
+  constraint vehicle_incident_records_downtime_end_not_before_start
+    check (downtime_end is null or downtime_start is null or downtime_end >= downtime_start)
+);
+
+create index vehicle_incident_records_vehicle_date_idx on vehicle_incident_records (vehicle_id, incident_date desc);
+create index vehicle_incident_records_incident_date_idx on vehicle_incident_records (incident_date);
+create index vehicle_incident_records_severity_idx on vehicle_incident_records (severity);
+create index vehicle_incident_records_repair_status_idx on vehicle_incident_records (repair_status);
+create index vehicle_incident_records_booking_id_idx on vehicle_incident_records (booking_id);
+create index vehicle_incident_records_date_repaired_idx on vehicle_incident_records (date_repaired);
+
+create trigger vehicle_incident_records_set_updated_at
+  before update on vehicle_incident_records
+  for each row execute function set_updated_at();
+
+create table vehicle_incident_attachments (
+  id uuid primary key default gen_random_uuid(),
+  incident_id uuid not null references vehicle_incident_records (id) on delete cascade,
+  category text not null check (category in ('photo', 'police_report', 'insurance_document', 'repair_quotation', 'other')),
+  storage_path text not null,
+  file_name text not null,
+  mime_type text not null,
+  size_bytes integer not null check (size_bytes >= 0),
+  uploaded_by uuid references profiles (id),
+  created_at timestamptz not null default now()
+);
+
+create index vehicle_incident_attachments_incident_id_idx on vehicle_incident_attachments (incident_id);
+
+alter table vehicle_blocks
+  drop constraint vehicle_blocks_type_check,
+  add constraint vehicle_blocks_type_check
+    check (type in ('maintenance', 'internal', 'preparing', 'cleaning', 'incident'));
+
+insert into permissions (key, description) values
+  ('view_incidents', 'View vehicle accident/damage incident records'),
+  ('manage_incidents', 'Create, edit, and delete vehicle accident/damage incident records');
+
+insert into role_permissions (role_id, permission_id)
+select r.id, p.id
+from roles r, permissions p
+where r.key in ('super_admin', 'administrator', 'fleet_manager')
+  and p.key in ('view_incidents', 'manage_incidents');
+
+alter table vehicle_incident_records enable row level security;
+alter table vehicle_incident_attachments enable row level security;
+
+create policy vehicle_incident_records_staff_select on vehicle_incident_records
+  for select using (has_permission(auth.uid(), 'view_incidents'));
+create policy vehicle_incident_records_staff_insert on vehicle_incident_records
+  for insert with check (has_permission(auth.uid(), 'manage_incidents'));
+create policy vehicle_incident_records_staff_update on vehicle_incident_records
+  for update using (has_permission(auth.uid(), 'manage_incidents'))
+  with check (has_permission(auth.uid(), 'manage_incidents'));
+create policy vehicle_incident_records_staff_delete on vehicle_incident_records
+  for delete using (has_permission(auth.uid(), 'manage_incidents'));
+
+create policy vehicle_incident_attachments_staff_select on vehicle_incident_attachments
+  for select using (has_permission(auth.uid(), 'view_incidents'));
+create policy vehicle_incident_attachments_staff_insert on vehicle_incident_attachments
+  for insert with check (has_permission(auth.uid(), 'manage_incidents'));
+create policy vehicle_incident_attachments_staff_delete on vehicle_incident_attachments
+  for delete using (has_permission(auth.uid(), 'manage_incidents'));
+
+insert into storage.buckets (id, name, public)
+values ('incident-documents', 'incident-documents', false)
+on conflict (id) do nothing;
+
+create policy storage_incident_documents_staff on storage.objects
+  for all using (bucket_id = 'incident-documents' and has_permission(auth.uid(), 'manage_incidents'))
+  with check (bucket_id = 'incident-documents' and has_permission(auth.uid(), 'manage_incidents'));
 
 commit;

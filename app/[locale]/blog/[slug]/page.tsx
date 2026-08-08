@@ -12,7 +12,10 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { locale, slug } = await props.params;
   const post = await getPostBySlug(slug);
-  if (!post) return {};
+  if (!post) {
+    const t = await getTranslations({ locale, namespace: "notFound" });
+    return { ...(await buildPageMetadata({ locale, path: `/blog/${slug}`, title: t("title"), description: t("description") })), robots: { index: false } };
+  }
 
   const title = locale === "fr" ? post.title_fr : post.title_en;
   const description = locale === "fr" ? post.excerpt_fr : post.excerpt_en;
@@ -39,6 +42,7 @@ export default async function BlogPostPage({
   if (!post || post.status !== "published") notFound();
 
   const t = await getTranslations("blog");
+  const tCommon = await getTranslations("common");
   const title = locale === "fr" ? post.title_fr : post.title_en;
   const body = locale === "fr" ? post.body_fr : post.body_en;
   const imageUrl = publicStorageUrl("blog", post.featured_image_path);
@@ -60,7 +64,7 @@ export default async function BlogPostPage({
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Home", href: "/" },
+          { label: tCommon("home"), href: "/" },
           { label: t("title"), href: "/blog" },
           { label: title },
         ]}

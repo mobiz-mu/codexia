@@ -1,6 +1,8 @@
 import {
   Body,
   Container,
+  EmailFooter,
+  EmailHeader,
   Head,
   Heading,
   Html,
@@ -12,6 +14,7 @@ import {
 
 export type BookingReceivedProps = {
   locale: "en" | "fr";
+  logoUrl: string;
   reference: string;
   customerName: string;
   vehicleName: string;
@@ -21,9 +24,12 @@ export type BookingReceivedProps = {
   returnAt: string;
   paymentMethodLabel: string;
   totalFormatted: string;
-  companyPhone: string;
-  companyEmail: string;
   myBookingUrl: string;
+  whatsappUrl: string;
+  supportEmail: string;
+  siteUrl: string;
+  mapsUrl?: string;
+  socials?: { facebook?: string; instagram?: string };
 };
 
 const COPY = {
@@ -37,7 +43,7 @@ const COPY = {
     pickup: "Pickup",
     dropoff: "Drop-off",
     payment: "Payment method",
-    total: "Total",
+    total: "Booking Total",
     notice:
       "This booking is not yet confirmed. Our team will review it and follow up with next steps.",
     manage: "View or manage your booking:",
@@ -53,7 +59,7 @@ const COPY = {
     pickup: "Prise en charge",
     dropoff: "Restitution",
     payment: "Méthode de paiement",
-    total: "Total",
+    total: "Total de la réservation",
     notice:
       "Cette réservation n'est pas encore confirmée. Notre équipe l'examinera et vous contactera pour la suite.",
     manage: "Consulter ou gérer votre réservation :",
@@ -70,6 +76,7 @@ export default function BookingReceived(props: BookingReceivedProps) {
       <Preview>{t.preview}</Preview>
       <Body style={{ fontFamily: "Arial, Helvetica, sans-serif", backgroundColor: "#F8FAF7" }}>
         <Container style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "12px" }}>
+          <EmailHeader logoUrl={props.logoUrl} />
           <Heading style={{ color: "#1F2937", fontSize: "20px" }}>{t.subject}</Heading>
           <Text style={{ color: "#1F2937" }}>{t.greeting(props.customerName)}</Text>
           <Text style={{ color: "#1F2937" }}>{t.intro}</Text>
@@ -102,9 +109,15 @@ export default function BookingReceived(props: BookingReceivedProps) {
           <Text style={{ color: "#1F2937" }}>
             {t.manage} <a href={props.myBookingUrl}>{props.myBookingUrl}</a>
           </Text>
-          <Text style={{ color: "#6B7280", fontSize: "14px" }}>
-            {t.contact} {props.companyPhone} · {props.companyEmail}
-          </Text>
+
+          <EmailFooter
+            locale={props.locale}
+            supportEmail={props.supportEmail}
+            whatsappUrl={props.whatsappUrl}
+            siteUrl={props.siteUrl}
+            mapsUrl={props.mapsUrl}
+            socials={props.socials}
+          />
         </Container>
       </Body>
     </Html>

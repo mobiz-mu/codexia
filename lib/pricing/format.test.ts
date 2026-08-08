@@ -17,3 +17,27 @@ describe("formatMoney", () => {
     expect(en).not.toBe(fr);
   });
 });
+
+describe("formatMoney — EUR", () => {
+  it("shows two decimal places for EN (en-GB grouping, symbol before the amount)", () => {
+    const formatted = formatMoney(125000, "EUR", "en");
+    expect(formatted).toContain("€");
+    expect(formatted).toContain("1,250.00");
+  });
+
+  it("shows two decimal places for FR (fr-FR grouping, comma decimal separator)", () => {
+    const formatted = formatMoney(125000, "EUR", "fr");
+    expect(formatted).toContain("€");
+    expect(formatted).toContain("1");
+    expect(formatted).toContain("250,00");
+  });
+
+  it("never drops cents the way the MUR path does", () => {
+    const formatted = formatMoney(100_50, "EUR", "en");
+    expect(formatted).toContain("100.50");
+  });
+
+  it("never shows the MUR 'Rs' prefix for a EUR amount", () => {
+    expect(formatMoney(10000, "EUR", "en")).not.toContain("Rs");
+  });
+});

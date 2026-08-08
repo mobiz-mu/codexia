@@ -12,6 +12,9 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Standalone CommonJS ops scripts — run directly via `node supabase/*.js`,
+    // never imported by app code, outside the Next.js/TypeScript build.
+    "supabase/*.js",
   ]),
 ]);
 

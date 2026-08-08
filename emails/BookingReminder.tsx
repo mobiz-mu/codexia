@@ -1,16 +1,20 @@
-import { Body, Container, Head, Heading, Html, Preview, Section, Text, Hr } from "./components";
+import { Body, Container, EmailFooter, EmailHeader, Head, Heading, Html, Preview, Section, Text } from "./components";
 
 export type BookingReminderProps = {
   locale: "en" | "fr";
+  logoUrl: string;
   reference: string;
   customerName: string;
   vehicleName: string;
   pickupLocationName: string;
   pickupAt: string;
   balanceFormatted: string;
-  companyPhone: string;
-  companyEmail: string;
   myBookingUrl: string;
+  whatsappUrl: string;
+  supportEmail: string;
+  siteUrl: string;
+  mapsUrl?: string;
+  socials?: { facebook?: string; instagram?: string };
 };
 
 const COPY = {
@@ -51,6 +55,7 @@ export default function BookingReminder(props: BookingReminderProps) {
       <Preview>{t.preview}</Preview>
       <Body style={{ fontFamily: "Arial, Helvetica, sans-serif", backgroundColor: "#F8FAF7" }}>
         <Container style={{ backgroundColor: "#ffffff", padding: "32px", borderRadius: "12px" }}>
+          <EmailHeader logoUrl={props.logoUrl} />
           <Heading style={{ color: "#1F2937", fontSize: "20px" }}>{t.subject}</Heading>
           <Text style={{ color: "#1F2937" }}>{t.greeting(props.customerName)}</Text>
           <Text style={{ color: "#1F2937" }}>{t.intro}</Text>
@@ -74,14 +79,18 @@ export default function BookingReminder(props: BookingReminderProps) {
 
           <Text style={{ color: "#6B7280", fontSize: "14px" }}>{t.documents}</Text>
 
-          <Hr />
-
           <Text style={{ color: "#1F2937" }}>
             {t.manage} <a href={props.myBookingUrl}>{props.myBookingUrl}</a>
           </Text>
-          <Text style={{ color: "#6B7280", fontSize: "14px" }}>
-            {t.contact} {props.companyPhone} · {props.companyEmail}
-          </Text>
+
+          <EmailFooter
+            locale={props.locale}
+            supportEmail={props.supportEmail}
+            whatsappUrl={props.whatsappUrl}
+            siteUrl={props.siteUrl}
+            mapsUrl={props.mapsUrl}
+            socials={props.socials}
+          />
         </Container>
       </Body>
     </Html>

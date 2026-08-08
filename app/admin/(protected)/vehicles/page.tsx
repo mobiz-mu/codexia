@@ -4,25 +4,28 @@ import { listVehiclesAdmin } from "@/lib/actions/admin/vehicles";
 import { formatMoney } from "@/lib/pricing/format";
 import { VehicleRowActions } from "@/components/admin/VehicleRowActions";
 import { StatusPill } from "@/components/admin/StatusPill";
+import { PageHeader, PageHeaderAction } from "@/components/admin/ui/PageHeader";
+import { Pagination } from "@/components/admin/ui/Pagination";
 
 export const metadata: Metadata = { title: "Vehicles" };
 
-export default async function AdminVehiclesPage() {
-  const vehicles = await listVehiclesAdmin();
+export default async function AdminVehiclesPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const params = await searchParams;
+  const { vehicles, total, page, pageSize } = await listVehiclesAdmin(params);
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-ink">Vehicles</h1>
-        <Link
-          href="/admin/vehicles/new"
-          className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
-        >
-          Add Vehicle
-        </Link>
-      </div>
+    <div className="flex flex-col gap-5">
+      <PageHeader
+        title="Vehicles"
+        action={<PageHeaderAction href="/admin/vehicles/new">Add Vehicle</PageHeaderAction>}
+      />
 
-      <div className="overflow-x-auto rounded-xl border border-border bg-background">
+      <div className="overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
         <table className="w-full text-left text-sm">
           <thead className="border-b border-border text-xs uppercase text-muted">
             <tr>
@@ -73,6 +76,14 @@ export default async function AdminVehiclesPage() {
           </tbody>
         </table>
       </div>
+
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        itemLabel="vehicle"
+        pageHref={(target) => `/admin/vehicles?page=${target}`}
+      />
     </div>
   );
 }

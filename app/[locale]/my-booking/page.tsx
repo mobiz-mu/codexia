@@ -8,7 +8,7 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { locale } = await props.params;
   const t = await getTranslations({ locale, namespace: "myBooking.landing" });
-  return buildPageMetadata({ locale, path: "/my-booking", title: t("title") });
+  return buildPageMetadata({ locale, path: "/my-booking", title: t("title"), description: t("intro") });
 }
 
 export default async function MyBookingLandingPage({

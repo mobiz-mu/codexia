@@ -50,7 +50,7 @@ export default async function ServicesPage({
 
       <Link
         href="/book"
-        className="mt-10 inline-block rounded-full bg-action px-6 py-3 text-sm font-semibold text-white shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
+        className="mt-10 inline-block rounded-full bg-action px-6 py-3 text-sm font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md"
       >
         {t("bookCta")}
       </Link>

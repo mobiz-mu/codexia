@@ -4,28 +4,16 @@ import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { CheckCircle2, Copy, Check } from "lucide-react";
-import type { PaymentMethod } from "../types";
 
 export function Confirmation({
   reference,
   accessToken,
-  paymentMethod,
-  vehicleName,
-  bankDetails,
-  whatsappNumber,
 }: {
   reference: string;
   accessToken: string;
-  paymentMethod: PaymentMethod;
-  vehicleName: string;
-  bankDetails: { bankName: string; accountName: string; accountNumber: string; swift: string };
-  whatsappNumber: string;
 }) {
   const c = useTranslations("booking.confirmation");
   const [copied, setCopied] = useState(false);
-
-  const whatsappMessage = `Hi Codexia, I've just submitted booking ${reference} for the ${vehicleName}. I'd like to arrange payment on arrival.`;
-  const whatsappHref = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(whatsappMessage)}`;
 
   async function handleCopy() {
     await navigator.clipboard.writeText(reference);
@@ -59,37 +47,8 @@ export function Confirmation({
         </div>
       </div>
 
-      <p className="rounded-lg bg-surface px-4 py-3 text-sm text-muted">{c("notConfirmedNotice")}</p>
+      <p className="rounded-lg bg-action-tint/50 px-4 py-3 text-sm text-action-dark">{c("confirmedNotice")}</p>
       <p className="text-sm text-muted">{c("emailNotice")}</p>
-
-      {paymentMethod === "bank_transfer" && (
-        <div className="w-full rounded-lg border border-border p-4 text-left text-sm">
-          <h3 className="mb-2 font-semibold text-ink">{c("bankDetailsTitle")}</h3>
-          <p>
-            <strong>Bank:</strong> {bankDetails.bankName || "—"}
-          </p>
-          <p>
-            <strong>Account name:</strong> {bankDetails.accountName || "—"}
-          </p>
-          <p>
-            <strong>Account number:</strong> {bankDetails.accountNumber || "—"}
-          </p>
-          <p>
-            <strong>SWIFT:</strong> {bankDetails.swift || "—"}
-          </p>
-        </div>
-      )}
-
-      {paymentMethod === "pay_on_arrival" && (
-        <a
-          href={whatsappHref}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="rounded-full bg-[#25D366] px-6 py-3 text-sm font-semibold text-white transition-transform hover:scale-105"
-        >
-          {c("whatsappCta")}
-        </a>
-      )}
 
       <Link
         href={`/my-booking/${accessToken}`}

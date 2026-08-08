@@ -13,7 +13,10 @@ export async function generateMetadata(props: {
 }): Promise<Metadata> {
   const { locale, slug } = await props.params;
   const category = await getVehicleCategoryBySlug(slug);
-  if (!category) return {};
+  if (!category) {
+    const t = await getTranslations({ locale, namespace: "notFound" });
+    return { ...(await buildPageMetadata({ locale, path: `/categories/${slug}`, title: t("title"), description: t("description") })), robots: { index: false } };
+  }
 
   const name = locale === "fr" ? category.name_fr : category.name_en;
   const description = locale === "fr" ? category.description_fr : category.description_en;
@@ -39,8 +42,9 @@ export default async function CategoryDetailPage({
   const category = await getVehicleCategoryBySlug(slug);
   if (!category) notFound();
 
-  const [t, vehicles] = await Promise.all([
+  const [t, tCommon, vehicles] = await Promise.all([
     getTranslations("categories"),
+    getTranslations("common"),
     getVehicles({ categorySlug: slug }),
   ]);
 
@@ -52,7 +56,7 @@ export default async function CategoryDetailPage({
       <Breadcrumbs
         locale={locale}
         items={[
-          { label: "Home", href: "/" },
+          { label: tCommon("home"), href: "/" },
           { label: t("title"), href: "/categories" },
           { label: name },
         ]}

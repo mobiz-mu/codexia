@@ -12,7 +12,7 @@ import { DetailsStep } from "./steps/DetailsStep";
 import { SummaryStep } from "./steps/SummaryStep";
 import { PaymentStep } from "./steps/PaymentStep";
 import { Confirmation } from "./steps/Confirmation";
-import { EMPTY_CUSTOMER, type BookingCriteria, type BookingCustomer, type PaymentMethod } from "./types";
+import { EMPTY_CUSTOMER, type BookingCriteria, type BookingCustomer } from "./types";
 import {
   searchAvailableVehicles,
   getExtras,
@@ -21,7 +21,6 @@ import {
 } from "@/lib/actions/booking";
 import type { VehicleWithImages } from "@/lib/data/vehicles";
 import type { PriceBreakdown } from "@/lib/pricing/calculate";
-import type { BankDetails } from "@/lib/config/get-bank-details";
 
 type Option = { slug: string; label: string };
 type LocationOption = Option & { id: string };
@@ -33,16 +32,12 @@ export function BookingWizard({
   locations,
   initialCriteria,
   initialVehicleSlug,
-  bankDetails,
-  whatsappNumber,
 }: {
   locale: "en" | "fr";
   categories: Option[];
   locations: LocationOption[];
   initialCriteria: BookingCriteria;
   initialVehicleSlug: string;
-  bankDetails: BankDetails;
-  whatsappNumber: string;
 }) {
   const t = useTranslations("booking");
 
@@ -59,11 +54,15 @@ export function BookingWizard({
     cancellation: false,
     insurance: false,
   });
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("bank_transfer");
   const [breakdown, setBreakdown] = useState<PriceBreakdown | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [pendingBooking, setPendingBooking] = useState<{
+    bookingId: string;
+    reference: string;
+    accessToken: string;
+  } | null>(null);
   const [result, setResult] = useState<{ reference: string; accessToken: string } | null>(null);
 
   const idempotencyKey = useMemo(
@@ -135,7 +134,8 @@ export function BookingWizard({
     setStep(5);
   }
 
-  async function handleSubmitBooking() {
+  async function handleContinueToPayment() {
+    setStep(6);
     if (!vehicle || !pickupLocation || !dropoffLocation) return;
     setSubmitting(true);
     setError(null);
@@ -176,7 +176,7 @@ export function BookingWizard({
         specialRequests: customer.specialRequests,
       },
       policyAcceptance,
-      paymentMethod,
+      paymentMethod: "online",
       idempotencyKey,
       locale,
     });
@@ -188,20 +188,15 @@ export function BookingWizard({
       return;
     }
 
-    setResult({ reference: response.reference, accessToken: response.accessToken });
+    setPendingBooking({
+      bookingId: response.bookingId,
+      reference: response.reference,
+      accessToken: response.accessToken,
+    });
   }
 
   if (result) {
-    return (
-      <Confirmation
-        reference={result.reference}
-        accessToken={result.accessToken}
-        paymentMethod={paymentMethod}
-        vehicleName={vehicle?.name ?? ""}
-        bankDetails={bankDetails}
-        whatsappNumber={whatsappNumber}
-      />
-    );
+    return <Confirmation reference={result.reference} accessToken={result.accessToken} />;
   }
 
   const showSummary = step >= 2;
@@ -259,19 +254,23 @@ export function BookingWizard({
           locale={locale}
           policyAcceptance={policyAcceptance}
           onPolicyChange={setPolicyAcceptance}
-          onContinue={() => setStep(6)}
+          onContinue={handleContinueToPayment}
           onBack={() => setStep(4)}
         />
       )}
 
       {step === 6 && (
         <PaymentStep
-          paymentMethod={paymentMethod}
-          onChange={setPaymentMethod}
-          onSubmit={handleSubmitBooking}
+          pendingBooking={pendingBooking}
+          creating={submitting}
+          createError={error}
+          locale={locale}
           onBack={() => setStep(5)}
-          submitting={submitting}
-          error={error}
+          onPaid={() => {
+            if (pendingBooking) {
+              setResult({ reference: pendingBooking.reference, accessToken: pendingBooking.accessToken });
+            }
+          }}
         />
       )}
     </>

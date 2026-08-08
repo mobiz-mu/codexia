@@ -40,7 +40,7 @@ export function CreateFaqEntryForm({ categories }: { categories: { id: string; n
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="self-start rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink disabled:opacity-60"
       >
         {pending ? "Adding..." : "Add Entry"}
       </button>

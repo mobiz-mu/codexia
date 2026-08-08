@@ -36,7 +36,9 @@ export function CreateBlockForm({ vehicles }: { vehicles: { id: string; name: st
         <label className="text-xs font-medium text-muted">Type</label>
         <select name="type" className="rounded-lg border border-border px-3 py-2 text-sm">
           <option value="maintenance">Maintenance</option>
-          <option value="internal">Internal</option>
+          <option value="internal">Blocked (internal use)</option>
+          <option value="preparing">Preparing</option>
+          <option value="cleaning">Cleaning</option>
         </select>
       </div>
       <div className="flex flex-col gap-1">
@@ -54,7 +56,7 @@ export function CreateBlockForm({ vehicles }: { vehicles: { id: string; name: st
       <button
         type="submit"
         disabled={pending}
-        className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+        className="rounded-full bg-action px-4 py-2 text-sm font-semibold text-ink disabled:opacity-60"
       >
         {pending ? "Adding..." : "Add Block"}
       </button>

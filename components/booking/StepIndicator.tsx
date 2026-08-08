@@ -49,7 +49,7 @@ export function StepIndicator({
               <span
                 className={cn(
                   "relative z-10 flex h-6 w-6 items-center justify-center rounded-full border-2 bg-background text-xs font-semibold",
-                  isDone && "border-primary bg-primary text-white",
+                  isDone && "border-primary bg-primary text-ink",
                   isCurrent && "border-primary text-primary-dark",
                   !isDone && !isCurrent && "border-border text-muted"
                 )}

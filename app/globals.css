@@ -20,7 +20,11 @@
 
   --color-ink: #132a3a;
   --color-body: #3a4c5a;
-  --color-muted: #6b7c89;
+  /* 5.51:1 against white — the original #6b7c89 measured 4.31:1, just under
+     WCAG AA's 4.5:1 minimum for normal text (confirmed via Lighthouse's
+     color-contrast audit, which failed on nearly every text-muted usage
+     site-wide). Same hue, just dark enough to pass. */
+  --color-muted: #5a6b78;
   --color-border: #e3eaef;
 
   /* Legacy alias kept during the rework so any not-yet-migrated usage still
