@@ -25,6 +25,7 @@ const NAV_ITEMS: AdminNavEntry[] = [
     items: [
       { href: "/admin/vehicles", label: "Vehicles", icon: "Car", permission: "manage_vehicles" },
       { href: "/admin/categories", label: "Categories", icon: "LayoutGrid", permission: "manage_vehicles" },
+      { href: "/admin/tariffs", label: "Tariffs", icon: "Tags", permission: "view_tariffs" },
       { href: "/admin/extras", label: "Extras", icon: "PackagePlus", permission: "manage_vehicles" },
       { href: "/admin/locations", label: "Locations", icon: "MapPin", permission: "manage_content" },
       { href: "/admin/maintenance", label: "Maintenance Records", icon: "Wrench", permission: "view_maintenance" },
