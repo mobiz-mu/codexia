@@ -127,7 +127,9 @@ export function AdminShell({
   const visibleItems = filterNavForPermissions(NAV_ITEMS, user.permissions);
 
   return (
-    <div className="flex min-h-screen flex-col lg:flex-row">
+    // Dark chrome frames the workspace; every page renders its content on
+    // light ops panels inside this frame.
+    <div className="flex min-h-screen flex-col bg-ops-frame lg:flex-row">
       <Suspense fallback={<AdminNav items={visibleItems} userEmail={user.email} logoutAction={logoutAdmin} />}>
         <AdminNavWithBadge
           items={visibleItems}
@@ -135,20 +137,28 @@ export function AdminShell({
           userEmail={user.email}
         />
       </Suspense>
-      <div className="flex min-w-0 flex-1 flex-col lg:ml-60">
-        <header className="sticky top-0 z-30 hidden items-center justify-end gap-3 border-b border-border bg-background/95 px-6 py-3 backdrop-blur lg:flex">
-          <span className="truncate text-sm text-muted">{user.email}</span>
+      <div className="flex min-w-0 flex-1 flex-col lg:ml-56">
+        <header className="sticky top-0 z-30 hidden items-center justify-end gap-3 border-b border-ops-rail bg-ops-frame-2 px-4 py-2 lg:flex">
+          <span className="truncate text-[12px] text-ops-ink-inv-2">{user.email}</span>
           <form action={logoutAdmin}>
             <button
               type="submit"
-              className="inline-flex items-center gap-1.5 rounded-full border border-border px-3.5 py-1.5 text-xs font-semibold text-ink transition-colors hover:border-primary hover:text-primary-dark"
+              className="inline-flex items-center gap-1.5 rounded-sm border border-ops-rail px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide text-ops-ink-inv transition-colors hover:border-ops-accent hover:text-ops-accent"
             >
               <LogOut className="h-3.5 w-3.5" aria-hidden="true" />
               Sign Out
             </button>
           </form>
         </header>
-        <main className="flex-1 overflow-x-auto p-4 sm:p-6">{children}</main>
+        {/* Dark chrome, light working surface — the reference's arrangement.
+            Keeping the work area light also means pages not yet migrated to
+            the `ops-*` primitives stay perfectly readable, so the frame can
+            land ahead of the page-by-page migration instead of after it. */}
+        <div className="flex-1 p-2 sm:p-3">
+          <main className="min-h-full overflow-x-auto rounded-sm border border-ops-line bg-ops-panel-2 p-3 sm:p-4">
+            {children}
+          </main>
+        </div>
       </div>
     </div>
   );

@@ -31,6 +31,51 @@
      resolves to a sane color instead of breaking; new code should not add
      more `accent` usages — use `primary`. */
   --color-accent: var(--color-primary);
+
+  /* ---------------------------------------------------------------------
+     Operations console palette (`ops-*`) — /admin ONLY.
+
+     These are deliberately NEW token names rather than an override of the
+     tokens above. The public site and the admin share this stylesheet, so
+     redefining --color-background or --color-surface for a dark admin would
+     drag the customer-facing site dark with it. Because nothing public
+     references an `ops-*` token, the public site is insulated by
+     construction rather than by convention.
+
+     Dark chrome frames the workspace; work happens on light panels with
+     blue header bars and hairline grid lines, matching the fleet
+     back-office reference: information density first, decoration last.
+     --------------------------------------------------------------------- */
+  --color-ops-frame: #11161c;
+  --color-ops-frame-2: #1a212a;
+  --color-ops-frame-3: #232c37;
+  --color-ops-rail: #2c3742;
+  --color-ops-panel: #ffffff;
+  --color-ops-panel-2: #f1f5f9;
+  --color-ops-panel-3: #e2e9f0;
+  --color-ops-header: #1f4e79;
+  --color-ops-header-2: #2b6ca3;
+  --color-ops-line: #c8d4de;
+  --color-ops-ink: #14212c;
+  --color-ops-ink-2: #4a5c6b;
+  --color-ops-ink-3: #71838f;
+  --color-ops-ink-inv: #e8eef4;
+  --color-ops-ink-inv-2: #9fb0bf;
+  --color-ops-accent: #1ba8e0;
+
+  /* Planning-board semantics. Every one of these is paired with a label and
+     a glyph in lib/fleet/status-config.ts so the board never depends on
+     colour alone to convey state. */
+  --color-ops-free: #dfe6ec;
+  --color-ops-booked: #d92d20;
+  --color-ops-web: #7c3aed;
+  --color-ops-agency: #0d9488;
+  --color-ops-quote: #94a3b8;
+  --color-ops-maint: #ea7317;
+  --color-ops-incident: #b45309;
+  --color-ops-staff: #475569;
+  --color-ops-stopsell: #2563eb;
+  --color-ops-conflict: #eab308;
 }
 
 @theme inline {
@@ -47,6 +92,34 @@
   --color-body: var(--color-body);
   --color-muted: var(--color-muted);
   --color-border: var(--color-border);
+
+  --color-ops-frame: var(--color-ops-frame);
+  --color-ops-frame-2: var(--color-ops-frame-2);
+  --color-ops-frame-3: var(--color-ops-frame-3);
+  --color-ops-rail: var(--color-ops-rail);
+  --color-ops-panel: var(--color-ops-panel);
+  --color-ops-panel-2: var(--color-ops-panel-2);
+  --color-ops-panel-3: var(--color-ops-panel-3);
+  --color-ops-header: var(--color-ops-header);
+  --color-ops-header-2: var(--color-ops-header-2);
+  --color-ops-line: var(--color-ops-line);
+  --color-ops-ink: var(--color-ops-ink);
+  --color-ops-ink-2: var(--color-ops-ink-2);
+  --color-ops-ink-3: var(--color-ops-ink-3);
+  --color-ops-ink-inv: var(--color-ops-ink-inv);
+  --color-ops-ink-inv-2: var(--color-ops-ink-inv-2);
+  --color-ops-accent: var(--color-ops-accent);
+  --color-ops-free: var(--color-ops-free);
+  --color-ops-booked: var(--color-ops-booked);
+  --color-ops-web: var(--color-ops-web);
+  --color-ops-agency: var(--color-ops-agency);
+  --color-ops-quote: var(--color-ops-quote);
+  --color-ops-maint: var(--color-ops-maint);
+  --color-ops-incident: var(--color-ops-incident);
+  --color-ops-staff: var(--color-ops-staff);
+  --color-ops-stopsell: var(--color-ops-stopsell);
+  --color-ops-conflict: var(--color-ops-conflict);
+
   --font-sans: var(--font-inter);
   --font-display: var(--font-display);
 }

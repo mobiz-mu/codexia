@@ -124,7 +124,7 @@ export function AdminNav({
   }
 
   const navLinks = (onNavigate?: () => void) => (
-    <nav className="flex flex-1 flex-col gap-1 overflow-y-auto p-3">
+    <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
       {items.map((entry) => {
         if (entry.type === "link") {
           const active = isActive(entry.href);
@@ -135,12 +135,12 @@ export function AdminNav({
               href={entry.href}
               onClick={onNavigate}
               className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active ? "bg-primary-tint text-primary-dark" : "text-ink hover:bg-surface"
+                "flex items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[13px] font-medium transition-colors",
+                active ? "bg-ops-accent text-white" : "text-ops-ink-inv hover:bg-ops-frame-3"
               )}
             >
               <Icon
-                className={cn("h-4 w-4 shrink-0", active ? "text-primary-dark" : "text-muted")}
+                className={cn("h-4 w-4 shrink-0", active ? "text-white" : "text-ops-ink-inv-2")}
                 aria-hidden="true"
               />
               {entry.label}
@@ -160,22 +160,22 @@ export function AdminNav({
               onClick={() => toggleGroup(entry.label)}
               aria-expanded={open}
               className={cn(
-                "flex w-full items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                groupActive ? "text-primary-dark" : "text-ink hover:bg-surface"
+                "flex w-full items-center gap-2.5 rounded-sm px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.08em] transition-colors",
+                groupActive ? "text-ops-accent" : "text-ops-ink-inv-2 hover:bg-ops-frame-3 hover:text-ops-ink-inv"
               )}
             >
               <GroupIcon
-                className={cn("h-4 w-4 shrink-0", groupActive ? "text-primary-dark" : "text-muted")}
+                className={cn("h-4 w-4 shrink-0", groupActive ? "text-ops-accent" : "text-ops-ink-inv-2")}
                 aria-hidden="true"
               />
               <span className="flex-1 text-left">{entry.label}</span>
               <ChevronDown
-                className={cn("h-3.5 w-3.5 shrink-0 text-muted transition-transform duration-200", open && "rotate-180")}
+                className={cn("h-3.5 w-3.5 shrink-0 text-ops-ink-inv-2 transition-transform duration-200", open && "rotate-180")}
                 aria-hidden="true"
               />
             </button>
             {open && (
-              <div className="animate-fade-in-up ml-4 mt-0.5 flex flex-col gap-0.5 border-l border-border pl-3">
+              <div className="mb-1 ml-3.5 mt-0.5 flex flex-col gap-px border-l border-ops-rail pl-2">
                 {entry.items.map((item) => {
                   const active = isActive(item.href);
                   const Icon = ICON_MAP[item.icon];
@@ -185,12 +185,12 @@ export function AdminNav({
                       href={item.href}
                       onClick={onNavigate}
                       className={cn(
-                        "flex items-center gap-2.5 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors",
-                        active ? "bg-primary-tint text-primary-dark" : "text-ink hover:bg-surface"
+                        "flex items-center gap-2 rounded-sm px-2.5 py-1 text-[12.5px] font-medium transition-colors",
+                        active ? "bg-ops-accent text-white" : "text-ops-ink-inv hover:bg-ops-frame-3"
                       )}
                     >
                       <Icon
-                        className={cn("h-3.5 w-3.5 shrink-0", active ? "text-primary-dark" : "text-muted")}
+                        className={cn("h-3.5 w-3.5 shrink-0", active ? "text-white" : "text-ops-ink-inv-2")}
                         aria-hidden="true"
                       />
                       {item.label}
@@ -209,7 +209,7 @@ export function AdminNav({
   return (
     <>
       {/* Mobile topbar */}
-      <div className="flex items-center justify-between border-b border-border bg-background px-4 py-3 lg:hidden">
+      <div className="flex items-center justify-between border-b border-ops-rail bg-ops-frame-2 px-4 py-2.5 lg:hidden">
         <Image
           src="/images/codexia-logo.png"
           alt="Codexia"
@@ -223,7 +223,7 @@ export function AdminNav({
             <button
               type="submit"
               aria-label="Sign out"
-              className="rounded-full border border-border p-2 text-ink transition-colors hover:border-primary hover:text-primary-dark"
+              className="rounded-sm border border-ops-rail p-2 text-ops-ink-inv transition-colors hover:border-ops-accent hover:text-ops-accent"
             >
               <LogOut className="h-4 w-4" aria-hidden="true" />
             </button>
@@ -233,7 +233,7 @@ export function AdminNav({
             aria-label={mobileOpen ? "Close menu" : "Open menu"}
             aria-expanded={mobileOpen}
             onClick={() => setMobileOpen((v) => !v)}
-            className="rounded-md p-2 text-ink transition-colors hover:bg-surface"
+            className="rounded-sm p-2 text-ops-ink-inv transition-colors hover:bg-ops-frame-3"
           >
             {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
@@ -246,11 +246,11 @@ export function AdminNav({
           <button
             type="button"
             aria-label="Close menu"
-            className="absolute inset-0 bg-ink/40"
+            className="absolute inset-0 bg-black/60"
             onClick={() => setMobileOpen(false)}
           />
-          <div className="animate-fade-in-up absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-background shadow-xl">
-            <div className="flex items-center justify-between border-b border-border p-4">
+          <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-ops-frame-2 shadow-xl">
+            <div className="flex items-center justify-between border-b border-ops-rail p-4">
               <Image
                 src="/images/codexia-logo.png"
                 alt="Codexia"
@@ -262,18 +262,18 @@ export function AdminNav({
                 type="button"
                 aria-label="Close menu"
                 onClick={() => setMobileOpen(false)}
-                className="rounded-md p-1.5 text-ink hover:bg-surface"
+                className="rounded-sm p-1.5 text-ops-ink-inv hover:bg-ops-frame-3"
               >
                 <X className="h-5 w-5" />
               </button>
             </div>
             {navLinks(() => setMobileOpen(false))}
-            <div className="border-t border-border p-3">
-              <p className="truncate px-3 text-xs text-muted">{userEmail}</p>
+            <div className="border-t border-ops-rail p-3">
+              <p className="truncate px-3 text-xs text-ops-ink-inv-2">{userEmail}</p>
               <form action={logoutAction}>
                 <button
                   type="submit"
-                  className="mt-1 flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm font-medium text-ink hover:bg-surface"
+                  className="mt-1 flex w-full items-center gap-2 rounded-sm px-3 py-2 text-left text-sm font-medium text-ops-ink-inv hover:bg-ops-frame-3"
                 >
                   <LogOut className="h-4 w-4" aria-hidden="true" />
                   Sign Out
@@ -285,8 +285,8 @@ export function AdminNav({
       )}
 
       {/* Desktop sidebar — fixed to the viewport so only the main content area scrolls */}
-      <aside className="hidden w-60 shrink-0 flex-col border-r border-border bg-background lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex">
-        <div className="flex items-center border-b border-border p-4">
+      <aside className="hidden w-56 shrink-0 flex-col border-r border-ops-rail bg-ops-frame-2 lg:fixed lg:inset-y-0 lg:left-0 lg:z-20 lg:flex">
+        <div className="flex items-center border-b border-ops-rail p-3">
           <Image
             src="/images/codexia-logo.png"
             alt="Codexia"
