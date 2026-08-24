@@ -182,7 +182,12 @@
   "submit": "Rechercher une disponibilité",
   "searchButton": "Rechercher",
   "pickupPastError": "La date de départ ne peut pas être antérieure à aujourd'hui.",
-  "returnBeforePickupError": "La date de retour doit être postérieure à la date de départ."
+  "returnBeforePickupError": "La date de retour doit être postérieure à la date de départ.",
+  "dateLabel": "Date",
+  "timeLabel": "Heure",
+  "meridiemLabel": "AM ou PM",
+  "pickupTime": "Heure de prise en charge",
+  "returnTime": "Heure de retour"
 },
   "vehicleCard": {
     "transmission": { "manual": "Manuelle", "automatic": "Automatique" },

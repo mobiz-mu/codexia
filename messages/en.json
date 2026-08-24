@@ -181,7 +181,12 @@
   "submit": "Search Availability",
   "searchButton": "Search",
   "pickupPastError": "Pickup date cannot be in the past.",
-  "returnBeforePickupError": "Return date must be after the pickup date."
+  "returnBeforePickupError": "Return date must be after the pickup date.",
+  "dateLabel": "Date",
+  "timeLabel": "Time",
+  "meridiemLabel": "AM or PM",
+  "pickupTime": "Pickup time",
+  "returnTime": "Return time"
  },
   "vehicleCard": {
     "transmission": { "manual": "Manual", "automatic": "Automatic" },

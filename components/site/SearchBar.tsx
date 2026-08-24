@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import {
-  CalendarClock,
   CarFront,
   MapPin,
   Search,
@@ -12,6 +11,7 @@ import { useTranslations } from "next-intl";
 
 import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils/cn";
+import { DateTimeSelect } from "@/components/booking/DateTimeSelect";
 
 type Option = {
   slug: string;
@@ -264,57 +264,35 @@ export function SearchBar({
             </div>
           </div>
 
-          {/* Pickup date */}
-          <div className="flex min-w-0 flex-col gap-2">
-            <label
-              htmlFor="search-pickup"
-              className={labelClass}
-            >
-              <CalendarClock
-                className={iconClass}
-                aria-hidden="true"
-              />
-
-              <span>{t("pickupDate")}</span>
-            </label>
-
-            <input
-              id="search-pickup"
-              name="pickup"
-              type="datetime-local"
-              required
-              className={cn(
-                fieldClass,
-                "min-w-0 [color-scheme:light]"
-              )}
-            />
-          </div>
+          {/* Pickup date — half-hour times, AM/PM split out from the clock face. */}
+          <DateTimeSelect
+            id="search-pickup"
+            name="pickup"
+            required
+            fieldClassName={fieldClass}
+            labelClassName={labelClass}
+            labels={{
+              field: t("pickupDate"),
+              date: t("dateLabel"),
+              time: t("pickupTime"),
+              meridiem: t("meridiemLabel"),
+            }}
+          />
 
           {/* Return date */}
-          <div className="flex min-w-0 flex-col gap-2">
-            <label
-              htmlFor="search-return"
-              className={labelClass}
-            >
-              <CalendarClock
-                className={iconClass}
-                aria-hidden="true"
-              />
-
-              <span>{t("returnDate")}</span>
-            </label>
-
-            <input
-              id="search-return"
-              name="return"
-              type="datetime-local"
-              required
-              className={cn(
-                fieldClass,
-                "min-w-0 [color-scheme:light]"
-              )}
-            />
-          </div>
+          <DateTimeSelect
+            id="search-return"
+            name="return"
+            required
+            fieldClassName={fieldClass}
+            labelClassName={labelClass}
+            labels={{
+              field: t("returnDate"),
+              date: t("dateLabel"),
+              time: t("returnTime"),
+              meridiem: t("meridiemLabel"),
+            }}
+          />
 
           {/* Passengers */}
           <div className="flex min-w-0 flex-col gap-2">
