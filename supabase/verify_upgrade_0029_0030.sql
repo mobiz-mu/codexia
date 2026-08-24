@@ -69,14 +69,21 @@ select '11 · tariff permissions exist',
        ''
 
 union all
+-- 5 grants, not 3: super_admin and administrator each get both permissions,
+-- fleet_manager gets view_tariffs only. (2 + 2 + 1.)
 select '12 · tariff permissions granted to expected roles',
-       (select count(*) = 3
+       (select count(*) = 5
         from role_permissions rp
         join roles r on r.id = rp.role_id
         join permissions p on p.id = rp.permission_id
         where p.key in ('view_tariffs', 'manage_tariffs')
           and r.key in ('super_admin', 'administrator', 'fleet_manager')),
-       'super_admin + administrator get both; fleet_manager gets view only'
+       (select count(*)::text || ' grants (expect 5: super_admin+administrator both, fleet_manager view only)'
+        from role_permissions rp
+        join roles r on r.id = rp.role_id
+        join permissions p on p.id = rp.permission_id
+        where p.key in ('view_tariffs', 'manage_tariffs')
+          and r.key in ('super_admin', 'administrator', 'fleet_manager'))
 
 union all
 select '13 · vehicles.is_staff_car exists and defaults false',
