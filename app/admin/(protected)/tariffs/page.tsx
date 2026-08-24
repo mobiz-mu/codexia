@@ -25,10 +25,14 @@ const MONTH_NAMES = [
   "July", "August", "September", "October", "November", "December",
 ];
 
+// Abbreviated on purpose: spelled-out months pushed the period column wide
+// enough to force the actions column off the end of the table on a laptop.
+const MONTH_ABBR = MONTH_NAMES.map((m) => m.slice(0, 3));
+
 function formatRange(from: string, to: string) {
   const fmt = (iso: string) => {
     const [y, m, d] = iso.split("-").map(Number);
-    return `${String(d).padStart(2, "0")} ${MONTH_NAMES[m - 1]} ${y}`;
+    return `${String(d).padStart(2, "0")} ${MONTH_ABBR[m - 1]} ${y}`;
   };
   return `${fmt(from)} → ${fmt(to)}`;
 }
@@ -111,16 +115,19 @@ export default async function TariffsPage({
                 <h3 className="bg-ops-header-2 px-2.5 py-1 text-[12px] font-bold uppercase tracking-[0.06em] text-white">
                   {group.label}
                 </h3>
-                <OpsTable minWidth="60rem">
+                {/* Sized so the actions column stays reachable without
+                    horizontal scrolling on a 1280px laptop — reaching Delete
+                    should not require scrolling a fleet table sideways. */}
+                <OpsTable minWidth="52rem">
                   <OpsThead>
                     <OpsTr>
-                      <OpsTh width="18rem">Period</OpsTh>
+                      <OpsTh width="14rem">Period</OpsTh>
                       {TIER_COLUMNS.map((c) => (
                         <OpsTh key={c.key} align="right">
                           {c.label}
                         </OpsTh>
                       ))}
-                      <OpsTh width="13rem" align="right">
+                      <OpsTh width="8.5rem" align="right">
                         Actions
                       </OpsTh>
                     </OpsTr>

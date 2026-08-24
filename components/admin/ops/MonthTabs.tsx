@@ -75,6 +75,10 @@ export function MonthTabs({
             key={label}
             href={hrefForMonth(month)}
             aria-current={isSelected ? "true" : undefined}
+            // The visible text swaps between the full and abbreviated month by
+            // CSS, so the accessible name is pinned here rather than left to
+            // depend on which span happens to be displayed.
+            aria-label={label}
             className={cn(
               "rounded-sm border px-2 py-1 text-[12px] font-semibold transition-colors",
               isSelected
@@ -82,8 +86,12 @@ export function MonthTabs({
                 : "border-ops-line bg-ops-panel text-ops-ink-2 hover:border-ops-accent hover:text-ops-header"
             )}
           >
-            <span className="hidden sm:inline">{label}</span>
-            <span className="sm:hidden">{label.slice(0, 3)}</span>
+            <span aria-hidden="true" className="hidden sm:inline">
+              {label}
+            </span>
+            <span aria-hidden="true" className="sm:hidden">
+              {label.slice(0, 3)}
+            </span>
           </Link>
         );
       })}

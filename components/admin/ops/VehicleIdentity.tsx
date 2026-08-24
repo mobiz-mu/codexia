@@ -39,14 +39,25 @@ export function VehicleIdentity({
   size = "md",
   className,
   onDark = false,
+  orientation = "inline",
 }: {
   vehicle: VehicleIdentityData;
   size?: keyof typeof SIZES;
   className?: string;
   /** Rendered on the dark frame (the board's vehicle rail) rather than a light panel. */
   onDark?: boolean;
+  /**
+   * `inline` puts the thumbnail beside the text — right for table rows.
+   * `stacked` puts it above, which is what a narrow left rail needs: side by
+   * side, a 128px thumbnail leaves roughly 85px for the name, which is not
+   * enough for "Suzuki Celerio" let alone a longer one. The operator must be
+   * able to read which vehicle they are pricing, so the name gets the full
+   * width of the rail and the thumbnail sits over it.
+   */
+  orientation?: "inline" | "stacked";
 }) {
   const s = SIZES[size];
+  const stacked = orientation === "stacked";
   const detail = [
     vehicle.transmission === "automatic" ? "Automatic" : vehicle.transmission === "manual" ? "Manual" : null,
     vehicle.registration,
@@ -55,12 +66,18 @@ export function VehicleIdentity({
     .join(" · ");
 
   return (
-    <div className={cn("flex min-w-0 items-center gap-2.5", className)}>
+    <div
+      className={cn(
+        "flex min-w-0",
+        stacked ? "flex-col items-stretch gap-1.5" : "items-center gap-2.5",
+        className
+      )}
+    >
       <div
         className={cn(
-          "relative shrink-0 overflow-hidden rounded-sm border",
+          "relative overflow-hidden rounded-sm border",
           onDark ? "border-ops-rail bg-ops-frame-3" : "border-ops-line bg-ops-panel-2",
-          s.box
+          stacked ? "h-24 w-full" : cn("shrink-0", s.box)
         )}
       >
         {vehicle.imageUrl ? (
@@ -73,7 +90,12 @@ export function VehicleIdentity({
           />
         ) : (
           <span className="grid h-full w-full place-items-center" aria-hidden="true">
-            <Car className={cn("h-4 w-4", onDark ? "text-ops-ink-inv-2" : "text-ops-ink-3")} />
+            <Car
+              className={cn(
+                stacked ? "h-7 w-7" : "h-4 w-4",
+                onDark ? "text-ops-ink-inv-2" : "text-ops-ink-3"
+              )}
+            />
           </span>
         )}
       </div>

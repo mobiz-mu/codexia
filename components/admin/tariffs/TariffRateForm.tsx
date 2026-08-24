@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { cn } from "@/lib/utils/cn";
 import { formatCentsToEuro } from "@/lib/pricing/tariff-schema";
@@ -77,6 +78,13 @@ export function TariffRateForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { status: "idle" } as TariffFormState);
   const [scope, setScope] = useState<"vehicle" | "category">(initial?.scope ?? "vehicle");
+  const router = useRouter();
+
+  // A saved period must appear in the listing below without a manual reload —
+  // revalidatePath alone leaves the already-rendered tree on screen.
+  useEffect(() => {
+    if (state.status === "success") router.refresh();
+  }, [state.status, router]);
 
   const index = vehicles.findIndex((v) => v.id === selectedVehicleId);
   const vehicle = index >= 0 ? vehicles[index] : vehicles[0];
@@ -90,6 +98,7 @@ export function TariffRateForm({
         {vehicle ? (
           <VehicleIdentity
             size="lg"
+            orientation="stacked"
             vehicle={{
               id: vehicle.id,
               name: vehicle.name,
