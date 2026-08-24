@@ -53,13 +53,26 @@ export type RateResolution =
       available: true;
       rateCents: number;
       tier: DurationTier | null;
-      source: "tariff" | "fallback";
+      /**
+       * `tariff` — a configured period governed this quote.
+       * `legacy_fallback` — the vehicle has no tariff periods at all and is
+       * still on the pre-tariff flat rate.
+       */
+      source: "tariff" | "legacy_fallback";
       periodId: string | null;
       periodLabel: string | null;
     }
   | {
       available: false;
-      reason: "duration_not_offered" | "no_rate_configured";
+      /**
+       * `duration_not_offered` — a period governs this date but prices the
+       * matched tier at zero, i.e. this rental length is not sold then.
+       * `tariff_gap` — the vehicle is on tariffs but no period covers this
+       * date (or none applies at this pickup location). A configuration
+       * mistake, surfaced rather than quietly priced.
+       * `no_rate_configured` — neither a tariff nor a legacy flat rate.
+       */
+      reason: "duration_not_offered" | "tariff_gap" | "no_rate_configured";
       tier: DurationTier | null;
       periodId: string | null;
       periodLabel: string | null;
@@ -180,13 +193,49 @@ export function selectTariffPeriod(input: {
 }
 
 /**
+ * Every period belonging to this vehicle or its category, ignoring dates and
+ * locations. Non-empty means the vehicle is "on tariffs", which is what
+ * turns a missing date into a configuration error rather than a licence to
+ * charge the old flat rate.
+ */
+export function scopedPeriodsFor(input: {
+  periods: TariffPeriod[];
+  vehicleId: string;
+  categoryId: string | null;
+}): TariffPeriod[] {
+  return input.periods.filter(
+    (p) =>
+      p.active &&
+      (p.vehicleId === input.vehicleId ||
+        (p.vehicleId === null && p.categoryId !== null && p.categoryId === input.categoryId))
+  );
+}
+
+/** True once any active period exists for the vehicle or its category. */
+export function isOnTariffs(input: {
+  periods: TariffPeriod[];
+  vehicleId: string;
+  categoryId: string | null;
+}): boolean {
+  return scopedPeriodsFor(input).length > 0;
+}
+
+/**
  * Resolve the per-day rate for a booking.
  *
- * `fallbackDailyPriceCents` is `vehicles.daily_price_cents`. It exists only
- * so vehicles with no tariff period yet keep working during the rollout —
- * once a period covers the date, the tariff is authoritative and the
- * fallback is not consulted. A zero tier is an explicit "not offered", so it
- * must never silently fall through to the old flat rate.
+ * `fallbackDailyPriceCents` is `vehicles.daily_price_cents`, kept as a
+ * CONTROLLED legacy path and nothing more. It applies only while a vehicle
+ * has no tariff periods at all. The moment a vehicle or its category is put
+ * on tariffs, a date with no covering period is reported as `tariff_gap` —
+ * it must never quietly resolve to the old flat price, because that would
+ * quote a stale rate that nobody chose and nobody would notice.
+ *
+ * A zero tier is likewise an explicit "not sold at this length" and never
+ * falls through to the flat rate.
+ *
+ * `periods` should be every period for the vehicle and its category,
+ * unfiltered by date — the resolver needs the unfiltered set to tell a gap
+ * apart from a vehicle that was never configured.
  */
 export function resolveDailyRate(input: {
   periods: TariffPeriod[];
@@ -198,6 +247,7 @@ export function resolveDailyRate(input: {
   fallbackDailyPriceCents: number;
 }): RateResolution {
   const tier = resolveDurationTier(input.days);
+  const onTariffs = isOnTariffs(input);
   const period = selectTariffPeriod(input);
 
   if (period) {
@@ -221,22 +271,20 @@ export function resolveDailyRate(input: {
     };
   }
 
+  if (onTariffs) {
+    return { available: false, reason: "tariff_gap", tier, periodId: null, periodLabel: null };
+  }
+
   if (input.fallbackDailyPriceCents > 0) {
     return {
       available: true,
       rateCents: input.fallbackDailyPriceCents,
       tier: null,
-      source: "fallback",
+      source: "legacy_fallback",
       periodId: null,
       periodLabel: null,
     };
   }
 
-  return {
-    available: false,
-    reason: "no_rate_configured",
-    tier,
-    periodId: null,
-    periodLabel: null,
-  };
+  return { available: false, reason: "no_rate_configured", tier, periodId: null, periodLabel: null };
 }

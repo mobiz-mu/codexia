@@ -2,9 +2,11 @@ import { describe, it, expect } from "vitest";
 import {
   DURATION_TIERS,
   businessDate,
+  isOnTariffs,
   rateForTier,
   resolveDailyRate,
   resolveDurationTier,
+  scopedPeriodsFor,
   selectTariffPeriod,
   type TariffPeriod,
 } from "./tariff";
@@ -191,6 +193,47 @@ describe("selectTariffPeriod", () => {
   });
 });
 
+describe("isOnTariffs / scopedPeriodsFor", () => {
+  const base = { vehicleId: "veh-1", categoryId: "cat-1" };
+
+  it("is false with no periods at all", () => {
+    expect(isOnTariffs({ ...base, periods: [] })).toBe(false);
+  });
+
+  it("is true from a vehicle period, whatever its dates", () => {
+    expect(
+      isOnTariffs({ ...base, periods: [period({ effectiveFrom: "2020-01-01", effectiveTo: "2020-12-31" })] })
+    ).toBe(true);
+  });
+
+  it("is true from a category period", () => {
+    expect(isOnTariffs({ ...base, periods: [period({ vehicleId: null, categoryId: "cat-1" })] })).toBe(true);
+  });
+
+  it("is false for another vehicle's or another category's periods", () => {
+    expect(isOnTariffs({ ...base, periods: [period({ vehicleId: "veh-999" })] })).toBe(false);
+    expect(
+      isOnTariffs({ ...base, periods: [period({ vehicleId: null, categoryId: "cat-999" })] })
+    ).toBe(false);
+  });
+
+  it("ignores inactive periods", () => {
+    expect(isOnTariffs({ ...base, periods: [period({ active: false })] })).toBe(false);
+  });
+
+  it("collects both scopes for a vehicle", () => {
+    const veh = period({ id: "v", vehicleId: "veh-1" });
+    const cat = period({ id: "c", vehicleId: null, categoryId: "cat-1" });
+    const other = period({ id: "o", vehicleId: "veh-999" });
+    expect(scopedPeriodsFor({ ...base, periods: [veh, cat, other] }).map((p) => p.id).sort()).toEqual(["c", "v"]);
+  });
+
+  it("treats a vehicle with no category as on tariffs only via its own periods", () => {
+    const cat = period({ vehicleId: null, categoryId: "cat-1" });
+    expect(isOnTariffs({ vehicleId: "veh-1", categoryId: null, periods: [cat] })).toBe(false);
+  });
+});
+
 describe("resolveDailyRate", () => {
   const base = {
     vehicleId: "veh-1",
@@ -253,22 +296,123 @@ describe("resolveDailyRate", () => {
       days: 1,
       fallbackDailyPriceCents: 1700,
     });
-    expect(result.available).toBe(false);
+    expect(result).toMatchObject({ available: false, reason: "duration_not_offered" });
   });
 
-  it("falls back to the flat daily price when no period covers the date", () => {
+  it("distinguishes a zero tier from a missing period", () => {
+    // Both are unavailable, but only one is a configuration mistake, and the
+    // admin needs to be told which.
+    const zeroed = resolveDailyRate({
+      ...base,
+      periods: [period({ rate1DayCents: 0 })],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 1,
+    });
+    const gap = resolveDailyRate({
+      ...base,
+      periods: [period({ effectiveFrom: "2026-10-01", effectiveTo: "2026-10-31" })],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 1,
+    });
+    expect(zeroed).toMatchObject({ reason: "duration_not_offered" });
+    expect(gap).toMatchObject({ reason: "tariff_gap" });
+  });
+
+  it("lets a vehicle period rescue a date the category does not cover", () => {
+    const catOct = period({ id: "cat", vehicleId: null, categoryId: "cat-1", effectiveFrom: "2026-10-01", effectiveTo: "2026-10-31" });
+    const vehSep = period({ id: "veh", vehicleId: "veh-1", rate7DayCents: 2600 });
+    const result = resolveDailyRate({
+      ...base,
+      periods: [catOct, vehSep],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 7,
+    });
+    expect(result).toMatchObject({ available: true, rateCents: 2600, periodId: "veh" });
+  });
+
+  it("prefers the vehicle rate over the category rate on a date both cover", () => {
+    const cat = period({ id: "cat", vehicleId: null, categoryId: "cat-1", rate7DayCents: 9900 });
+    const veh = period({ id: "veh", vehicleId: "veh-1", rate7DayCents: 2000 });
+    const result = resolveDailyRate({
+      ...base,
+      periods: [cat, veh],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 7,
+    });
+    expect(result).toMatchObject({ available: true, rateCents: 2000, periodId: "veh" });
+  });
+
+  it("lets a vehicle period zero out a duration the category still sells", () => {
+    const cat = period({ id: "cat", vehicleId: null, categoryId: "cat-1", rate1DayCents: 3000 });
+    const veh = period({ id: "veh", vehicleId: "veh-1", rate1DayCents: 0 });
+    const result = resolveDailyRate({
+      ...base,
+      periods: [cat, veh],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 1,
+    });
+    expect(result).toMatchObject({ available: false, reason: "duration_not_offered", periodId: "veh" });
+  });
+
+  it("uses the legacy flat price only while the vehicle has no tariffs at all", () => {
+    const result = resolveDailyRate({ ...base, periods: [], pickupAt: pickupOn("2026-09-10"), days: 3 });
+    expect(result).toMatchObject({ available: true, rateCents: 1700, source: "legacy_fallback" });
+  });
+
+  it("reports a gap instead of the flat price once the vehicle is on tariffs", () => {
+    // The vehicle is configured for October but someone asks about September.
+    // Quoting 1700 here would silently sell a stale pre-tariff rate.
     const result = resolveDailyRate({
       ...base,
       periods: [period({ effectiveFrom: "2026-10-01", effectiveTo: "2026-10-31" })],
       pickupAt: pickupOn("2026-09-10"),
       days: 5,
     });
-    expect(result).toMatchObject({ available: true, rateCents: 1700, source: "fallback", tier: null });
+    expect(result).toMatchObject({ available: false, reason: "tariff_gap" });
   });
 
-  it("falls back when the vehicle has no tariff configured at all", () => {
-    const result = resolveDailyRate({ ...base, periods: [], pickupAt: pickupOn("2026-09-10"), days: 3 });
-    expect(result).toMatchObject({ available: true, rateCents: 1700, source: "fallback" });
+  it("reports a gap when only the category is on tariffs and the date is uncovered", () => {
+    const result = resolveDailyRate({
+      ...base,
+      periods: [
+        period({ id: "cat", vehicleId: null, categoryId: "cat-1", effectiveFrom: "2026-10-01", effectiveTo: "2026-10-31" }),
+      ],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 5,
+    });
+    expect(result).toMatchObject({ available: false, reason: "tariff_gap" });
+  });
+
+  it("reports a gap when the only covering period is scoped to a different location", () => {
+    const result = resolveDailyRate({
+      ...base,
+      periods: [period({ locationIds: ["loc-airport"] })],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 5,
+      pickupLocationId: "loc-town",
+    });
+    expect(result).toMatchObject({ available: false, reason: "tariff_gap" });
+  });
+
+  it("does not treat another vehicle's tariffs as putting this vehicle on tariffs", () => {
+    // Only vehicle 999 is configured, so vehicle 1 is still genuinely legacy.
+    const result = resolveDailyRate({
+      ...base,
+      periods: [period({ id: "other", vehicleId: "veh-999" })],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 5,
+    });
+    expect(result).toMatchObject({ available: true, source: "legacy_fallback" });
+  });
+
+  it("ignores inactive periods when deciding whether a vehicle is on tariffs", () => {
+    const result = resolveDailyRate({
+      ...base,
+      periods: [period({ active: false, effectiveFrom: "2026-10-01", effectiveTo: "2026-10-31" })],
+      pickupAt: pickupOn("2026-09-10"),
+      days: 5,
+    });
+    expect(result).toMatchObject({ available: true, source: "legacy_fallback" });
   });
 
   it("reports no rate configured when there is neither a period nor a flat price", () => {
