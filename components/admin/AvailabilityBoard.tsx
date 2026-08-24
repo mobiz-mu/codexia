@@ -61,6 +61,7 @@ const BLOCK_STYLES: Record<string, string> = {
   preparing: "bg-teal-200 text-teal-900",
   cleaning: "bg-sky-200 text-sky-900",
   incident: "bg-red-200 text-red-900",
+  stop_sell: "bg-blue-200 text-blue-900",
 };
 
 const BLOCK_LABELS: Record<string, string> = {
@@ -69,6 +70,7 @@ const BLOCK_LABELS: Record<string, string> = {
   preparing: "Preparing",
   cleaning: "Cleaning",
   incident: "Accident / Damage",
+  stop_sell: "Stop-sell",
 };
 
 function startOfDay(date: Date) {

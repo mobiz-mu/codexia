@@ -36,7 +36,7 @@ export async function listBlocks(vehicleId?: string) {
     id: string;
     vehicle_id: string;
     period: string;
-    type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident";
+    type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident" | "stop_sell";
     note: string | null;
     vehicles: { name: string } | null;
   }[];
@@ -52,7 +52,7 @@ const blockSchema = z.object({
 
 export type BlockFormState = { status: "idle" | "success" | "error"; error?: string };
 
-export type VehicleBlockType = "maintenance" | "internal" | "preparing" | "cleaning" | "incident";
+export type VehicleBlockType = "maintenance" | "internal" | "preparing" | "cleaning" | "incident" | "stop_sell";
 
 // Shared low-level insert primitive — the ONE place vehicle_blocks rows get
 // created from, so a caller (createBlock's own form, or the Accident &
@@ -187,7 +187,7 @@ export type AvailabilityBoardBooking = {
 export type AvailabilityBoardBlock = {
   id: string;
   vehicleId: string;
-  type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident";
+  type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident" | "stop_sell";
   note: string | null;
   startAt: string;
   endAt: string;

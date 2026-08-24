@@ -468,11 +468,34 @@ export type Database = {
         assigned_at: string;
         assigned_by: string | null;
       }>;
+      vehicle_tariff_periods: Table<{
+        id: string;
+        vehicle_id: string | null;
+        category_id: string | null;
+        label: string | null;
+        effective_from: string;
+        effective_to: string;
+        rate_1_day_cents: number;
+        rate_3_day_cents: number;
+        rate_4_day_cents: number;
+        rate_7_day_cents: number;
+        rate_14_day_cents: number;
+        rate_21_plus_day_cents: number;
+        currency: string;
+        active: boolean;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      vehicle_tariff_period_locations: Table<{
+        tariff_period_id: string;
+        location_id: string;
+      }>;
       vehicle_blocks: Table<{
         id: string;
         vehicle_id: string;
         period: string;
-        type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident";
+        type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident" | "stop_sell";
         note: string | null;
         created_by: string | null;
         created_at: string;
@@ -541,6 +564,8 @@ export type Database = {
         issued_date: string | null;
         expiry_date: string;
         cost_cents: number | null;
+        /** Always 'MUR' — internal fleet costs are rupee-denominated (0030). */
+        currency: string;
         remarks: string | null;
         created_by: string | null;
         created_at: string;
@@ -598,6 +623,8 @@ export type Database = {
         third_party_details: string | null;
         estimated_repair_cost_cents: number | null;
         actual_repair_cost_cents: number | null;
+        /** Always 'MUR'; applies to both repair cost columns (0030). */
+        repair_cost_currency: string;
         vehicle_operational_status: "operational" | "limited_operation" | "not_operational";
         repair_status:
           | "reported"
@@ -655,6 +682,8 @@ export type Database = {
         mileage_km: number | null;
         service_provider: string | null;
         cost_cents: number;
+        /** Always 'MUR' — internal fleet costs are rupee-denominated (0030). */
+        currency: string;
         remarks: string | null;
         created_by: string | null;
         created_at: string;
@@ -680,6 +709,8 @@ export type Database = {
         status: "draft" | "active" | "archived";
         featured: boolean;
         is_demo: boolean;
+        /** Internal/staff vehicle: excluded from public inventory and booking (0030). */
+        is_staff_car: boolean;
         passengers: number;
         doors: number;
         luggage: number;
