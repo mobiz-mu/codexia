@@ -65,6 +65,8 @@ export function TariffRateForm({
   initial,
   submitLabel = "Add tariff period",
   canManage,
+  mode = "create",
+  footerExtra,
 }: {
   action: (prev: TariffFormState, formData: FormData) => Promise<TariffFormState>;
   vehicles: TariffFormVehicle[];
@@ -75,13 +77,27 @@ export function TariffRateForm({
   initial?: TariffFormInitial;
   submitLabel?: string;
   canManage: boolean;
+  /**
+   * `edit` targets one existing period, so stepping through the fleet would
+   * silently repoint it at another vehicle — the stepper is hidden and the
+   * subject is shown read-only instead.
+   */
+  mode?: "create" | "edit";
+  /** e.g. a Cancel link, rendered beside the submit button. */
+  footerExtra?: React.ReactNode;
 }) {
   const [state, formAction, pending] = useActionState(action, { status: "idle" } as TariffFormState);
   const [scope, setScope] = useState<"vehicle" | "category">(initial?.scope ?? "vehicle");
   const router = useRouter();
 
-  // A saved period must appear in the listing below without a manual reload —
+  // A saved period must appear in the listing without a manual reload —
   // revalidatePath alone leaves the already-rendered tree on screen.
+  //
+  // Refresh only: an earlier attempt also navigated the inline editor closed
+  // on save, but that navigation and this refresh cancelled each other and
+  // the listing stopped updating at all. Keeping the editor open until the
+  // operator dismisses it is both simpler and closer to the reference, where
+  // the expanded row persists.
   useEffect(() => {
     if (state.status === "success") router.refresh();
   }, [state.status, router]);
@@ -90,12 +106,26 @@ export function TariffRateForm({
   const vehicle = index >= 0 ? vehicles[index] : vehicles[0];
   const prev = index > 0 ? vehicles[index - 1] : null;
   const next = index >= 0 && index < vehicles.length - 1 ? vehicles[index + 1] : null;
+  const isEdit = mode === "edit";
+  const selectedCategory = categories.find(
+    (c) => c.id === (initial?.categoryId ?? vehicle?.category_id)
+  );
 
   return (
     <form action={formAction} className="grid gap-4 md:grid-cols-[15rem_1fr]">
-      {/* Left rail — always shows which vehicle is being priced. */}
+      {/* Left rail — always shows what is being priced. */}
       <div className="flex flex-col gap-2 border-ops-line md:border-r md:pr-4">
-        {vehicle ? (
+        {scope === "category" ? (
+          // A category tariff prices a whole group, so showing one car's photo
+          // here would misrepresent what the operator is about to change.
+          <div className="rounded-sm border border-ops-line bg-ops-panel-2 px-2.5 py-2">
+            <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-ops-ink-3">Category</p>
+            <p className="mt-0.5 text-[15px] font-semibold leading-tight text-ops-ink">
+              {selectedCategory?.name_en ?? "—"}
+            </p>
+            <p className="mt-0.5 text-[11px] text-ops-ink-3">Applies to every vehicle in this category</p>
+          </div>
+        ) : vehicle ? (
           <VehicleIdentity
             size="lg"
             orientation="stacked"
@@ -111,25 +141,27 @@ export function TariffRateForm({
           <p className="text-[12px] text-ops-ink-3">No vehicles available.</p>
         )}
 
-        <div className="flex items-center gap-1 text-[12px]">
-          <span className="text-ops-ink-3">Vehicle:</span>
-          <button
-            type="button"
-            disabled={!prev}
-            onClick={() => prev && onSelectVehicle(prev.id)}
-            className="rounded-sm border border-ops-line px-1.5 py-0.5 font-semibold text-ops-header disabled:opacity-40"
-          >
-            ‹ Prev
-          </button>
-          <button
-            type="button"
-            disabled={!next}
-            onClick={() => next && onSelectVehicle(next.id)}
-            className="rounded-sm border border-ops-line px-1.5 py-0.5 font-semibold text-ops-header disabled:opacity-40"
-          >
-            Next ›
-          </button>
-        </div>
+        {!isEdit && scope === "vehicle" ? (
+          <div className="flex items-center gap-1 text-[12px]">
+            <span className="text-ops-ink-3">Vehicle:</span>
+            <button
+              type="button"
+              disabled={!prev}
+              onClick={() => prev && onSelectVehicle(prev.id)}
+              className="rounded-sm border border-ops-line px-1.5 py-0.5 font-semibold text-ops-header disabled:opacity-40"
+            >
+              ‹ Prev
+            </button>
+            <button
+              type="button"
+              disabled={!next}
+              onClick={() => next && onSelectVehicle(next.id)}
+              className="rounded-sm border border-ops-line px-1.5 py-0.5 font-semibold text-ops-header disabled:opacity-40"
+            >
+              Next ›
+            </button>
+          </div>
+        ) : null}
 
         <fieldset className="mt-1">
           <legend className={labelClass}>Applies to</legend>
@@ -212,7 +244,12 @@ export function TariffRateForm({
           </label>
         </div>
 
-        <div className="grid gap-2 sm:grid-cols-3 lg:grid-cols-6">
+        {/* Auto-fit rather than fixed breakpoint columns: this form renders
+            both full width in the create panel and inside a narrower inline
+            editor within the table, and viewport breakpoints know nothing
+            about the container, which squeezed the rate inputs until values
+            like "20.00" were clipped. */}
+        <div className="grid gap-2 [grid-template-columns:repeat(auto-fit,minmax(7.5rem,1fr))]">
           {TIERS.map((tier) => (
             <label key={tier.name}>
               <span className={labelClass}>{tier.label}</span>
@@ -279,6 +316,7 @@ export function TariffRateForm({
           >
             {pending ? "Saving…" : submitLabel}
           </button>
+          {footerExtra}
           {state.status === "error" ? (
             <p role="alert" className="text-[12px] font-medium text-ops-booked">
               {state.error}

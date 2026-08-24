@@ -7,7 +7,8 @@ import { OpsTable, OpsTbody, OpsTd, OpsTh, OpsThead, OpsTr } from "@/components/
 import { MonthTabs } from "@/components/admin/ops/MonthTabs";
 import { TariffWorkspace } from "@/components/admin/tariffs/TariffWorkspace";
 import { TariffRowActions } from "@/components/admin/tariffs/TariffRowActions";
-import type { TariffFormVehicle } from "@/components/admin/tariffs/TariffRateForm";
+import { TariffEditPanel } from "@/components/admin/tariffs/TariffEditPanel";
+import type { TariffFormInitial, TariffFormVehicle } from "@/components/admin/tariffs/TariffRateForm";
 
 export const metadata: Metadata = { title: "Tariffs" };
 
@@ -51,12 +52,13 @@ function groupLabelFor(p: TariffPeriodRecord) {
 export default async function TariffsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string; year?: string }>;
+  searchParams: Promise<{ month?: string; year?: string; edit?: string }>;
 }) {
   const params = await searchParams;
   const now = new Date();
   const year = Number(params.year) || now.getUTCFullYear();
   const month = params.month === undefined ? null : Number(params.month) || null;
+  const editId = params.edit ?? null;
 
   const [screen, periods] = await Promise.all([
     getTariffScreenData(),
@@ -75,6 +77,33 @@ export default async function TariffsPage({
 
   const hrefFor = (m: number | null, y: number = year) =>
     m === null ? `/admin/tariffs?year=${y}` : `/admin/tariffs?year=${y}&month=${m}`;
+
+  // The editor is addressed by URL rather than client state, so the open row
+  // survives a refresh and the whole listing stays server-rendered.
+  const listHref = hrefFor(month);
+  const editHrefFor = (id: string) => `${listHref}${listHref.includes("?") ? "&" : "?"}edit=${id}`;
+
+  function initialFor(p: TariffPeriodRecord): TariffFormInitial {
+    return {
+      id: p.id,
+      scope: p.vehicleId ? "vehicle" : "category",
+      vehicleId: p.vehicleId ?? undefined,
+      categoryId: p.categoryId ?? undefined,
+      label: p.label,
+      effectiveFrom: p.effectiveFrom,
+      effectiveTo: p.effectiveTo,
+      active: p.active,
+      locationIds: p.locationIds,
+      rates: {
+        rate1DayCents: p.rate1DayCents,
+        rate3DayCents: p.rate3DayCents,
+        rate4DayCents: p.rate4DayCents,
+        rate7DayCents: p.rate7DayCents,
+        rate14DayCents: p.rate14DayCents,
+        rate21PlusDayCents: p.rate21PlusDayCents,
+      },
+    };
+  }
 
   const locationNameById = new Map(screen.locations.map((l) => [l.id, l.name_en]));
 
@@ -121,19 +150,19 @@ export default async function TariffsPage({
                 <OpsTable minWidth="52rem">
                   <OpsThead>
                     <OpsTr>
-                      <OpsTh width="14rem">Period</OpsTh>
+                      <OpsTh width="13rem">Period</OpsTh>
                       {TIER_COLUMNS.map((c) => (
                         <OpsTh key={c.key} align="right">
                           {c.label}
                         </OpsTh>
                       ))}
-                      <OpsTh width="8.5rem" align="right">
+                      <OpsTh width="9.5rem" align="right">
                         Actions
                       </OpsTh>
                     </OpsTr>
                   </OpsThead>
                   <OpsTbody>
-                    {group.rows.map((p, i) => (
+                    {group.rows.map((p, i) => [
                       <OpsTr key={p.id} zebra={i}>
                         <OpsTd>
                           <span className="block font-semibold text-ops-ink">
@@ -182,10 +211,31 @@ export default async function TariffsPage({
                         })}
 
                         <OpsTd align="right">
-                          <TariffRowActions id={p.id} active={p.active} canManage={screen.canManage} />
+                          <TariffRowActions
+                            id={p.id}
+                            active={p.active}
+                            canManage={screen.canManage}
+                            editHref={screen.canManage ? editHrefFor(p.id) : null}
+                            isEditing={editId === p.id}
+                          />
                         </OpsTd>
-                      </OpsTr>
-                    ))}
+                      </OpsTr>,
+                      editId === p.id && screen.canManage ? (
+                        <tr key={`${p.id}-edit`}>
+                          <td colSpan={TIER_COLUMNS.length + 2} className="p-0">
+                            <TariffEditPanel
+                              periodId={p.id}
+                              initial={initialFor(p)}
+                              vehicles={vehicles}
+                              categories={screen.categories}
+                              locations={screen.locations}
+                              canManage={screen.canManage}
+                              closeHref={listHref}
+                            />
+                          </td>
+                        </tr>
+                      ) : null,
+                    ])}
                   </OpsTbody>
                 </OpsTable>
               </section>
