@@ -2,7 +2,9 @@
 
 import { randomBytes, createHash } from "crypto";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { calculateBookingPrice } from "@/lib/pricing/calculate";
+import { calculateBookingPrice, daysBetween } from "@/lib/pricing/calculate";
+import { resolveDailyRate } from "@/lib/pricing/tariff";
+import { loadTariffPeriodsForVehicle, messageForUnavailableRate } from "@/lib/pricing/load-tariffs";
 import { computeDeposit, type DepositTier } from "@/lib/pricing/deposit";
 import { findNonEurBookingInput } from "@/lib/pricing/currency-guard";
 import { createPayPalOrder, capturePayPalOrder, type PayPalCaptureResponse } from "@/lib/payments/paypal-client";
@@ -155,11 +157,43 @@ export async function quoteBooking(input: {
 
   const taxRatePercent = Number(settingsRows?.[0]?.value ?? 0);
 
+  // Duration-tier tariff resolution. This is the ONE place a per-day rate is
+  // decided; the public wizard, admin/manual booking, the stored pricing
+  // snapshot, the deposit and the PayPal amount all descend from this call,
+  // so a rate can never differ between the customer's quote and the office.
+  const pickupAt = new Date(input.pickupAt);
+  const returnAt = new Date(input.returnAt);
+  const days = daysBetween(pickupAt, returnAt);
+
+  const tariffPeriods = await loadTariffPeriodsForVehicle(supabase, vehicle.id, vehicle.category_id);
+  const rate = resolveDailyRate({
+    periods: tariffPeriods,
+    pickupAt,
+    days,
+    vehicleId: vehicle.id,
+    categoryId: vehicle.category_id,
+    pickupLocationId: input.pickupLocationId,
+    fallbackDailyPriceCents: vehicle.daily_price_cents,
+  });
+
+  if (!rate.available) {
+    // A zero tier and a coverage gap both mean "do not sell this" — neither
+    // may fall through to the old flat price.
+    return { ok: false, error: messageForUnavailableRate(rate.reason) };
+  }
+
   const breakdown = calculateBookingPrice({
-    dailyPriceCents: vehicle.daily_price_cents,
+    dailyPriceCents: rate.rateCents,
     currency: vehicle.currency,
-    pickupAt: new Date(input.pickupAt),
-    returnAt: new Date(input.returnAt),
+    pickupAt,
+    returnAt,
+    rate: {
+      dailyRateCents: rate.rateCents,
+      source: rate.source,
+      tariffPeriodId: rate.periodId,
+      tariffPeriodLabel: rate.periodLabel,
+      durationTier: rate.tier,
+    },
     pickupDeliveryFeeCents: pickupLocation.delivery_fee_cents,
     dropoffDeliveryFeeCents: dropoffLocation.delivery_fee_cents,
     depositCents: vehicle.deposit_cents,

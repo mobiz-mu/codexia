@@ -10,6 +10,19 @@ export type PriceBreakdown = {
   totalCents: number;
   depositCents: number;
   currency: string;
+  /**
+   * Provenance of the per-day rate, carried into the booking's stored
+   * pricing snapshot so a historic booking can always be explained: which
+   * tariff period priced it, and at which duration tier. Optional because
+   * bookings taken before tariffs existed have no such provenance.
+   */
+  rate?: {
+    dailyRateCents: number;
+    source: "tariff" | "legacy_fallback";
+    tariffPeriodId: string | null;
+    tariffPeriodLabel: string | null;
+    durationTier: number | null;
+  };
 };
 
 export function daysBetween(pickupAt: Date, returnAt: Date): number {
@@ -27,6 +40,7 @@ export function calculateBookingPrice(input: {
   depositCents: number;
   taxRatePercent: number;
   extras: { nameEn: string; priceCents: number; pricingMode: "per_day" | "flat"; quantity: number }[];
+  rate?: PriceBreakdown["rate"];
 }): PriceBreakdown {
   const days = daysBetween(input.pickupAt, input.returnAt);
   const lineItems: PriceLineItem[] = [];
@@ -66,5 +80,6 @@ export function calculateBookingPrice(input: {
     totalCents,
     depositCents: input.depositCents,
     currency: input.currency,
+    ...(input.rate ? { rate: input.rate } : {}),
   };
 }
