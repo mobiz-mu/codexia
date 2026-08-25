@@ -3,6 +3,8 @@
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { maintenanceSchema, normalizeMaintenanceListFilters, sanitizeSearchTerm } from "@/lib/maintenance/schema";
+import { insertVehicleBlock, closeBlockEarly } from "@/lib/actions/admin/availability";
+import { findAvailabilityConflicts } from "@/lib/actions/admin/manual-booking";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {
@@ -132,6 +134,91 @@ export async function listVehiclesForMaintenanceSelect() {
 
 export type MaintenanceFormState = { status: "idle" | "success" | "error"; error?: string };
 
+/**
+ * Take a vehicle off the road for maintenance, through the SAME
+ * vehicle_blocks primitive incidents and manual blocks already use.
+ *
+ * There is one unavailability engine; this is a second caller, not a second
+ * system. Conflicts are explained in the operator's own terms — naming the
+ * booking or block in the way — rather than surfacing an exclusion-constraint
+ * error, and nothing is written until the window is genuinely free.
+ */
+async function createMaintenanceDowntime(input: {
+  vehicleId: string;
+  startAt: string;
+  endAt: string;
+  note: string;
+  actorId: string;
+}): Promise<{ ok: true; blockId: string } | { ok: false; error: string }> {
+  const startIso = new Date(input.startAt).toISOString();
+  const endIso = new Date(input.endAt).toISOString();
+
+  const conflicts = await findAvailabilityConflicts(input.vehicleId, startIso, endIso);
+  if (conflicts.length > 0) {
+    const detail = conflicts
+      .map((c) => `${c.label} (${c.detail}) ${c.from} → ${c.to}`)
+      .join("; ");
+    return {
+      ok: false,
+      error: `Cannot take this vehicle off the road for that window — it clashes with: ${detail}. Resolve the clash first; nothing has been changed.`,
+    };
+  }
+
+  const result = await insertVehicleBlock({
+    vehicleId: input.vehicleId,
+    type: "maintenance",
+    note: input.note,
+    startAt: startIso,
+    endAt: endIso,
+    actorId: input.actorId,
+  });
+
+  if (!result.ok) return { ok: false, error: result.error };
+  return { ok: true, blockId: result.blockId };
+}
+
+/**
+ * Return a vehicle to service early, when the work finished sooner than
+ * planned.
+ *
+ * Uses the shared closeBlockEarly primitive rather than deleting the block:
+ * a block that has already started is shortened to end now, so the record of
+ * the car having genuinely been off the road survives. Only a block that has
+ * not started yet is removed outright, because there is no history to keep.
+ * The maintenance record itself is untouched either way — the service
+ * happened regardless of when the car went back on the road.
+ */
+export async function closeMaintenanceDowntime(
+  recordId: string
+): Promise<{ ok: boolean; error?: string }> {
+  const user = await requireAdminUser();
+  assertPermission(user, "manage_maintenance");
+
+  const supabase = createAdminClient();
+  const { data: record } = await supabase
+    .from("vehicle_maintenance_records")
+    .select("id, availability_block_id")
+    .eq("id", recordId)
+    .maybeSingle();
+
+  if (!record) return { ok: false, error: "Maintenance record not found." };
+  if (!record.availability_block_id) {
+    return { ok: false, error: "This record has no downtime to close." };
+  }
+
+  const result = await closeBlockEarly(record.availability_block_id);
+  if (!result.ok) return result;
+
+  // The block may have been deleted outright (if it had not started), so drop
+  // the dangling reference rather than leaving a link to nothing.
+  await supabase
+    .from("vehicle_maintenance_records")
+    .update({ availability_block_id: null })
+    .eq("id", recordId);
+
+  return { ok: true };
+}
+
 function mapToRow(parsed: ReturnType<typeof maintenanceSchema.safeParse> & { success: true }) {
   const d = parsed.data;
   return {
@@ -150,7 +237,15 @@ function mapToRow(parsed: ReturnType<typeof maintenanceSchema.safeParse> & { suc
     electrical_work: d.electricalWork,
     mileage_km: d.mileageKm,
     service_provider: d.serviceProvider,
-    cost_cents: d.costEur,
+    invoice_reference: d.invoiceReference,
+    // cost_cents is the authoritative MUR total; the three components are an
+    // optional breakdown and are summed into it when the operator uses them.
+    cost_cents: d.costMur > 0 ? d.costMur : d.partsCostMur + d.labourCostMur + d.otherCostMur,
+    parts_cost_cents: d.partsCostMur,
+    labour_cost_cents: d.labourCostMur,
+    other_cost_cents: d.otherCostMur,
+    next_service_date: d.nextServiceDate,
+    next_service_mileage_km: d.nextServiceMileageKm,
     remarks: d.remarks,
   };
 }
@@ -191,13 +286,32 @@ export async function createMaintenanceRecord(
   const { data: vehicle } = await supabase.from("vehicles").select("id").eq("id", parsed.data.vehicleId).maybeSingle();
   if (!vehicle) return { status: "error", error: "Selected vehicle does not exist." };
 
+  // Downtime is created BEFORE the record, so a clash with an existing
+  // booking or block aborts the whole thing. Writing the history first and
+  // discovering the conflict afterwards would leave a record claiming the car
+  // was off the road when it never was.
+  let blockId: string | null = null;
+  if (parsed.data.markUnavailable && parsed.data.downtimeStart && parsed.data.downtimeEnd) {
+    const downtime = await createMaintenanceDowntime({
+      vehicleId: parsed.data.vehicleId,
+      startAt: parsed.data.downtimeStart,
+      endAt: parsed.data.downtimeEnd,
+      note: parsed.data.serviceProvider ? `Maintenance — ${parsed.data.serviceProvider}` : "Maintenance",
+      actorId: user.id,
+    });
+    if (!downtime.ok) return { status: "error", error: downtime.error };
+    blockId = downtime.blockId;
+  }
+
   const { data: inserted, error } = await supabase
     .from("vehicle_maintenance_records")
-    .insert({ ...mapToRow(parsed), created_by: user.id })
+    .insert({ ...mapToRow(parsed), availability_block_id: blockId, created_by: user.id })
     .select("id")
     .single();
 
   if (error || !inserted) {
+    // Don't strand the block we just took out on the vehicle.
+    if (blockId) await supabase.from("vehicle_blocks").delete().eq("id", blockId);
     console.error("createMaintenanceRecord failed", error?.message);
     return { status: "error", error: "Failed to save maintenance record." };
   }
@@ -210,7 +324,7 @@ export async function createMaintenanceRecord(
     diff: {
       vehicle_id: parsed.data.vehicleId,
       maintenance_type: parsed.data.maintenanceType,
-      cost_cents: parsed.data.costEur,
+      cost_cents: parsed.data.costMur,
     },
   });
 
@@ -252,7 +366,7 @@ export async function updateMaintenanceRecord(
     diff: {
       vehicle_id: parsed.data.vehicleId,
       maintenance_type: parsed.data.maintenanceType,
-      cost_cents: parsed.data.costEur,
+      cost_cents: parsed.data.costMur,
     },
   });
 

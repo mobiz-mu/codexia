@@ -33,6 +33,7 @@ import {
   UserCog,
   MapPin,
   Wrench,
+  Fuel,
   ShieldAlert,
   Siren,
   type LucideIcon,
@@ -68,6 +69,7 @@ const ICON_MAP = {
   UserCog,
   MapPin,
   Wrench,
+  Fuel,
   ShieldAlert,
   Siren,
 } satisfies Record<string, LucideIcon>;

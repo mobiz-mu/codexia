@@ -686,3 +686,82 @@ export async function runComplianceAlertCheck(): Promise<ComplianceAlertCheckRes
 
   return { checked: rows.length, newAlerts, emailSent };
 }
+
+/**
+ * Every compliance document for one vehicle, grouped by document type.
+ *
+ * The reference system opens a vehicle and shows its whole document register
+ * at once, which is how a fleet manager actually thinks: "is this car legal
+ * to rent?", not "show me every insurance record in the fleet". The
+ * document-type list is the current record for each type (from the existing
+ * vehicle_compliance_current view), with the full renewal history beneath it,
+ * so an expired-then-renewed document reads correctly rather than appearing
+ * twice with no indication which one counts.
+ */
+export async function getComplianceDossier(vehicleId: string) {
+  const user = await requireAdminUser();
+  assertPermission(user, "view_compliance");
+
+  const supabase = createAdminClient();
+
+  const [{ data: vehicle }, { data: current }, { data: history }] = await Promise.all([
+    supabase
+      .from("vehicles")
+      .select("id, name, brand, model, transmission, internal_registration_ref, is_staff_car, status")
+      .eq("id", vehicleId)
+      .maybeSingle(),
+    supabase.from("vehicle_compliance_current").select("*").eq("vehicle_id", vehicleId),
+    supabase
+      .from("vehicle_compliance_records")
+      .select("id, document_type, custom_type, reference_number, provider, issued_date, expiry_date, cost_cents, currency, remarks, created_at")
+      .eq("vehicle_id", vehicleId)
+      .order("expiry_date", { ascending: false }),
+  ]);
+
+  const currentIds = new Set((current ?? []).map((c) => (c as { id: string }).id));
+
+  return {
+    vehicle,
+    current: (current ?? []) as unknown as {
+      id: string;
+      document_type: string;
+      custom_type: string | null;
+      reference_number: string | null;
+      provider: string | null;
+      issued_date: string | null;
+      expiry_date: string;
+      cost_cents: number | null;
+      currency: string;
+      remarks: string | null;
+    }[],
+    history: (history ?? []).filter((h) => !currentIds.has(h.id)),
+  };
+}
+
+/** Vehicles with their current document count, for the dossier index. */
+export async function listComplianceVehicles() {
+  const user = await requireAdminUser();
+  assertPermission(user, "view_compliance");
+
+  const supabase = createAdminClient();
+  const [{ data: vehicles }, { data: current }] = await Promise.all([
+    supabase
+      .from("vehicles")
+      .select("id, name, brand, model, transmission, internal_registration_ref, is_staff_car")
+      .neq("status", "archived")
+      .order("name"),
+    supabase.from("vehicle_compliance_current").select("vehicle_id, expiry_date"),
+  ]);
+
+  const byVehicle = new Map<string, string[]>();
+  for (const c of (current ?? []) as unknown as { vehicle_id: string; expiry_date: string }[]) {
+    const list = byVehicle.get(c.vehicle_id) ?? [];
+    list.push(c.expiry_date);
+    byVehicle.set(c.vehicle_id, list);
+  }
+
+  return (vehicles ?? []).map((v) => ({
+    ...v,
+    expiryDates: byVehicle.get(v.id) ?? [],
+  }));
+}

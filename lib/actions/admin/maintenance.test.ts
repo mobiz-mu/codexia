@@ -72,7 +72,7 @@ function validFormData(overrides: Record<string, string> = {}) {
     electricalWork: "",
     mileageKm: "45000",
     serviceProvider: "Auto Garage Ltd",
-    costEur: "120.50",
+    costMur: "120.50",
     remarks: "",
     ...overrides,
   };
@@ -125,7 +125,7 @@ describe("createMaintenanceRecord", () => {
     const fakeFrom = vi.fn();
     vi.mocked(createAdminClient).mockReturnValue({ from: fakeFrom } as unknown as ReturnType<typeof createAdminClient>);
 
-    const result = await createMaintenanceRecord({ status: "idle" }, validFormData({ costEur: "-10" }));
+    const result = await createMaintenanceRecord({ status: "idle" }, validFormData({ costMur: "-10" }));
     expect(result).toEqual({ status: "error", error: "Please check the form for errors." });
     expect(fakeFrom).not.toHaveBeenCalled();
   });

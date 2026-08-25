@@ -6,9 +6,16 @@ describe("formatMoney", () => {
     expect(formatMoney(9000, "MUR", "en")).toContain("90");
   });
 
-  it("rounds to whole units with no decimals shown", () => {
-    const formatted = formatMoney(9050, "MUR", "en");
-    expect(formatted).not.toMatch(/\.\d/);
+  it("shows rupee cents, because fleet costs reconcile against supplier invoices", () => {
+    // Changed deliberately in Phase D: MUR stopped being a legacy display
+    // path and became the live currency for fleet running costs, where
+    // rendering Rs 1,499.77 as "Rs 1,500" loses real money.
+    expect(formatMoney(9050, "MUR", "en")).toBe("Rs 90.50");
+    expect(formatMoney(149977, "MUR", "en")).toBe("Rs 1,499.77");
+  });
+
+  it("always shows two decimals, even for a round amount", () => {
+    expect(formatMoney(9000, "MUR", "en")).toBe("Rs 90.00");
   });
 
   it("uses French formatting conventions for the fr locale", () => {

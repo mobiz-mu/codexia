@@ -472,6 +472,36 @@ export type Database = {
         assigned_at: string;
         assigned_by: string | null;
       }>;
+      vehicle_fuel_records: Table<{
+        id: string;
+        vehicle_id: string;
+        filled_at: string;
+        odometer_km: number;
+        /** Integer millilitres — never a float (0033). */
+        litres_ml: number;
+        price_per_litre_cents: number;
+        total_cost_cents: number;
+        /** Always 'MUR'. */
+        currency: string;
+        station: string | null;
+        driver_name: string | null;
+        full_tank: boolean;
+        receipt_reference: string | null;
+        notes: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+      vehicle_fuel_attachments: Table<{
+        id: string;
+        fuel_record_id: string;
+        storage_path: string;
+        file_name: string;
+        mime_type: string;
+        size_bytes: number;
+        uploaded_by: string | null;
+        created_at: string;
+      }>;
       vehicle_tariff_periods: Table<{
         id: string;
         vehicle_id: string | null;
@@ -685,7 +715,16 @@ export type Database = {
         electrical_work: string | null;
         mileage_km: number | null;
         service_provider: string | null;
+        /** Authoritative MUR total; the three component columns are an optional breakdown (0032). */
         cost_cents: number;
+        parts_cost_cents: number;
+        labour_cost_cents: number;
+        other_cost_cents: number;
+        invoice_reference: string | null;
+        next_service_date: string | null;
+        next_service_mileage_km: number | null;
+        /** Optional link to the canonical vehicle_blocks row taking this car off the road (0032). */
+        availability_block_id: string | null;
         /** Always 'MUR' — internal fleet costs are rupee-denominated (0030). */
         currency: string;
         remarks: string | null;

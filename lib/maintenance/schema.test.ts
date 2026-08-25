@@ -21,18 +21,18 @@ function baseInput(overrides: Record<string, string> = {}) {
     electricalWork: "",
     mileageKm: "45000",
     serviceProvider: "Auto Garage Ltd",
-    costEur: "120.50",
+    costMur: "120.50",
     remarks: "",
     ...overrides,
   };
 }
 
 describe("maintenanceSchema", () => {
-  it("accepts a valid scheduled service record and converts cost to EUR cents", () => {
+  it("accepts a valid scheduled service record and converts cost to MUR minor units", () => {
     const result = maintenanceSchema.safeParse(baseInput());
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.costEur).toBe(12050);
+      expect(result.data.costMur).toBe(12050);
       expect(result.data.mileageKm).toBe(45000);
       expect(result.data.servicingDetails).toBe("Full service");
       expect(result.data.repairsPerformed).toBeNull();
@@ -54,17 +54,17 @@ describe("maintenanceSchema", () => {
   });
 
   it("rejects a negative cost", () => {
-    const result = maintenanceSchema.safeParse(baseInput({ costEur: "-50" }));
+    const result = maintenanceSchema.safeParse(baseInput({ costMur: "-50" }));
     expect(result.success).toBe(false);
   });
 
   it("rejects a non-numeric cost", () => {
-    const result = maintenanceSchema.safeParse(baseInput({ costEur: "not-a-number" }));
+    const result = maintenanceSchema.safeParse(baseInput({ costMur: "not-a-number" }));
     expect(result.success).toBe(false);
   });
 
   it("accepts a zero cost", () => {
-    const result = maintenanceSchema.safeParse(baseInput({ costEur: "0" }));
+    const result = maintenanceSchema.safeParse(baseInput({ costMur: "0" }));
     expect(result.success).toBe(true);
   });
 
@@ -193,5 +193,98 @@ describe("EUR formatting for maintenance cost", () => {
 
   it("formats zero cost as EUR", () => {
     expect(formatMoney(0, "EUR", "en")).toBe("€0.00");
+  });
+});
+
+describe("maintenance MUR costs", () => {
+  it("stores rupee amounts as integer minor units", () => {
+    const r = maintenanceSchema.safeParse(baseInput({ costMur: "1499.77" }));
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.costMur).toBe(149977);
+  });
+
+  it("accepts a comma decimal separator", () => {
+    const r = maintenanceSchema.safeParse(baseInput({ costMur: "1499,77" }));
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.costMur).toBe(149977);
+  });
+
+  it("treats an omitted component cost as zero rather than failing", () => {
+    const r = maintenanceSchema.safeParse(baseInput());
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.partsCostMur).toBe(0);
+      expect(r.data.labourCostMur).toBe(0);
+      expect(r.data.otherCostMur).toBe(0);
+    }
+  });
+
+  it("parses an itemised breakdown into minor units", () => {
+    const r = maintenanceSchema.safeParse(
+      baseInput({ partsCostMur: "800.00", labourCostMur: "650.50", otherCostMur: "49.27" })
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.partsCostMur).toBe(80000);
+      expect(r.data.labourCostMur).toBe(65050);
+      expect(r.data.otherCostMur).toBe(4927);
+      // The action sums these into the total when no explicit total is given;
+      // integer arithmetic means the sum is exact.
+      expect(r.data.partsCostMur + r.data.labourCostMur + r.data.otherCostMur).toBe(149977);
+    }
+  });
+
+  it("rejects a malformed rupee amount rather than silently storing zero", () => {
+    for (const bad of ["1.234", "abc", "-5", "12.3.4"]) {
+      expect(maintenanceSchema.safeParse(baseInput({ costMur: bad })).success, bad).toBe(false);
+    }
+  });
+});
+
+describe("maintenance downtime", () => {
+  it("does not require downtime when the vehicle is not marked unavailable", () => {
+    // Logging that work happened must never imply the car was off the road.
+    const r = maintenanceSchema.safeParse(baseInput());
+    expect(r.success).toBe(true);
+    if (r.success) expect(r.data.markUnavailable).toBe(false);
+  });
+
+  it("requires both downtime bounds once the box is ticked", () => {
+    expect(maintenanceSchema.safeParse(baseInput({ markUnavailable: "on" })).success).toBe(false);
+    expect(
+      maintenanceSchema.safeParse(baseInput({ markUnavailable: "on", downtimeStart: "2027-03-01T08:00" })).success
+    ).toBe(false);
+  });
+
+  it("accepts a well-formed downtime window", () => {
+    const r = maintenanceSchema.safeParse(
+      baseInput({ markUnavailable: "on", downtimeStart: "2027-03-01T08:00", downtimeEnd: "2027-03-03T17:00" })
+    );
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.markUnavailable).toBe(true);
+      expect(r.data.downtimeStart).toBe("2027-03-01T08:00");
+    }
+  });
+
+  it("rejects downtime that ends before it starts", () => {
+    const r = maintenanceSchema.safeParse(
+      baseInput({ markUnavailable: "on", downtimeStart: "2027-03-03T17:00", downtimeEnd: "2027-03-01T08:00" })
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("rejects a zero-length downtime window", () => {
+    const r = maintenanceSchema.safeParse(
+      baseInput({ markUnavailable: "on", downtimeStart: "2027-03-01T08:00", downtimeEnd: "2027-03-01T08:00" })
+    );
+    expect(r.success).toBe(false);
+  });
+
+  it("ignores stray downtime dates when the box is not ticked", () => {
+    const r = maintenanceSchema.safeParse(
+      baseInput({ downtimeStart: "2027-03-03T17:00", downtimeEnd: "2027-03-01T08:00" })
+    );
+    expect(r.success).toBe(true);
   });
 });

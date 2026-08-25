@@ -36,6 +36,18 @@ const optionalText = (max: number) =>
     .optional()
     .transform((v) => (v && v.length > 0 ? v : null));
 
+// Rupee decimal string ("1499.77") -> MUR minor units. Money never becomes a
+// float: the string is parsed once and immediately rounded to integer cents.
+const murAmount = (label: string) =>
+  z
+    .string()
+    .optional()
+    .transform((v) => (v && v.trim().length > 0 ? v.trim().replace(",", ".") : "0"))
+    .refine((v) => /^\d+(\.\d{0,2})?$/.test(v), {
+      message: `${label} must be a valid rupee amount, for example 1499.77.`,
+    })
+    .transform((v) => Math.round(Number.parseFloat(v) * 100));
+
 export const maintenanceSchema = z
   .object({
     vehicleId: z.string().uuid("Please select a vehicle."),
@@ -61,15 +73,32 @@ export const maintenanceSchema = z
         message: "Mileage must be a whole number of 0 or more.",
       }),
     serviceProvider: optionalText(200),
-    // Entered as a plain EUR decimal string ("123.45"), stored as cents —
-    // same convention as the deposit-tier admin settings.
-    costEur: z
+    invoiceReference: optionalText(120),
+    // Entered as a plain rupee decimal string ("1499.77"), stored as MUR minor
+    // units. Fleet running costs are rupee-denominated (0030); customer rental
+    // pricing is EUR and lives in an entirely different set of tables.
+    costMur: murAmount("Total cost"),
+    partsCostMur: murAmount("Parts cost"),
+    labourCostMur: murAmount("Labour cost"),
+    otherCostMur: murAmount("Other cost"),
+    nextServiceDate: z
       .string()
-      .refine((v) => Number.isFinite(Number.parseFloat(v)) && Number.parseFloat(v) >= 0, {
-        message: "Total cost must be a valid EUR amount of 0 or more.",
-      })
-      .transform((v) => Math.round(Number.parseFloat(v) * 100)),
+      .optional()
+      .transform((v) => (v && v.trim().length > 0 ? v : null)),
+    nextServiceMileageKm: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim().length > 0 ? Number(v) : null))
+      .refine((v) => v === null || (Number.isInteger(v) && v >= 0), {
+        message: "Next service mileage must be a whole number of 0 or more.",
+      }),
     remarks: optionalText(4000),
+
+    // Downtime is opt-in. Recording that work happened must never, on its own,
+    // retroactively take a vehicle off the road.
+    markUnavailable: z.coerce.boolean().default(false),
+    downtimeStart: z.string().optional().transform((v) => (v && v.trim() ? v : null)),
+    downtimeEnd: z.string().optional().transform((v) => (v && v.trim() ? v : null)),
     // Unchecked checkboxes are omitted from FormData entirely, not sent as
     // "false" — .default(false) covers the key being absent. Opt-in only:
     // backfilling an old record must never silently overwrite the vehicle's
@@ -80,7 +109,19 @@ export const maintenanceSchema = z
   .refine((data) => data.maintenanceType !== "other" || (data.customType && data.customType.length > 0), {
     message: "Please enter a custom type when maintenance type is Other.",
     path: ["customType"],
-  });
+  })
+  .refine((data) => !data.markUnavailable || (data.downtimeStart && data.downtimeEnd), {
+    message: "Enter the downtime start and end when marking the vehicle unavailable.",
+    path: ["downtimeStart"],
+  })
+  .refine(
+    (data) =>
+      !data.markUnavailable ||
+      !data.downtimeStart ||
+      !data.downtimeEnd ||
+      new Date(data.downtimeEnd) > new Date(data.downtimeStart),
+    { message: "Downtime must end after it starts.", path: ["downtimeEnd"] }
+  );
 
 export type MaintenanceListFilters = {
   vehicleId: string | null;
