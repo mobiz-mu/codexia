@@ -142,6 +142,10 @@ export type Database = {
         updated_at: string;
         deleted_at: string | null;
         payment_method: "bank_transfer" | "pay_on_arrival" | "online" | null;
+        /** Channel the booking arrived through (0031). */
+        source: "website" | "admin";
+        /** Staff-only notes; never rendered to the customer (0031). */
+        internal_notes: string | null;
       }>;
       calendar_sync_log: Table<{
         id: string;
