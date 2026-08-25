@@ -15,7 +15,7 @@ function assertPermission(user: { permissions: Set<string> }, permission: string
 const PAGE_SIZE = 20;
 
 const LIST_COLUMNS =
-  "id, vehicle_id, maintenance_date, maintenance_type, custom_type, mileage_km, service_provider, cost_cents, remarks, created_at, vehicles(name)";
+  "id, vehicle_id, maintenance_date, maintenance_type, custom_type, mileage_km, service_provider, invoice_reference, cost_cents, parts_cost_cents, labour_cost_cents, other_cost_cents, availability_block_id, next_service_date, remarks, created_at, vehicles(name, brand, model, transmission, internal_registration_ref)";
 
 export type MaintenanceListRow = {
   id: string;
@@ -25,10 +25,22 @@ export type MaintenanceListRow = {
   custom_type: string | null;
   mileage_km: number | null;
   service_provider: string | null;
+  invoice_reference: string | null;
   cost_cents: number;
+  parts_cost_cents: number;
+  labour_cost_cents: number;
+  other_cost_cents: number;
+  availability_block_id: string | null;
+  next_service_date: string | null;
   remarks: string | null;
   created_at: string;
-  vehicles: { name: string } | null;
+  vehicles: {
+    name: string;
+    brand: string;
+    model: string;
+    transmission: 'manual' | 'automatic';
+    internal_registration_ref: string | null;
+  } | null;
 };
 
 export async function listMaintenanceRecordsAdmin(rawFilters: {

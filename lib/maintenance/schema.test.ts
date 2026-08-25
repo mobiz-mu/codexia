@@ -186,13 +186,20 @@ describe("sanitizeSearchTerm", () => {
   });
 });
 
-describe("EUR formatting for maintenance cost", () => {
-  it("formats maintenance cost cents as EUR", () => {
-    expect(formatMoney(12050, "EUR", "en")).toBe("€120.50");
+describe("MUR formatting for maintenance cost", () => {
+  // Changed in Phase D: maintenance is a fleet running cost and is rupee-
+  // denominated. Formatting it as euros overstated every figure by roughly
+  // fiftyfold.
+  it("formats maintenance cost cents as rupees", () => {
+    expect(formatMoney(12050, "MUR", "en")).toBe("Rs 120.50");
   });
 
-  it("formats zero cost as EUR", () => {
-    expect(formatMoney(0, "EUR", "en")).toBe("€0.00");
+  it("formats zero cost as rupees", () => {
+    expect(formatMoney(0, "MUR", "en")).toBe("Rs 0.00");
+  });
+
+  it("keeps the cents on an odd amount", () => {
+    expect(formatMoney(149977, "MUR", "en")).toBe("Rs 1,499.77");
   });
 });
 

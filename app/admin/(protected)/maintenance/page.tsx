@@ -1,17 +1,20 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Search } from "lucide-react";
+
 import { listMaintenanceRecordsAdmin, listVehiclesForMaintenanceSelect } from "@/lib/actions/admin/maintenance";
-import { MAINTENANCE_TYPE_LABELS, MAINTENANCE_TYPES } from "@/lib/maintenance/schema";
+import { MAINTENANCE_TYPE_LABELS, MAINTENANCE_TYPES, type MaintenanceType } from "@/lib/maintenance/schema";
 import { formatMoney } from "@/lib/pricing/format";
 import { MaintenanceDeleteButton } from "@/components/admin/MaintenanceDeleteButton";
-import { PageHeader, PageHeaderAction } from "@/components/admin/ui/PageHeader";
+import { OpsPanel, OpsToolbar } from "@/components/admin/ops/OpsPanel";
+import { OpsTable, OpsTbody, OpsTd, OpsTh, OpsThead, OpsTr, OpsEmptyRow } from "@/components/admin/ops/OpsTable";
+import { VehicleIdentity } from "@/components/admin/ops/VehicleIdentity";
 import { Pagination } from "@/components/admin/ui/Pagination";
 
-const fieldClass =
-  "rounded-lg border border-border bg-background px-3 py-2 text-sm text-ink transition-colors focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20";
-
 export const metadata: Metadata = { title: "Vehicle Maintenance Records" };
+
+const inputClass =
+  "rounded-sm border border-ops-line bg-white px-2 py-1 text-[12px] text-ops-ink outline-none focus:border-ops-accent focus:ring-1 focus:ring-ops-accent";
+const labelClass = "text-[10px] font-bold uppercase tracking-wide text-ops-ink-3";
 
 export default async function AdminMaintenancePage({
   searchParams,
@@ -27,9 +30,6 @@ export default async function AdminMaintenancePage({
 }) {
   const params = await searchParams;
 
-  // Independent reads — the filter dropdown's vehicle list has no
-  // dependency on the (already-filtered) records list, so they run in
-  // parallel rather than one after another.
   const [{ records, total, page, pageSize }, vehicles] = await Promise.all([
     listMaintenanceRecordsAdmin(params),
     listVehiclesForMaintenanceSelect(),
@@ -48,98 +48,205 @@ export default async function AdminMaintenancePage({
     return `/admin/maintenance?${qs.toString()}`;
   }
 
+  // Every figure on this page is Mauritian Rupees. Customer rental pricing is
+  // EUR and lives in an entirely separate set of tables.
+  const spend = records.reduce(
+    (acc, r) => ({
+      parts: acc.parts + r.parts_cost_cents,
+      labour: acc.labour + r.labour_cost_cents,
+      other: acc.other + r.other_cost_cents,
+      total: acc.total + r.cost_cents,
+    }),
+    { parts: 0, labour: 0, other: 0, total: 0 }
+  );
+
   return (
-    <div className="flex flex-col gap-5">
-      <PageHeader
-        title="Vehicle Maintenance Records"
-        action={<PageHeaderAction href="/admin/maintenance/new">Add Record</PageHeaderAction>}
-      />
+    <div className="flex flex-col gap-3">
+      <OpsPanel
+        title="Vehicle maintenance"
+        subtitle={`${total} record${total === 1 ? "" : "s"} · Parts ${formatMoney(spend.parts, "MUR", "en")} · Labour ${formatMoney(spend.labour, "MUR", "en")} · Other ${formatMoney(spend.other, "MUR", "en")} · Total ${formatMoney(spend.total, "MUR", "en")}`}
+        flush
+        actions={
+          <Link
+            href="/admin/maintenance/new"
+            className="rounded-sm bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-ops-header hover:bg-ops-panel-2"
+          >
+            New record
+          </Link>
+        }
+      >
+        <OpsToolbar>
+          <form method="get" action="/admin/maintenance" className="flex flex-wrap items-end gap-2">
+            <label className="flex flex-col">
+              <span className={labelClass}>Vehicle</span>
+              <select name="vehicleId" defaultValue={params.vehicleId ?? ""} className={inputClass}>
+                <option value="">All vehicles</option>
+                {vehicles.map((v) => (
+                  <option key={v.id} value={v.id}>
+                    {v.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col">
+              <span className={labelClass}>Type</span>
+              <select name="type" defaultValue={params.type ?? ""} className={inputClass}>
+                <option value="">All types</option>
+                {MAINTENANCE_TYPES.map((t) => (
+                  <option key={t} value={t}>
+                    {MAINTENANCE_TYPE_LABELS[t]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="flex flex-col">
+              <span className={labelClass}>From</span>
+              <input type="date" name="dateFrom" defaultValue={params.dateFrom ?? ""} className={inputClass} />
+            </label>
+            <label className="flex flex-col">
+              <span className={labelClass}>To</span>
+              <input type="date" name="dateTo" defaultValue={params.dateTo ?? ""} className={inputClass} />
+            </label>
+            <label className="flex flex-col">
+              <span className={labelClass}>Search</span>
+              <input
+                name="search"
+                defaultValue={params.search ?? ""}
+                placeholder="Garage or remarks"
+                className={inputClass}
+              />
+            </label>
+            <button
+              type="submit"
+              className="rounded-sm border border-ops-header bg-ops-header px-2 py-1 text-[12px] font-semibold text-white"
+            >
+              Filter
+            </button>
+            <Link
+              href="/admin/maintenance"
+              className="rounded-sm border border-ops-line px-2 py-1 text-[12px] font-semibold text-ops-ink-2 hover:border-ops-accent"
+            >
+              Reset
+            </Link>
+          </form>
+        </OpsToolbar>
 
-      <form className="flex flex-wrap gap-3">
-        <select name="vehicleId" defaultValue={params.vehicleId ?? ""} className={fieldClass}>
-          <option value="">All vehicles</option>
-          {vehicles.map((v) => (
-            <option key={v.id} value={v.id}>
-              {v.name}
-            </option>
-          ))}
-        </select>
-        <select name="type" defaultValue={params.type ?? ""} className={fieldClass}>
-          <option value="">All types</option>
-          {MAINTENANCE_TYPES.map((t) => (
-            <option key={t} value={t}>
-              {MAINTENANCE_TYPE_LABELS[t]}
-            </option>
-          ))}
-        </select>
-        <input type="date" name="dateFrom" defaultValue={params.dateFrom ?? ""} className={fieldClass} />
-        <input type="date" name="dateTo" defaultValue={params.dateTo ?? ""} className={fieldClass} />
-        <input
-          type="text"
-          name="search"
-          defaultValue={params.search ?? ""}
-          placeholder="Search remarks, provider..."
-          className={`${fieldClass} min-w-56 flex-1`}
-        />
-        <button
-          type="submit"
-          className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-ink shadow-sm transition-colors hover:bg-primary-dark"
-        >
-          <Search className="h-4 w-4" aria-hidden="true" />
-          Filter
-        </button>
-      </form>
-
-      <div className="overflow-x-auto rounded-xl border border-border bg-background shadow-sm">
-        <table className="w-full text-left text-sm">
-          <thead className="border-b border-border text-xs uppercase text-muted">
-            <tr>
-              <th className="px-4 py-2">Date</th>
-              <th className="px-4 py-2">Vehicle</th>
-              <th className="px-4 py-2">Type</th>
-              <th className="px-4 py-2">Provider</th>
-              <th className="px-4 py-2">Cost</th>
-              <th className="px-4 py-2" />
-            </tr>
-          </thead>
-          <tbody>
-            {records.map((r) => (
-              <tr key={r.id} className="border-b border-border transition-colors last:border-0 hover:bg-surface">
-                <td className="px-4 py-2 text-xs">{new Date(r.maintenance_date).toLocaleDateString("en-GB")}</td>
-                <td className="px-4 py-2">
-                  <Link
-                    href={`/admin/maintenance/${r.id}`}
-                    className="font-medium text-primary-dark hover:underline"
-                  >
-                    {r.vehicles?.name ?? "—"}
-                  </Link>
-                </td>
-                <td className="px-4 py-2">
-                  {r.maintenance_type === "other"
-                    ? r.custom_type ?? "Other"
-                    : MAINTENANCE_TYPE_LABELS[r.maintenance_type as keyof typeof MAINTENANCE_TYPE_LABELS] ??
-                      r.maintenance_type}
-                </td>
-                <td className="px-4 py-2">{r.service_provider ?? "—"}</td>
-                {/* Fleet running costs are rupees, not euros. */}
-                <td className="px-4 py-2 font-medium text-ink">{formatMoney(r.cost_cents, "MUR", "en")}</td>
-                <td className="px-4 py-2 text-right">
-                  <MaintenanceDeleteButton recordId={r.id} />
-                </td>
-              </tr>
-            ))}
-            {records.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-muted">
-                  No maintenance records found.
-                </td>
-              </tr>
+        <OpsTable minWidth="78rem">
+          <OpsThead>
+            <OpsTr>
+              <OpsTh width="7rem">Date</OpsTh>
+              <OpsTh width="15rem">Vehicle</OpsTh>
+              <OpsTh align="right" width="7rem">
+                Mileage
+              </OpsTh>
+              <OpsTh width="10rem">Type</OpsTh>
+              <OpsTh width="11rem">Garage</OpsTh>
+              <OpsTh align="right" width="7rem">
+                Parts Rs
+              </OpsTh>
+              <OpsTh align="right" width="7rem">
+                Labour Rs
+              </OpsTh>
+              <OpsTh align="right" width="7rem">
+                Other Rs
+              </OpsTh>
+              <OpsTh align="right" width="8rem">
+                Total Rs
+              </OpsTh>
+              <OpsTh width="8rem">Downtime</OpsTh>
+              <OpsTh align="right" width="8rem">
+                Action
+              </OpsTh>
+            </OpsTr>
+          </OpsThead>
+          <OpsTbody>
+            {records.length === 0 ? (
+              <OpsEmptyRow colSpan={11}>No maintenance records match these filters.</OpsEmptyRow>
+            ) : (
+              records.map((r, i) => (
+                <OpsTr key={r.id} zebra={i}>
+                  <OpsTd numeric className="font-semibold text-ops-ink">
+                    {r.maintenance_date}
+                  </OpsTd>
+                  <OpsTd>
+                    {r.vehicles ? (
+                      <VehicleIdentity
+                        size="sm"
+                        vehicle={{
+                          id: r.vehicle_id,
+                          name: r.vehicles.name,
+                          subtitle: `${r.vehicles.brand} ${r.vehicles.model}`,
+                          transmission: r.vehicles.transmission,
+                          registration: r.vehicles.internal_registration_ref,
+                        }}
+                      />
+                    ) : (
+                      "—"
+                    )}
+                  </OpsTd>
+                  <OpsTd align="right" numeric>
+                    {r.mileage_km !== null ? `${r.mileage_km.toLocaleString()} km` : "—"}
+                  </OpsTd>
+                  <OpsTd>
+                    {MAINTENANCE_TYPE_LABELS[r.maintenance_type as MaintenanceType] ?? r.maintenance_type}
+                    {r.custom_type ? (
+                      <span className="block text-[11px] text-ops-ink-3">{r.custom_type}</span>
+                    ) : null}
+                  </OpsTd>
+                  <OpsTd className="truncate">
+                    {r.service_provider ?? "—"}
+                    {r.invoice_reference ? (
+                      <span className="block font-mono text-[11px] text-ops-ink-3">{r.invoice_reference}</span>
+                    ) : null}
+                  </OpsTd>
+                  <OpsTd align="right" numeric>
+                    {r.parts_cost_cents ? (r.parts_cost_cents / 100).toFixed(2) : "—"}
+                  </OpsTd>
+                  <OpsTd align="right" numeric>
+                    {r.labour_cost_cents ? (r.labour_cost_cents / 100).toFixed(2) : "—"}
+                  </OpsTd>
+                  <OpsTd align="right" numeric>
+                    {r.other_cost_cents ? (r.other_cost_cents / 100).toFixed(2) : "—"}
+                  </OpsTd>
+                  <OpsTd align="right" numeric className="font-semibold text-ops-ink">
+                    {formatMoney(r.cost_cents, "MUR", "en")}
+                  </OpsTd>
+                  <OpsTd>
+                    {r.availability_block_id ? (
+                      <span className="inline-flex items-center gap-1 rounded-sm bg-ops-maint px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white">
+                        <span aria-hidden="true">M</span> Off road
+                      </span>
+                    ) : (
+                      <span className="text-[11px] text-ops-ink-3">History only</span>
+                    )}
+                  </OpsTd>
+                  <OpsTd align="right">
+                    <div className="flex items-center justify-end gap-1">
+                      <Link
+                        href={`/admin/maintenance/${r.id}`}
+                        className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[11px] font-semibold text-ops-ink-2 hover:border-ops-accent hover:text-ops-header"
+                      >
+                        Open
+                      </Link>
+                      <MaintenanceDeleteButton recordId={r.id} />
+                    </div>
+                  </OpsTd>
+                </OpsTr>
+              ))
             )}
-          </tbody>
-        </table>
-      </div>
+          </OpsTbody>
+        </OpsTable>
 
-      <Pagination page={page} totalPages={totalPages} total={total} itemLabel="record" pageHref={pageHref} />
+        <div className="border-t border-ops-line px-3 py-2">
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            total={total}
+            itemLabel="maintenance records"
+            pageHref={pageHref}
+          />
+        </div>
+      </OpsPanel>
     </div>
   );
 }

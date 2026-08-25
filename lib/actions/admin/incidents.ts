@@ -21,7 +21,7 @@ function todayIso(): string {
 const PAGE_SIZE = 20;
 
 const LIST_COLUMNS =
-  "id, vehicle_id, incident_date, incident_type, custom_type, severity, repair_status, location, estimated_repair_cost_cents, actual_repair_cost_cents, created_at, vehicles(name)";
+  "id, vehicle_id, incident_date, incident_type, custom_type, severity, repair_status, location, estimated_repair_cost_cents, actual_repair_cost_cents, availability_block_id, downtime_start, downtime_end, created_at, vehicles(name, brand, model, transmission, internal_registration_ref)";
 
 export type IncidentListRow = {
   id: string;
@@ -34,8 +34,17 @@ export type IncidentListRow = {
   location: string | null;
   estimated_repair_cost_cents: number | null;
   actual_repair_cost_cents: number | null;
+  availability_block_id: string | null;
+  downtime_start: string | null;
+  downtime_end: string | null;
   created_at: string;
-  vehicles: { name: string } | null;
+  vehicles: {
+    name: string;
+    brand: string;
+    model: string;
+    transmission: 'manual' | 'automatic';
+    internal_registration_ref: string | null;
+  } | null;
 };
 
 export async function listIncidentRecordsAdmin(rawFilters: {
