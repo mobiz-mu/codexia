@@ -134,7 +134,7 @@ export default async function AdminCompliancePage({
                   </td>
                   <td className="px-4 py-2">{r.provider ?? "—"}</td>
                   <td className="px-4 py-2 font-medium text-ink">
-                    {r.cost_cents != null ? formatMoney(r.cost_cents, "EUR", "en") : "—"}
+                    {r.cost_cents != null ? formatMoney(r.cost_cents, "MUR", "en") : "—"}
                   </td>
                   <td className="px-4 py-2 text-right">
                     <ComplianceDeleteButton recordId={r.id} />

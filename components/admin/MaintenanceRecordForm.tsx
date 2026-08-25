@@ -24,6 +24,12 @@ type Initial = {
   mileage_km?: number | null;
   service_provider?: string | null;
   cost_cents?: number;
+  parts_cost_cents?: number;
+  labour_cost_cents?: number;
+  other_cost_cents?: number;
+  invoice_reference?: string | null;
+  next_service_date?: string | null;
+  next_service_mileage_km?: number | null;
   remarks?: string | null;
 };
 
@@ -64,6 +70,7 @@ export function MaintenanceRecordForm({
 }) {
   const [state, formAction, pending] = useActionState(action, { status: "idle" } as MaintenanceFormState);
   const [maintenanceType, setMaintenanceType] = useState(initial?.maintenance_type ?? MAINTENANCE_TYPES[0]);
+  const [markUnavailable, setMarkUnavailable] = useState(false);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -144,21 +151,59 @@ export function MaintenanceRecordForm({
         </div>
 
         <div className="flex flex-col gap-1">
-          <label className={labelClass}>Total cost</label>
-          <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
-              €
-            </span>
-            <input
-              type="number"
-              step="0.01"
-              min="0"
-              name="costEur"
-              defaultValue={((initial?.cost_cents ?? 0) / 100).toFixed(2)}
-              required
-              className={`${fieldClass} w-full pl-7`}
-            />
-          </div>
+          <label className={labelClass}>Invoice / reference</label>
+          <input name="invoiceReference" defaultValue={initial?.invoice_reference ?? ""} className={fieldClass} />
+        </div>
+      </div>
+
+      {/* Fleet running costs are Mauritian Rupees, never euros — customer
+          rental pricing is EUR and lives in an entirely separate set of
+          tables. The two are never mixed into one total. */}
+      <fieldset className="rounded-lg border border-border p-3">
+        <legend className={`${labelClass} px-1`}>Cost — Mauritian Rupees (Rs)</legend>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {[
+            { name: "partsCostMur", label: "Parts", key: "parts_cost_cents" as const },
+            { name: "labourCostMur", label: "Labour", key: "labour_cost_cents" as const },
+            { name: "otherCostMur", label: "Other", key: "other_cost_cents" as const },
+            { name: "costMur", label: "Total", key: "cost_cents" as const },
+          ].map((f) => (
+            <div key={f.name} className="flex flex-col gap-1">
+              <label className={labelClass}>{f.label}</label>
+              <div className="relative">
+                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+                  Rs
+                </span>
+                <input
+                  inputMode="decimal"
+                  name={f.name}
+                  defaultValue={initial?.[f.key] ? ((initial[f.key] as number) / 100).toFixed(2) : ""}
+                  placeholder="0.00"
+                  className={`${fieldClass} w-full pl-9`}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-muted">
+          Leave the total blank to have it calculated from parts, labour and other.
+        </p>
+      </fieldset>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Next service due</label>
+          <input type="date" name="nextServiceDate" defaultValue={initial?.next_service_date ?? ""} className={fieldClass} />
+        </div>
+        <div className="flex flex-col gap-1">
+          <label className={labelClass}>Next service mileage (km)</label>
+          <input
+            type="number"
+            min="0"
+            name="nextServiceMileageKm"
+            defaultValue={initial?.next_service_mileage_km ?? ""}
+            className={fieldClass}
+          />
         </div>
       </div>
 
@@ -180,6 +225,47 @@ export function MaintenanceRecordForm({
         <label className={labelClass}>Remarks</label>
         <textarea name="remarks" defaultValue={initial?.remarks ?? ""} rows={3} className={fieldClass} />
       </div>
+
+      {/* Downtime is opt-in and explicit. Logging that work happened must
+          never, on its own, retroactively take a vehicle off the road. */}
+      <fieldset className="rounded-lg border border-border p-3">
+        <legend className={`${labelClass} px-1`}>Vehicle availability</legend>
+        <label className="flex items-start gap-2 text-sm text-ink">
+          <input
+            type="checkbox"
+            name="markUnavailable"
+            value="true"
+            checked={markUnavailable}
+            onChange={(e) => setMarkUnavailable(e.target.checked)}
+            className="mt-0.5"
+          />
+          <span>
+            Mark vehicle unavailable for this work
+            <span className="block text-xs text-muted">
+              Creates a maintenance block on the shared availability engine, so the vehicle immediately stops being
+              offered in public search, on the planning board and in manual booking. Leave unchecked to record the
+              work as history only.
+            </span>
+          </span>
+        </label>
+
+        {markUnavailable ? (
+          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Downtime starts</label>
+              <input type="datetime-local" name="downtimeStart" required className={fieldClass} />
+            </div>
+            <div className="flex flex-col gap-1">
+              <label className={labelClass}>Downtime ends</label>
+              <input type="datetime-local" name="downtimeEnd" required className={fieldClass} />
+            </div>
+            <p className="text-xs text-muted sm:col-span-2">
+              If this window clashes with an existing booking or block, the record will not be saved and the clash
+              will be named — nothing is overwritten.
+            </p>
+          </div>
+        ) : null}
+      </fieldset>
 
       <label className="flex items-start gap-2 text-sm text-ink">
         <input type="checkbox" name="updateVehicleInfo" value="true" className="mt-0.5" />

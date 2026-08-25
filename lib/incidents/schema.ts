@@ -114,7 +114,7 @@ const optionalEurCost = () =>
     .optional()
     .transform((v) => (v && v.trim().length > 0 ? v : null))
     .refine((v) => v === null || (Number.isFinite(Number.parseFloat(v)) && Number.parseFloat(v) >= 0), {
-      message: "Cost must be a valid EUR amount of 0 or more.",
+      message: "Cost must be a valid rupee amount of 0 or more.",
     })
     .transform((v) => (v === null ? null : Math.round(Number.parseFloat(v) * 100)));
 

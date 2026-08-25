@@ -108,7 +108,7 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
                     {r.service_provider ? ` · ${r.service_provider}` : ""}
                   </div>
                 </div>
-                <span className="font-medium text-ink">{formatMoney(r.cost_cents, "EUR", "en")}</span>
+                <span className="font-medium text-ink">{formatMoney(r.cost_cents, "MUR", "en")}</span>
               </li>
             ))}
           </ul>
@@ -160,9 +160,9 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
                   <RepairStatusBadge status={r.repair_status} />
                   <span className="font-medium text-ink">
                     {r.actual_repair_cost_cents != null
-                      ? formatMoney(r.actual_repair_cost_cents, "EUR", "en")
+                      ? formatMoney(r.actual_repair_cost_cents, "MUR", "en")
                       : r.estimated_repair_cost_cents != null
-                        ? `~${formatMoney(r.estimated_repair_cost_cents, "EUR", "en")}`
+                        ? `~${formatMoney(r.estimated_repair_cost_cents, "MUR", "en")}`
                         : "—"}
                   </span>
                 </div>

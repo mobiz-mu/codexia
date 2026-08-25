@@ -213,7 +213,7 @@ export default async function AdminOverviewPage() {
           <KpiCard
             icon={Banknote}
             label="Repair Cost This Month"
-            value={formatMoney(incidentStats.repairCostThisMonthCents, "EUR", "en")}
+            value={formatMoney(incidentStats.repairCostThisMonthCents, "MUR", "en")}
             tone="action"
           />
         </KpiSection>

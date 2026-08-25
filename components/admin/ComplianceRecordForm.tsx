@@ -96,14 +96,14 @@ export function ComplianceRecordForm({
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Cost (optional)</label>
           <div className="relative">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">€</span>
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rs</span>
             <input
               type="number"
               step="0.01"
               min="0"
               name="costEur"
               defaultValue={initial?.cost_cents != null ? (initial.cost_cents / 100).toFixed(2) : ""}
-              className={`${fieldClass} w-full pl-7`}
+              className={`${fieldClass} w-full pl-9`}
             />
           </div>
         </div>

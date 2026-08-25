@@ -133,9 +133,9 @@ export default async function AdminIncidentsPage({
                 </td>
                 <td className="px-4 py-2 font-medium text-ink">
                   {r.actual_repair_cost_cents != null
-                    ? formatMoney(r.actual_repair_cost_cents, "EUR", "en")
+                    ? formatMoney(r.actual_repair_cost_cents, "MUR", "en")
                     : r.estimated_repair_cost_cents != null
-                      ? `~${formatMoney(r.estimated_repair_cost_cents, "EUR", "en")}`
+                      ? `~${formatMoney(r.estimated_repair_cost_cents, "MUR", "en")}`
                       : "—"}
                 </td>
                 <td className="px-4 py-2 text-right">

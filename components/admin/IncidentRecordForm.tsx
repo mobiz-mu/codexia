@@ -200,33 +200,33 @@ export function IncidentRecordForm({
       </div>
 
       <div className={sectionClass}>
-        <h3 className={sectionTitleClass}>Repair costs (EUR)</h3>
+        <h3 className={sectionTitleClass}>Repair costs (Mauritian Rupees)</h3>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="flex flex-col gap-1">
             <label className={labelClass}>Estimated repair cost</label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">€</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rs</span>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 name="estimatedRepairCostEur"
                 defaultValue={initial?.estimated_repair_cost_cents != null ? (initial.estimated_repair_cost_cents / 100).toFixed(2) : ""}
-                className={`${fieldClass} w-full pl-7`}
+                className={`${fieldClass} w-full pl-9`}
               />
             </div>
           </div>
           <div className="flex flex-col gap-1">
             <label className={labelClass}>Actual repair cost</label>
             <div className="relative">
-              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">€</span>
+              <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">Rs</span>
               <input
                 type="number"
                 step="0.01"
                 min="0"
                 name="actualRepairCostEur"
                 defaultValue={initial?.actual_repair_cost_cents != null ? (initial.actual_repair_cost_cents / 100).toFixed(2) : ""}
-                className={`${fieldClass} w-full pl-7`}
+                className={`${fieldClass} w-full pl-9`}
               />
             </div>
           </div>

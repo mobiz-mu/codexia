@@ -121,7 +121,8 @@ export default async function AdminMaintenancePage({
                       r.maintenance_type}
                 </td>
                 <td className="px-4 py-2">{r.service_provider ?? "—"}</td>
-                <td className="px-4 py-2 font-medium text-ink">{formatMoney(r.cost_cents, "EUR", "en")}</td>
+                {/* Fleet running costs are rupees, not euros. */}
+                <td className="px-4 py-2 font-medium text-ink">{formatMoney(r.cost_cents, "MUR", "en")}</td>
                 <td className="px-4 py-2 text-right">
                   <MaintenanceDeleteButton recordId={r.id} />
                 </td>

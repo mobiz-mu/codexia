@@ -38,7 +38,7 @@ export const complianceSchema = z
       .transform((v) => (v && v.trim().length > 0 ? v : null))
       .refine((v) => v === null || !Number.isNaN(Date.parse(v)), { message: "Issued date is not a valid date." }),
     expiryDate: z.string().refine((v) => !Number.isNaN(Date.parse(v)), { message: "Please enter a valid expiry date." }),
-    // Optional — entered as a plain EUR decimal string ("123.45") when
+    // Optional — entered as a plain rupee decimal string ("5500.00") when
     // present, stored as cents. An empty field means "cost not recorded",
     // not zero.
     costEur: z
@@ -46,7 +46,7 @@ export const complianceSchema = z
       .optional()
       .transform((v) => (v && v.trim().length > 0 ? v : null))
       .refine((v) => v === null || (Number.isFinite(Number.parseFloat(v)) && Number.parseFloat(v) >= 0), {
-        message: "Cost must be a valid EUR amount of 0 or more.",
+        message: "Cost must be a valid rupee amount of 0 or more.",
       })
       .transform((v) => (v === null ? null : Math.round(Number.parseFloat(v) * 100))),
     remarks: optionalText(4000),
