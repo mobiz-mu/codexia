@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { publicStorageUrl } from "@/lib/supabase/storage";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
@@ -178,6 +179,8 @@ export type AvailabilityBoardBooking = {
   id: string;
   reference: string;
   status: string;
+  /** Channel the reservation arrived through — drives the board colour. */
+  source: "website" | "admin";
   vehicleId: string;
   customerName: string;
   pickupAt: string;
@@ -193,7 +196,19 @@ export type AvailabilityBoardBlock = {
   endAt: string;
 };
 
-export type AvailabilityBoardVehicle = { id: string; name: string };
+export type AvailabilityBoardVehicle = {
+  id: string;
+  name: string;
+  brand: string;
+  model: string;
+  transmission: "manual" | "automatic";
+  registration: string | null;
+  categoryId: string;
+  isStaffCar: boolean;
+  imageUrl: string | null;
+};
+
+export type AvailabilityBoardCategory = { id: string; name: string; slug: string };
 
 /**
  * Data for the hotel-style planning board: one row per active vehicle, with
@@ -204,6 +219,7 @@ export async function getAvailabilityBoardData(
   days: number
 ): Promise<{
   vehicles: AvailabilityBoardVehicle[];
+  categories: AvailabilityBoardCategory[];
   bookings: AvailabilityBoardBooking[];
   blocks: AvailabilityBoardBlock[];
 }> {
@@ -214,37 +230,74 @@ export async function getAvailabilityBoardData(
   const windowStart = new Date(startDate).toISOString();
   const windowEnd = new Date(new Date(startDate).getTime() + days * 24 * 60 * 60 * 1000).toISOString();
 
-  const [{ data: vehicles }, { data: rawBookings }, { data: blocks }] = await Promise.all([
-    supabase.from("vehicles").select("id, name").eq("status", "active").order("name"),
-    supabase
-      .from("bookings")
-      .select("id, reference, status, vehicle_id, pickup_at, return_at, booking_customers(full_name)")
-      .in("status", BOARD_ACTIVE_STATUSES)
-      .not("vehicle_id", "is", null)
-      .lt("pickup_at", windowEnd)
-      .gt("return_at", windowStart),
-    supabase
-      .from("vehicle_blocks")
-      .select("id, vehicle_id, type, note, period")
-      .filter("period", "ov", `[${windowStart},${windowEnd})`),
-  ]);
+  // Five bulk reads for the whole window, issued in parallel — never one per
+  // vehicle and never one per day. Bookings and blocks are both bounded by
+  // the window, so widening the range costs rows, not round trips.
+  const [{ data: vehicles }, { data: categories }, { data: rawBookings }, { data: blocks }, { data: images }] =
+    await Promise.all([
+      supabase
+        .from("vehicles")
+        .select(
+          "id, name, brand, model, transmission, internal_registration_ref, category_id, is_staff_car"
+        )
+        .neq("status", "archived")
+        .order("name"),
+      supabase.from("vehicle_categories").select("id, name_en, slug").order("display_order"),
+      supabase
+        .from("bookings")
+        .select(
+          "id, reference, status, source, vehicle_id, pickup_at, return_at, booking_customers(full_name)"
+        )
+        .in("status", BOARD_ACTIVE_STATUSES)
+        .not("vehicle_id", "is", null)
+        .lt("pickup_at", windowEnd)
+        .gt("return_at", windowStart),
+      supabase
+        .from("vehicle_blocks")
+        .select("id, vehicle_id, type, note, period")
+        .filter("period", "ov", `[${windowStart},${windowEnd})`),
+      supabase.from("vehicle_images").select("vehicle_id, path, variants, is_main").eq("is_main", true),
+    ]);
 
   const bookings = (rawBookings ?? []) as unknown as {
     id: string;
     reference: string;
     status: string;
+    source: "website" | "admin";
     vehicle_id: string;
     pickup_at: string;
     return_at: string;
     booking_customers: { full_name: string } | { full_name: string }[] | null;
   }[];
 
+  const imageByVehicle = new Map<string, string>();
+  for (const img of images ?? []) {
+    const variants = img.variants as Record<string, string> | null;
+    // Prefer the smallest generated variant — the board renders these at
+    // roughly 56px, so shipping a hero image per row would be wasteful.
+    const path = variants?.thumb ?? variants?.card ?? img.path;
+    const url = publicStorageUrl("vehicle-images", path);
+    if (url) imageByVehicle.set(img.vehicle_id, url);
+  }
+
   return {
-    vehicles: vehicles ?? [],
+    vehicles: (vehicles ?? []).map((v) => ({
+      id: v.id,
+      name: v.name,
+      brand: v.brand,
+      model: v.model,
+      transmission: v.transmission,
+      registration: v.internal_registration_ref,
+      categoryId: v.category_id,
+      isStaffCar: v.is_staff_car,
+      imageUrl: imageByVehicle.get(v.id) ?? null,
+    })),
+    categories: (categories ?? []).map((c) => ({ id: c.id, name: c.name_en, slug: c.slug })),
     bookings: bookings.map((b) => ({
       id: b.id,
       reference: b.reference,
       status: b.status,
+      source: b.source ?? "website",
       vehicleId: b.vehicle_id,
       customerName: Array.isArray(b.booking_customers)
         ? (b.booking_customers[0]?.full_name ?? "")

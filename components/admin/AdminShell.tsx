@@ -14,6 +14,8 @@ const NAV_ITEMS: AdminNavEntry[] = [
     icon: "CalendarDays",
     items: [
       { href: "/admin/bookings", label: "Bookings", icon: "CalendarDays", permission: "manage_bookings" },
+      { href: "/admin/bookings/new", label: "New Booking", icon: "CalendarPlus", permission: "manage_bookings" },
+      { href: "/admin/operations", label: "Departures & Returns", icon: "ArrowLeftRight", permission: "manage_bookings" },
       { href: "/admin/calendar", label: "Calendar", icon: "CalendarRange", permission: "manage_bookings" },
       { href: "/admin/availability", label: "Availability", icon: "ShieldOff", permission: "manage_vehicles" },
     ],
