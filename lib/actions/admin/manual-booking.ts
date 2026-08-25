@@ -8,6 +8,7 @@ import { quoteBooking } from "@/lib/actions/booking";
 import { computeDeposit } from "@/lib/pricing/deposit";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { OPS_STATUS, opsStatusForBlock } from "@/lib/fleet/status-config";
+import { businessDay, businessTime } from "@/lib/fleet/movements";
 import { manualBookingSchema, readManualBookingForm } from "@/lib/booking/manual-schema";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
@@ -35,8 +36,13 @@ export type AvailabilityConflict = {
   to: string;
 };
 
+/**
+ * Conflict windows are shown in Mauritius time, not UTC. The operator typed
+ * "09:00" into the form; telling them the clash runs from "05:00" would look
+ * like a different booking entirely.
+ */
 function fmt(iso: string) {
-  return iso.replace("T", " ").slice(0, 16);
+  return `${businessDay(iso)} ${businessTime(iso)}`;
 }
 
 /**

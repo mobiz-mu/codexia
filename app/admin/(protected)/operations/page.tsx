@@ -81,7 +81,7 @@ export default async function OperationsPage({
     <div className="flex flex-col gap-3">
       <OpsPanel
         title="Departures & returns"
-        subtitle={`${departures} departure${departures === 1 ? "" : "s"} · ${returns} return${returns === 1 ? "" : "s"}${needsAttention ? ` · ${needsAttention} need attention` : ""}`}
+        subtitle={`${departures} departure${departures === 1 ? "" : "s"} · ${returns} return${returns === 1 ? "" : "s"}${needsAttention ? ` · ${needsAttention} ${needsAttention === 1 ? "needs" : "need"} attention` : ""}`}
         flush
       >
         <OpsToolbar>

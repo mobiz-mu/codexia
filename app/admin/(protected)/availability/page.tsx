@@ -9,7 +9,6 @@ import { PlanningLegend } from "@/components/admin/ops/OpsStatusBadge";
 import { OpsPanel, OpsToolbar } from "@/components/admin/ops/OpsPanel";
 import { OpsTable, OpsTbody, OpsTd, OpsTh, OpsThead, OpsTr, OpsEmptyRow } from "@/components/admin/ops/OpsTable";
 import { cn } from "@/lib/utils/cn";
-import { newBookingHref } from "@/lib/booking/prefill";
 
 export const metadata: Metadata = { title: "Availability" };
 
@@ -206,8 +205,6 @@ export default async function AdminAvailabilityPage({
             bookings={bookings}
             blocks={boardBlocks}
             groupByCategory={groupByCategory}
-            bookingHref={(id) => `/admin/bookings/${id}`}
-            newBookingHref={newBookingHref}
           />
           <div className="border-t border-ops-rail px-3 py-2">
             <PlanningLegend />

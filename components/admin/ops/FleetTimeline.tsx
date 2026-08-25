@@ -11,6 +11,7 @@ import {
   type OpsStatusKey,
 } from "@/lib/fleet/status-config";
 import { VehicleIdentity } from "./VehicleIdentity";
+import { newBookingHref } from "@/lib/booking/prefill";
 import type {
   AvailabilityBoardBlock,
   AvailabilityBoardBooking,
@@ -80,8 +81,6 @@ export function FleetTimeline({
   bookings,
   blocks,
   groupByCategory,
-  bookingHref,
-  newBookingHref,
 }: {
   windowStart: string;
   days: number;
@@ -91,9 +90,6 @@ export function FleetTimeline({
   bookings: AvailabilityBoardBooking[];
   blocks: AvailabilityBoardBlock[];
   groupByCategory: boolean;
-  bookingHref: (bookingId: string) => string;
-  /** Click an empty day to start a manual booking pre-filled with vehicle + date. */
-  newBookingHref: (vehicleId: string, date: string) => string;
 }) {
   const start = useMemo(() => startOfUtcDay(new Date(windowStart)), [windowStart]);
 
@@ -134,7 +130,7 @@ export function FleetTimeline({
         endIndex: Math.min(days, dayIndex(start, b.returnAt) + 1),
         label: b.customerName || b.reference,
         sub: b.reference,
-        href: bookingHref(b.id),
+        href: `/admin/bookings/${b.id}`,
         title: `${b.reference} · ${b.customerName} · ${OPS_STATUS[status].label}`,
       });
     }
@@ -154,7 +150,7 @@ export function FleetTimeline({
     }
 
     return map;
-  }, [bookings, blocks, start, days, bookingHref]);
+  }, [bookings, blocks, start, days]);
 
   const grouped = useMemo(() => {
     if (!groupByCategory) return [{ category: null as AvailabilityBoardCategory | null, rows: vehicles }];
