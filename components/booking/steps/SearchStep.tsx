@@ -3,6 +3,7 @@
 import { useTranslations } from "next-intl";
 import { Search } from "lucide-react";
 import type { BookingCriteria } from "../types";
+import { DateTimeSelect } from "../DateTimeSelect";
 
 type Option = { slug: string; label: string };
 
@@ -115,33 +116,45 @@ export function SearchStep({
           </select>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="wizard-pickup" className="text-sm font-medium text-ink">
-            {t("pickupDate")}
-          </label>
-          <input
-            id="wizard-pickup"
-            type="datetime-local"
-            required
-            value={criteria.pickupAt}
-            onChange={(e) => onChange({ ...criteria, pickupAt: e.target.value })}
-            className={fieldClass}
-          />
-        </div>
+        {/*
+          The same half-hour / AM-PM control the homepage search uses. The
+          wizard kept a raw datetime-local for a while, so a customer arriving
+          through the navigation could pick 09:07 while one arriving from the
+          homepage could not — two different pickup rules in one funnel. It
+          submits the identical `YYYY-MM-DDTHH:mm` string, so criteria,
+          validation, pricing and the availability query are untouched.
+        */}
+        <DateTimeSelect
+          id="wizard-pickup"
+          name="pickupAt"
+          required
+          defaultValue={criteria.pickupAt}
+          fieldClassName={fieldClass}
+          labelClassName="text-sm font-medium text-ink"
+          labels={{
+            field: t("pickupDate"),
+            date: t("dateLabel"),
+            time: t("pickupTime"),
+            meridiem: t("meridiemLabel"),
+          }}
+          onChange={(value) => onChange({ ...criteria, pickupAt: value })}
+        />
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="wizard-return" className="text-sm font-medium text-ink">
-            {t("returnDate")}
-          </label>
-          <input
-            id="wizard-return"
-            type="datetime-local"
-            required
-            value={criteria.returnAt}
-            onChange={(e) => onChange({ ...criteria, returnAt: e.target.value })}
-            className={fieldClass}
-          />
-        </div>
+        <DateTimeSelect
+          id="wizard-return"
+          name="returnAt"
+          required
+          defaultValue={criteria.returnAt}
+          fieldClassName={fieldClass}
+          labelClassName="text-sm font-medium text-ink"
+          labels={{
+            field: t("returnDate"),
+            date: t("dateLabel"),
+            time: t("returnTime"),
+            meridiem: t("meridiemLabel"),
+          }}
+          onChange={(value) => onChange({ ...criteria, returnAt: value })}
+        />
       </div>
 
       {error && (
