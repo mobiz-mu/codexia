@@ -15,6 +15,11 @@ import { canTransition } from "@/lib/booking/status-machine";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { checkRateLimit } from "@/lib/utils/rate-limit";
 import {
+  isPubliclyBookable,
+  parseBlockPeriod,
+  publicVehicleFilter,
+} from "@/lib/fleet/availability-rules";
+import {
   createBookingSchema,
   type CreateBookingInput,
 } from "@/lib/validation/booking";
@@ -39,12 +44,9 @@ export async function searchAvailableVehicles(criteria: {
   const pickupAt = new Date(criteria.pickupAt).toISOString();
   const returnAt = new Date(criteria.returnAt).toISOString();
 
-  let query = supabase
-    .from("vehicles")
-    .select("*, vehicle_images(*), vehicle_categories!inner(slug)")
-    .eq("status", "active")
-    .eq("currency", "EUR")
-    .is("deleted_at", null);
+  let query = publicVehicleFilter(
+    supabase.from("vehicles").select("*, vehicle_images(*), vehicle_categories!inner(slug), is_staff_car, status")
+  );
 
   if (criteria.categorySlug) {
     query = query.eq("vehicle_categories.slug", criteria.categorySlug);
@@ -53,19 +55,21 @@ export async function searchAvailableVehicles(criteria: {
     query = query.eq("slug", criteria.vehicleSlug);
   }
 
+  // Three bulk reads, never one per vehicle. Statuses and periods are both
+  // bounded by the requested window.
   const [{ data: vehicles, error: vehiclesError }, { data: conflictingBookings }, { data: conflictingBlocks }] =
     await Promise.all([
       query,
       supabase
         .from("bookings")
-        .select("vehicle_id")
+        .select("vehicle_id, status, pickup_at, return_at")
         .in("status", ACTIVE_BOOKING_STATUSES)
         .not("vehicle_id", "is", null)
         .lt("pickup_at", returnAt)
         .gt("return_at", pickupAt),
       supabase
         .from("vehicle_blocks")
-        .select("vehicle_id")
+        .select("vehicle_id, type, period")
         .filter("period", "ov", `[${pickupAt},${returnAt})`),
     ]);
 
@@ -74,13 +78,50 @@ export async function searchAvailableVehicles(criteria: {
     return [];
   }
 
-  const unavailableIds = new Set([
-    ...(conflictingBookings ?? []).map((b) => b.vehicle_id as string),
-    ...(conflictingBlocks ?? []).map((b) => b.vehicle_id as string),
-  ]);
+  // Group the already-fetched conflicts by vehicle, then let the canonical
+  // rule decide. isPubliclyBookable is the one definition of "sellable" the
+  // board, the manual-booking pre-check and this search all share, so the
+  // storefront cannot drift from the rest of the system the way it did when
+  // this function re-derived availability on its own.
+  const bookingsByVehicle = new Map<string, { status: string; start: string; end: string }[]>();
+  for (const b of (conflictingBookings ?? []) as unknown as {
+    vehicle_id: string;
+    status: string;
+    pickup_at: string;
+    return_at: string;
+  }[]) {
+    const list = bookingsByVehicle.get(b.vehicle_id) ?? [];
+    list.push({ status: b.status, start: b.pickup_at, end: b.return_at });
+    bookingsByVehicle.set(b.vehicle_id, list);
+  }
 
-  const results = (vehicles ?? []) as unknown as VehicleWithImages[];
-  return results.filter((v) => !unavailableIds.has(v.id));
+  const blocksByVehicle = new Map<string, { type: string; start: string; end: string }[]>();
+  for (const b of (conflictingBlocks ?? []) as unknown as {
+    vehicle_id: string;
+    type: string;
+    period: string;
+  }[]) {
+    const range = parseBlockPeriod(b.period);
+    if (!range) continue;
+    const list = blocksByVehicle.get(b.vehicle_id) ?? [];
+    list.push({ type: b.type, start: range.startsAt.toISOString(), end: range.endsAt.toISOString() });
+    blocksByVehicle.set(b.vehicle_id, list);
+  }
+
+  const window = { start: pickupAt, end: returnAt };
+  const results = (vehicles ?? []) as unknown as (VehicleWithImages & {
+    is_staff_car: boolean;
+    status: string;
+  })[];
+
+  return results.filter((vehicle) =>
+    isPubliclyBookable({
+      vehicle: { status: vehicle.status, isStaffCar: vehicle.is_staff_car === true },
+      window,
+      bookings: bookingsByVehicle.get(vehicle.id) ?? [],
+      blocks: blocksByVehicle.get(vehicle.id) ?? [],
+    })
+  );
 }
 
 export async function getExtras() {
@@ -227,13 +268,28 @@ export async function createBooking(input: CreateBookingInput & { locale: "en" |
 
   const supabase = createAdminClient();
 
-  const { data: existing } = await supabase
-    .from("bookings")
-    .select("reference, access_token_hash")
-    .eq("idempotency_key", data.idempotencyKey)
-    .maybeSingle();
+  const [{ data: existing }, { data: vehicleEligibility }] = await Promise.all([
+    supabase
+      .from("bookings")
+      .select("reference, access_token_hash")
+      .eq("idempotency_key", data.idempotencyKey)
+      .maybeSingle(),
+    supabase.from("vehicles").select("is_staff_car, status").eq("id", data.vehicleId).maybeSingle(),
+  ]);
+
   if (existing) {
     return { ok: false, error: "This booking has already been submitted." };
+  }
+
+  // Last line of defence on the customer funnel. searchAvailableVehicles and
+  // the public listings already exclude staff cars and non-active vehicles,
+  // so this only fires for a stale wizard state or a forged vehicleId — but
+  // it is the insertion itself, and a staff car must never end up held by a
+  // customer booking. Deliberately NOT enforced inside quoteBooking, which
+  // admin manual booking also uses: assigning a staff car internally is a
+  // legitimate operation, being sold one is not.
+  if (!vehicleEligibility || vehicleEligibility.is_staff_car || vehicleEligibility.status !== "active") {
+    return { ok: false, error: "This vehicle is not available for online booking." };
   }
 
   const quote = await quoteBooking({

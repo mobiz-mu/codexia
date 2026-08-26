@@ -11,6 +11,26 @@
 
 export type Interval = { start: string; end: string };
 
+/** Parses a Postgres `["…","…")` tstzrange literal into absolute instants. */
+export function parseBlockPeriod(period: string): { startsAt: Date; endsAt: Date } | null {
+  const match = /\[([^,]+),([^)]+)\)/.exec(period);
+  if (!match) return null;
+  // Postgres renders the offset as `+00`, which Date cannot parse reliably —
+  // it needs `+00:00`. Normalising this is not cosmetic: without it every
+  // block parses as Invalid Date and no vehicle would ever read as exempt.
+  const clean = (raw: string) =>
+    raw
+      .trim()
+      .replace(/^"|"$/g, "")
+      .replace(" ", "T")
+      .replace(/([+-]\d{2})$/, "$1:00");
+  const startsAt = new Date(clean(match[1]));
+  const endsAt = new Date(clean(match[2]));
+  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) return null;
+  return { startsAt, endsAt };
+}
+
+
 /**
  * Half-open overlap: `[start, end)`.
  *
@@ -37,9 +57,49 @@ export function bookingHoldsVehicle(status: string): boolean {
   return HOLDING_BOOKING_STATUSES.has(status);
 }
 
-/** Every block type takes the vehicle off the road for its period. */
+/**
+ * Every block type takes the vehicle off the road for its period.
+ *
+ * Kept in step with the `vehicle_blocks_type_check` constraint — `inspection`
+ * was added to the database by migration 0034 and has to be honoured here
+ * too, or a car sitting in a weekly inspection would read as rentable.
+ */
+export const VEHICLE_HOLDING_BLOCK_TYPES = [
+  "maintenance",
+  "internal",
+  "preparing",
+  "cleaning",
+  "incident",
+  "stop_sell",
+  "inspection",
+] as const;
+
 export function blockHoldsVehicle(type: string): boolean {
-  return ["maintenance", "internal", "preparing", "cleaning", "incident", "stop_sell"].includes(type);
+  return (VEHICLE_HOLDING_BLOCK_TYPES as readonly string[]).includes(type);
+}
+
+/**
+ * The row-level conditions a vehicle must satisfy to be public rental stock,
+ * expressed as a PostgREST filter.
+ *
+ * This is the query-side half of the same rule `isPubliclyBookable` applies
+ * in memory, and it lives beside it so the two cannot drift. Every public
+ * inventory, search and quote path composes this rather than restating the
+ * columns — which is exactly what went wrong before: `is_staff_car` was
+ * documented as excluded from "all public inventory and booking queries" and
+ * migration 0030 even built `vehicles_rentable_idx` for the filter, but no
+ * query ever applied it.
+ *
+ * `currency` is part of the rule because the public funnel prices in EUR
+ * only; a legacy MUR-priced row is not sellable through it.
+ */
+type VehicleFilterable<Q> = {
+  eq(column: string, value: string | boolean): Q;
+  is(column: string, value: null): Q;
+};
+
+export function publicVehicleFilter<Q extends VehicleFilterable<Q>>(query: Q): Q {
+  return query.eq("status", "active").eq("is_staff_car", false).eq("currency", "EUR").is("deleted_at", null);
 }
 
 /**

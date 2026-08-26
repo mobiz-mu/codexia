@@ -87,24 +87,12 @@ export function isExemptingBlockType(type: string): type is ExemptingBlockType {
 
 export type BlockRange = { type: string; startsAt: Date; endsAt: Date };
 
-/** Parses a Postgres `["…","…")` tstzrange literal into absolute instants. */
-export function parseBlockPeriod(period: string): { startsAt: Date; endsAt: Date } | null {
-  const match = /\[([^,]+),([^)]+)\)/.exec(period);
-  if (!match) return null;
-  // Postgres renders the offset as `+00`, which Date cannot parse reliably —
-  // it needs `+00:00`. Normalising this is not cosmetic: without it every
-  // block parses as Invalid Date and no vehicle would ever read as exempt.
-  const clean = (raw: string) =>
-    raw
-      .trim()
-      .replace(/^"|"$/g, "")
-      .replace(" ", "T")
-      .replace(/([+-]\d{2})$/, "$1:00");
-  const startsAt = new Date(clean(match[1]));
-  const endsAt = new Date(clean(match[2]));
-  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) return null;
-  return { startsAt, endsAt };
-}
+/**
+ * Re-exported from the shared fleet rule module: the public search, the
+ * planning board and the weekly-inspection resolver all read the same
+ * Postgres range literal, and a second parser would be a second bug.
+ */
+export { parseBlockPeriod } from "@/lib/fleet/availability-rules";
 
 /**
  * Merges overlapping AND touching ranges. Touching matters: two consecutive

@@ -1,6 +1,7 @@
 import { unstable_cache } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
 import { createPublicClient } from "@/lib/supabase/public";
+import { publicVehicleFilter } from "@/lib/fleet/availability-rules";
 import type { Database } from "@/lib/supabase/types";
 
 type VehicleRow = Database["public"]["Tables"]["vehicles"]["Row"];
@@ -8,6 +9,26 @@ type VehicleImageRow = Database["public"]["Tables"]["vehicle_images"]["Row"];
 type VehicleCategoryRow = Database["public"]["Tables"]["vehicle_categories"]["Row"];
 
 type VehicleCategoryBadge = Pick<VehicleCategoryRow, "slug" | "name_en" | "name_fr">;
+
+/**
+ * A note on the prices these rows carry.
+ *
+ * `vehicles.daily_price_cents` is a TEASER price, not a quote. Every
+ * authoritative customer-facing amount — the booking total, the deposit and
+ * the PayPal order — descends from `quoteBooking()`, which resolves the rate
+ * through `resolveDailyRate()` and never falls back to this column once a
+ * vehicle or its category is on tariffs.
+ *
+ * The listing and card surfaces that read it are deliberately outside that
+ * path: they are shown before a date range exists, so no tariff period can be
+ * selected yet. Inside the funnel the same distinction is made explicitly —
+ * PriceSummary shows this figure only until the server quote arrives, and
+ * labels it "Estimated total".
+ *
+ * The open item is presentational, and tracked as such: with tariffs
+ * configured, these teaser figures can differ from the eventual quote, and
+ * the cards do not currently say "from".
+ */
 
 export type VehicleWithImages = VehicleRow & {
   vehicle_images: VehicleImageRow[];
@@ -25,13 +46,12 @@ export type VehicleWithDetails = VehicleRow & {
 export const getFeaturedVehicles = unstable_cache(
   async (limit = 6): Promise<VehicleWithImages[]> => {
     const supabase = createPublicClient();
-    const { data, error } = await supabase
-      .from("vehicles")
-      .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
-      .eq("featured", true)
-      .eq("status", "active")
-      .eq("currency", "EUR")
-      .is("deleted_at", null)
+    const { data, error } = await publicVehicleFilter(
+      supabase
+        .from("vehicles")
+        .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
+        .eq("featured", true)
+    )
       .order("created_at", { ascending: false })
       .limit(limit);
 
@@ -53,12 +73,9 @@ export const getVehicles = unstable_cache(
     longTermOnly?: boolean;
   }): Promise<VehicleWithImages[]> => {
     const supabase = createPublicClient();
-    let query = supabase
-      .from("vehicles")
-      .select("*, vehicle_images(*), vehicle_categories!inner(slug, name_en, name_fr)")
-      .eq("status", "active")
-      .eq("currency", "EUR")
-      .is("deleted_at", null);
+    let query = publicVehicleFilter(
+      supabase.from("vehicles").select("*, vehicle_images(*), vehicle_categories!inner(slug, name_en, name_fr)")
+    );
 
     if (options?.categorySlug) {
       query = query.eq("vehicle_categories.slug", options.categorySlug);
@@ -87,14 +104,9 @@ export const getVehicles = unstable_cache(
 
 export async function getVehicleBySlug(slug: string): Promise<VehicleWithDetails | null> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("vehicles")
-    .select("*, vehicle_images(*), vehicle_categories(*)")
-    .eq("slug", slug)
-    .eq("status", "active")
-    .eq("currency", "EUR")
-    .is("deleted_at", null)
-    .maybeSingle();
+  const { data, error } = await publicVehicleFilter(
+    supabase.from("vehicles").select("*, vehicle_images(*), vehicle_categories(*)").eq("slug", slug)
+  ).maybeSingle();
 
   if (error) {
     console.error("getVehicleBySlug failed", error.message);
@@ -109,13 +121,12 @@ export async function getRelatedVehicles(
   limit = 3
 ): Promise<VehicleWithImages[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from("vehicles")
-    .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
-    .eq("category_id", categoryId)
-    .eq("status", "active")
-    .eq("currency", "EUR")
-    .is("deleted_at", null)
+  const { data, error } = await publicVehicleFilter(
+    supabase
+      .from("vehicles")
+      .select("*, vehicle_images(*), vehicle_categories(slug, name_en, name_fr)")
+      .eq("category_id", categoryId)
+  )
     .neq("id", excludeId)
     .limit(limit);
 
