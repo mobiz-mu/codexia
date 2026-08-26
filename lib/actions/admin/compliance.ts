@@ -437,7 +437,16 @@ export async function deleteComplianceAttachment(attachmentId: string) {
   // own attachment row (never accepted as raw client input), so there is no
   // way to pass a path outside this record's own compliance_record_id/*
   // prefix.
-  await supabase.storage.from("compliance-documents").remove([attachment.storage_path]);
+  // Storage first, then the row. This order can only ever leave a row
+  // pointing at a missing file — visible and recoverable — never a file with
+  // no row, which nothing would ever find again. Incidents and Inspections
+  // already checked this error; these two did not, and would delete the row
+  // regardless, orphaning the object in a private bucket.
+  const { error: storageError } = await supabase.storage.from("compliance-documents").remove([attachment.storage_path]);
+  if (storageError) {
+    console.error("deleteComplianceAttachment storage removal failed", storageError.message);
+    return { ok: false as const, error: "Failed to delete the stored file — the attachment was not removed." };
+  }
   const { error } = await supabase.from("vehicle_compliance_attachments").delete().eq("id", attachmentId);
 
   if (error) {

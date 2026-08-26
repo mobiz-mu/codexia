@@ -543,7 +543,16 @@ export async function deleteMaintenanceAttachment(attachmentId: string) {
     .maybeSingle();
   if (!attachment) return { ok: false as const, error: "Attachment not found." };
 
-  await supabase.storage.from("maintenance-documents").remove([attachment.storage_path]);
+  // Storage first, then the row. This order can only ever leave a row
+  // pointing at a missing file — visible and recoverable — never a file with
+  // no row, which nothing would ever find again. Incidents and Inspections
+  // already checked this error; these two did not, and would delete the row
+  // regardless, orphaning the object in a private bucket.
+  const { error: storageError } = await supabase.storage.from("maintenance-documents").remove([attachment.storage_path]);
+  if (storageError) {
+    console.error("deleteMaintenanceAttachment storage removal failed", storageError.message);
+    return { ok: false as const, error: "Failed to delete the stored file — the attachment was not removed." };
+  }
   const { error } = await supabase.from("vehicle_maintenance_attachments").delete().eq("id", attachmentId);
 
   if (error) {
