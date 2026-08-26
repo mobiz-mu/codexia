@@ -1027,3 +1027,83 @@ describe("attachments", () => {
     ).rejects.toThrow(/Missing required permission: manage_inspections/);
   });
 });
+
+/**
+ * The cleanup path relied on by live verification.
+ *
+ * Completion makes an inspection non-draft, and deleteInspection refuses
+ * anything but a draft — so a completed synthetic record could otherwise
+ * never be removed without bypassing the immutability policy. Clearing one
+ * answer through the ordinary action returns the derived result to `draft`,
+ * which makes the record deletable again through the ordinary action too.
+ *
+ * This works only while the inspection is UNAPPROVED. Once approved it is a
+ * signed historical record and both paths refuse, by design.
+ */
+describe("draft walk-back — how a completed synthetic inspection is cleaned", () => {
+  const completedInspection = {
+    id: INSPECTION_ID,
+    vehicle_id: VEHICLE_ID,
+    inspection_date: "2026-09-18",
+    odometer_km: 50000,
+    result: "failed",
+    approved_at: null,
+    availability_block_id: null,
+  };
+
+  it("allows clearing an answer on a completed but unapproved inspection", async () => {
+    const items = allItems("pass");
+    items[35].result = "fail";
+    const { client, writes } = makeSupabase({ items, inspection: completedInspection });
+    vi.mocked(createAdminClient).mockReturnValue(client);
+
+    const res = await setInspectionItemResult(INSPECTION_ID, form({ itemKey: "road_brakes", result: "" }));
+
+    expect(res.ok).toBe(true);
+    const itemUpdate = writes.find((w) => w.table === "vehicle_inspection_items" && w.op === "update");
+    expect((itemUpdate?.payload as { result: unknown }).result).toBeNull();
+  });
+
+  it("recomputes the result back to draft once an item is unanswered", async () => {
+    const items = allItems("pass");
+    items[35].result = null; // already cleared
+    const { client, writes } = makeSupabase({ items, inspection: completedInspection });
+    vi.mocked(createAdminClient).mockReturnValue(client);
+
+    await setInspectionItemResult(INSPECTION_ID, form({ itemKey: "road_brakes", result: "" }));
+
+    const headerUpdate = writes
+      .filter((w) => w.table === "vehicle_inspections" && w.op === "update")
+      .map((w) => w.payload as Record<string, unknown>)
+      .find((p) => "result" in p);
+    expect(headerUpdate?.result).toBe("draft");
+  });
+
+  it("then permits deletion, because the record is a draft again", async () => {
+    const { client, writes } = makeSupabase({
+      inspection: { ...completedInspection, result: "draft" },
+      attachmentCount: 0,
+    });
+    vi.mocked(createAdminClient).mockReturnValue(client);
+
+    const res = await deleteInspection(INSPECTION_ID);
+
+    expect(res.ok).toBe(true);
+    expect(writes.some((w) => w.table === "vehicle_inspections" && w.op === "delete")).toBe(true);
+  });
+
+  // The escape hatch must not exist for a signed record.
+  it("refuses the walk-back entirely once the inspection is approved", async () => {
+    const { client, writes } = makeSupabase({
+      items: allItems("pass"),
+      inspection: { ...completedInspection, approved_at: "2026-09-21T08:00:00Z" },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(client);
+
+    const res = await setInspectionItemResult(INSPECTION_ID, form({ itemKey: "road_brakes", result: "" }));
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/approved/);
+    expect(writes.some((w) => w.table === "vehicle_inspection_items")).toBe(false);
+  });
+});
