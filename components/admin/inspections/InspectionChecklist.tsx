@@ -273,6 +273,23 @@ export function InspectionChecklist({
                               </label>
                             );
                           })}
+                          {/* An operator who mis-clicks needs a way back to
+                              "not yet answered" — without this the four radios
+                              are one-way and a wrong answer can only be
+                              replaced, never withdrawn. Shown only once the
+                              item actually has an answer. */}
+                          {editable && row?.result ? (
+                            <button
+                              type="button"
+                              onClick={() => save(definition.key, null, row?.remarks ?? null)}
+                              disabled={busyKey === definition.key}
+                              aria-label={`Clear the answer for ${definition.label}`}
+                              title="Clear this answer"
+                              className="inline-flex min-h-[34px] items-center rounded-sm border border-dashed border-ops-line px-2 text-[11px] font-semibold text-ops-ink-3 hover:border-ops-accent hover:text-ops-header disabled:opacity-50 sm:min-h-0 sm:py-0.5"
+                            >
+                              Clear
+                            </button>
+                          ) : null}
                         </fieldset>
                       </td>
                       <td className="px-2.5 py-1.5 align-middle">

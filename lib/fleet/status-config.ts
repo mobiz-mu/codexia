@@ -25,6 +25,7 @@ export type OpsStatusKey =
   | "quote"
   | "maintenance"
   | "incident"
+  | "inspection"
   | "staff"
   | "stop_sell"
   | "conflict";
@@ -107,6 +108,18 @@ export const OPS_STATUS: Record<OpsStatusKey, OpsStatusDef> = {
     swatch: "var(--color-ops-incident)",
     description: "Off the road after an accident or damage",
   },
+  inspection: {
+    key: "inspection",
+    label: "Inspection downtime",
+    glyph: "I",
+    // Amber rather than the incident brown: a weekly inspection taking a car
+    // off the road is planned fleet work, not an accident. Distinct from
+    // maintenance too, so the board says WHY the vehicle is unavailable.
+    cell: "bg-ops-warning text-white",
+    badge: "bg-ops-warning text-white",
+    swatch: "var(--color-ops-warning)",
+    description: "Off the road after a weekly inspection defect",
+  },
   staff: {
     key: "staff",
     label: "Staff car",
@@ -145,6 +158,7 @@ export const OPS_LEGEND_ORDER: OpsStatusKey[] = [
   "quote",
   "maintenance",
   "incident",
+  "inspection",
   "staff",
   "stop_sell",
   "conflict",
@@ -193,6 +207,7 @@ const BLOCK_TYPE_TO_OPS: Record<string, OpsStatusKey> = {
   preparing: "maintenance",
   cleaning: "maintenance",
   incident: "incident",
+  inspection: "inspection",
   stop_sell: "stop_sell",
 };
 
