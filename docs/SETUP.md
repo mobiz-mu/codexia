@@ -18,9 +18,22 @@ used instead), apply the schema by hand:
    truth. Regenerate it after any migration change:
 
    ```bash
-   for f in supabase/migrations/*.sql; do cat "$f"; echo; done > /tmp/schema.sql
-   cat /tmp/schema.sql supabase/seed.sql > supabase/apply_all.sql
+   { for f in supabase/migrations/*.sql; do
+       [ "$(basename "$f" | cut -c1-4)" = "0026" ] && { cat supabase/seed.sql; echo; }
+       cat "$f"; echo
+     done; } > supabase/apply_all.sql
    ```
+
+   **`seed.sql` goes between `0025` and `0026`, not at the end.** It is not a
+   stylistic choice. `seed.sql` is what creates the `roles` rows, and every
+   migration from `0026` onward grants its new permissions by selecting from
+   `roles`. Append `seed.sql` last and those grants match an empty table and
+   insert nothing — silently. The schema still applies without a single
+   error, and the result is **50 of 75** `role_permissions`: every fleet-ops
+   grant for `administrator` and `fleet_manager` is missing, so staff simply
+   cannot see half the admin and nothing anywhere says why.
+
+   `lib/db/apply-all-ordering.test.ts` fails if this ordering is ever lost.
 
 Once the CLI can reach the database (e.g. via the Session Pooler URL from
 Project Settings → Database → Connection Pooling), migrations can be applied

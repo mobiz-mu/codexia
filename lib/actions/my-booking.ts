@@ -84,7 +84,7 @@ export async function resendBookingLink(
     await sendEmail({
       templateKey: "booking_link_resend",
       to: parsed.data.email,
-      subject: `${SITE_DEFAULTS.companyName} â€“ Your Booking Link`,
+      subject: `${SITE_DEFAULTS.companyName} — Your Booking Link`,
       react: BookingLinkEmail({ locale: "en", reference: booking?.reference ?? "", myBookingUrl, ...brand }),
       bookingId: mostRecentBookingId,
     });

@@ -1497,6 +1497,18 @@ where key = 'deposit_amount_eur_cents';
 -- ============================================================================
 -- Codexia Ltd — seed data. Vehicles/pricing below are clearly-marked demo
 -- content (is_demo = true), not binding specs or prices.
+--
+-- ORDERING IS LOAD-BEARING: this file must run AFTER migration 0025 and
+-- BEFORE migration 0026, which is exactly where it sits in this bundle.
+--
+-- The `roles` rows are created here, and every migration from 0026 onward
+-- grants its new permissions by selecting from `roles`. Run this file last
+-- instead and those grants match an empty table and insert nothing — no
+-- error, no warning, and 50 of 75 role_permissions, missing every fleet-ops
+-- grant for administrator and fleet_manager.
+--
+-- See docs/SETUP.md for the regeneration command, and
+-- lib/db/apply-all-ordering.test.ts for the guard that enforces it.
 -- ============================================================================
 
 -- ---------------------------------------------------------------------------
