@@ -34,6 +34,7 @@ const NAV_ITEMS: AdminNavEntry[] = [
       { href: "/admin/fuel", label: "Fuel Records", icon: "Fuel", permission: "view_fuel" },
       { href: "/admin/compliance/vehicles", label: "Fleet Compliance", icon: "ShieldAlert", permission: "view_compliance" },
       { href: "/admin/compliance", label: "All Documents", icon: "FileText", permission: "view_compliance" },
+      { href: "/admin/inspections", label: "Weekly Inspections", icon: "ClipboardCheck", permission: "view_inspections" },
       { href: "/admin/incidents", label: "Accident & Damage History", icon: "Siren", permission: "view_incidents" },
     ],
   },

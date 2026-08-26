@@ -63,6 +63,9 @@ export type InspectionListRow = {
     transmission: "manual" | "automatic";
     internal_registration_ref: string | null;
   } | null;
+  /** Populated by listInspectionsAdmin from one grouped query, not per row. */
+  attentionCount?: number;
+  failCount?: number;
 };
 
 export type InspectionItemRow = {
@@ -997,8 +1000,36 @@ export async function listInspectionsAdmin(rawFilters: {
     return { records: [] as InspectionListRow[], total: 0, page: filters.page, pageSize: PAGE_SIZE, filters };
   }
 
+  const rows = (data ?? []) as unknown as InspectionListRow[];
+
+  // Defect counts for the whole page in ONE query, grouped in memory. Never a
+  // count query per row, and never one per checklist item.
+  let defectCounts = new Map<string, { attention: number; fail: number }>();
+  if (rows.length > 0) {
+    const { data: items } = await supabase
+      .from("vehicle_inspection_items")
+      .select("inspection_id, result")
+      .in(
+        "inspection_id",
+        rows.map((r) => r.id)
+      )
+      .in("result", ["attention", "fail"]);
+
+    defectCounts = (items ?? []).reduce((acc, item) => {
+      const entry = acc.get(item.inspection_id) ?? { attention: 0, fail: 0 };
+      if (item.result === "attention") entry.attention += 1;
+      if (item.result === "fail") entry.fail += 1;
+      acc.set(item.inspection_id, entry);
+      return acc;
+    }, new Map<string, { attention: number; fail: number }>());
+  }
+
   return {
-    records: (data ?? []) as unknown as InspectionListRow[],
+    records: rows.map((r) => ({
+      ...r,
+      attentionCount: defectCounts.get(r.id)?.attention ?? 0,
+      failCount: defectCounts.get(r.id)?.fail ?? 0,
+    })),
     total: count ?? 0,
     page: filters.page,
     pageSize: PAGE_SIZE,

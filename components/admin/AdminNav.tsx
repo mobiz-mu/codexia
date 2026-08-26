@@ -36,6 +36,7 @@ import {
   Fuel,
   ShieldAlert,
   Siren,
+  ClipboardCheck,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
@@ -72,6 +73,7 @@ const ICON_MAP = {
   Fuel,
   ShieldAlert,
   Siren,
+  ClipboardCheck,
 } satisfies Record<string, LucideIcon>;
 
 export type AdminIconName = keyof typeof ICON_MAP;

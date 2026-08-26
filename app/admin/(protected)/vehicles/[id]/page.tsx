@@ -11,12 +11,21 @@ import { INCIDENT_TYPE_LABELS } from "@/lib/incidents/schema";
 import { formatMoney } from "@/lib/pricing/format";
 import { ComplianceStatusBadge } from "@/components/admin/ComplianceStatusBadge";
 import { SeverityBadge, RepairStatusBadge } from "@/components/admin/IncidentBadges";
+import {
+  InspectionApprovalBadge,
+  InspectionResultBadge,
+} from "@/components/admin/inspections/InspectionBadges";
+import { getRecentInspectionsForVehicle } from "@/lib/actions/admin/inspections";
+import type { DerivedResult } from "@/lib/inspections/presentation";
 
 export const metadata: Metadata = { title: "Edit Vehicle" };
 
 export default async function EditVehiclePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const { vehicle, images, categories, recentMaintenance, currentCompliance, recentIncidents } = await getVehicleAdmin(id);
+  const [
+    { vehicle, images, categories, recentMaintenance, currentCompliance, recentIncidents },
+    recentInspections,
+  ] = await Promise.all([getVehicleAdmin(id), getRecentInspectionsForVehicle(id, 5)]);
   if (!vehicle) notFound();
 
   const complianceByType = new Map(currentCompliance.map((c) => [c.document_type, c]));
@@ -109,6 +118,58 @@ export default async function EditVehiclePage({ params }: { params: Promise<{ id
                   </div>
                 </div>
                 <span className="font-medium text-ink">{formatMoney(r.cost_cents, "MUR", "en")}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <div className="rounded-xl border border-border bg-background p-6">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="font-semibold text-ink">Recent Weekly Inspections</h2>
+          <div className="flex gap-3 text-sm font-medium text-primary-dark">
+            <Link href={`/admin/inspections?vehicleId=${id}`} className="hover:underline">
+              View history
+            </Link>
+            <Link href={`/admin/inspections/new?vehicleId=${id}`} className="hover:underline">
+              New inspection
+            </Link>
+          </div>
+        </div>
+        {recentInspections.length === 0 ? (
+          <p className="text-sm text-muted">No weekly inspections recorded yet.</p>
+        ) : (
+          <ul className="flex flex-col divide-y divide-border">
+            {recentInspections.map((i) => (
+              <li key={i.id} className="flex items-center justify-between gap-3 py-2 text-sm">
+                <div className="min-w-0">
+                  <Link
+                    href={`/admin/inspections/${i.id}`}
+                    className="font-medium text-primary-dark hover:underline"
+                  >
+                    Week ending {i.week_ending}
+                  </Link>
+                  <div className="text-xs text-muted">
+                    {new Date(i.inspection_date).toLocaleDateString("en-GB")}
+                    {i.inspector_name ? ` · ${i.inspector_name}` : ""}
+                    {` · ${i.odometer_km.toLocaleString()} km`}
+                  </div>
+                </div>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  {i.failCount > 0 && (
+                    <span className="rounded px-1.5 py-0.5 text-xs font-semibold text-red-700">
+                      {i.failCount} fail
+                    </span>
+                  )}
+                  {i.attentionCount > 0 && (
+                    <span className="rounded px-1.5 py-0.5 text-xs font-semibold text-amber-700">
+                      {i.attentionCount} attention
+                    </span>
+                  )}
+                  {/* Result and approval stay separate, as everywhere else. */}
+                  <InspectionResultBadge result={i.result as DerivedResult} />
+                  <InspectionApprovalBadge approvedAt={i.approved_at} />
+                </div>
               </li>
             ))}
           </ul>
