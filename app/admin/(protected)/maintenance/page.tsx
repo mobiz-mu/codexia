@@ -2,7 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { listMaintenanceRecordsAdmin, listVehiclesForMaintenanceSelect } from "@/lib/actions/admin/maintenance";
-import { MAINTENANCE_TYPE_LABELS, MAINTENANCE_TYPES, type MaintenanceType } from "@/lib/maintenance/schema";
+import {
+  MAINTENANCE_TYPE_LABELS,
+  MAINTENANCE_TYPES,
+  resolveMaintenanceCostBreakdown,
+  summariseMaintenanceCosts,
+  type MaintenanceType,
+} from "@/lib/maintenance/schema";
 import { formatMoney } from "@/lib/pricing/format";
 import { MaintenanceDeleteButton } from "@/components/admin/MaintenanceDeleteButton";
 import { OpsPanel, OpsToolbar } from "@/components/admin/ops/OpsPanel";
@@ -50,21 +56,31 @@ export default async function AdminMaintenancePage({
 
   // Every figure on this page is Mauritian Rupees. Customer rental pricing is
   // EUR and lives in an entirely separate set of tables.
-  const spend = records.reduce(
-    (acc, r) => ({
-      parts: acc.parts + r.parts_cost_cents,
-      labour: acc.labour + r.labour_cost_cents,
-      other: acc.other + r.other_cost_cents,
-      total: acc.total + r.cost_cents,
-    }),
-    { parts: 0, labour: 0, other: 0, total: 0 }
-  );
+  //
+  // Components are summed only from rows that carry a breakdown, so a legacy
+  // lump-sum record contributes to the total without making the Parts figure
+  // look wrong.
+  const spend = summariseMaintenanceCosts(records);
+  const subtitleParts = [
+    `${total} record${total === 1 ? "" : "s"}`,
+    ...(spend.hasItemisation
+      ? [
+          `Parts ${formatMoney(spend.parts, "MUR", "en")}`,
+          `Labour ${formatMoney(spend.labour, "MUR", "en")}`,
+          `Other ${formatMoney(spend.other, "MUR", "en")}`,
+        ]
+      : []),
+    ...(spend.unitemisedTotal > 0
+      ? [`Unitemised ${formatMoney(spend.unitemisedTotal, "MUR", "en")}`]
+      : []),
+    `Total ${formatMoney(spend.total, "MUR", "en")}`,
+  ];
 
   return (
     <div className="flex flex-col gap-3">
       <OpsPanel
         title="Vehicle maintenance"
-        subtitle={`${total} record${total === 1 ? "" : "s"} · Parts ${formatMoney(spend.parts, "MUR", "en")} · Labour ${formatMoney(spend.labour, "MUR", "en")} · Other ${formatMoney(spend.other, "MUR", "en")} · Total ${formatMoney(spend.total, "MUR", "en")}`}
+        subtitle={subtitleParts.join(" · ")}
         flush
         actions={
           <Link
@@ -131,30 +147,30 @@ export default async function AdminMaintenancePage({
           </form>
         </OpsToolbar>
 
-        <OpsTable minWidth="78rem">
+        <OpsTable minWidth="68rem">
           <OpsThead>
             <OpsTr>
-              <OpsTh width="7rem">Date</OpsTh>
-              <OpsTh width="15rem">Vehicle</OpsTh>
-              <OpsTh align="right" width="7rem">
+              <OpsTh width="6rem">Date</OpsTh>
+              <OpsTh width="12rem">Vehicle</OpsTh>
+              <OpsTh align="right" width="5.5rem">
                 Mileage
               </OpsTh>
-              <OpsTh width="10rem">Type</OpsTh>
-              <OpsTh width="11rem">Garage</OpsTh>
-              <OpsTh align="right" width="7rem">
+              <OpsTh width="6rem">Type</OpsTh>
+              <OpsTh width="6.5rem">Garage</OpsTh>
+              <OpsTh align="right" width="4.5rem" wrap>
                 Parts Rs
               </OpsTh>
-              <OpsTh align="right" width="7rem">
+              <OpsTh align="right" width="5rem" wrap>
                 Labour Rs
               </OpsTh>
-              <OpsTh align="right" width="7rem">
+              <OpsTh align="right" width="4.5rem" wrap>
                 Other Rs
               </OpsTh>
-              <OpsTh align="right" width="8rem">
+              <OpsTh align="right" width="6.5rem" wrap>
                 Total Rs
               </OpsTh>
-              <OpsTh width="8rem">Downtime</OpsTh>
-              <OpsTh align="right" width="8rem">
+              <OpsTh width="6.5rem">Downtime</OpsTh>
+              <OpsTh align="right" width="5.5rem">
                 Action
               </OpsTh>
             </OpsTr>
@@ -163,9 +179,11 @@ export default async function AdminMaintenancePage({
             {records.length === 0 ? (
               <OpsEmptyRow colSpan={11}>No maintenance records match these filters.</OpsEmptyRow>
             ) : (
-              records.map((r, i) => (
+              records.map((r, i) => {
+                const breakdown = resolveMaintenanceCostBreakdown(r);
+                return (
                 <OpsTr key={r.id} zebra={i}>
-                  <OpsTd numeric className="font-semibold text-ops-ink">
+                  <OpsTd numeric className="whitespace-nowrap font-semibold text-ops-ink">
                     {r.maintenance_date}
                   </OpsTd>
                   <OpsTd>
@@ -200,16 +218,30 @@ export default async function AdminMaintenancePage({
                     ) : null}
                   </OpsTd>
                   <OpsTd align="right" numeric>
-                    {r.parts_cost_cents ? (r.parts_cost_cents / 100).toFixed(2) : "—"}
+                    {breakdown.kind === "itemised" ? (breakdown.parts / 100).toFixed(2) : "—"}
                   </OpsTd>
                   <OpsTd align="right" numeric>
-                    {r.labour_cost_cents ? (r.labour_cost_cents / 100).toFixed(2) : "—"}
+                    {breakdown.kind === "itemised" ? (breakdown.labour / 100).toFixed(2) : "—"}
                   </OpsTd>
                   <OpsTd align="right" numeric>
-                    {r.other_cost_cents ? (r.other_cost_cents / 100).toFixed(2) : "—"}
+                    {breakdown.kind === "itemised" ? (breakdown.other / 100).toFixed(2) : "—"}
                   </OpsTd>
                   <OpsTd align="right" numeric className="font-semibold text-ops-ink">
-                    {formatMoney(r.cost_cents, "MUR", "en")}
+                    {breakdown.kind === "none" ? (
+                      "—"
+                    ) : (
+                      <>
+                        {formatMoney(breakdown.total, "MUR", "en")}
+                        {breakdown.kind === "unitemised" ? (
+                          <span
+                            className="ml-1 text-[10px] font-semibold uppercase tracking-wide text-ops-ink-3"
+                            title="Recorded as a lump sum — no parts/labour breakdown was captured."
+                          >
+                            Unitemised
+                          </span>
+                        ) : null}
+                      </>
+                    )}
                   </OpsTd>
                   <OpsTd>
                     {r.availability_block_id ? (
@@ -232,7 +264,8 @@ export default async function AdminMaintenancePage({
                     </div>
                   </OpsTd>
                 </OpsTr>
-              ))
+                );
+              })
             )}
           </OpsTbody>
         </OpsTable>

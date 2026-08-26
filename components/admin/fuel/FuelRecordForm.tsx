@@ -100,12 +100,12 @@ export function FuelRecordForm({
         </button>
 
         {state.status === "error" ? (
-          <p role="alert" className="w-full text-[12px] font-medium text-ops-booked">
+          <p role="alert" className="w-full text-[12px] font-medium text-ops-danger">
             {state.error}
           </p>
         ) : null}
         {state.status === "success" ? (
-          <p role="status" className="w-full text-[12px] font-medium text-ops-agency">
+          <p role="status" className="w-full text-[12px] font-medium text-ops-success">
             Saved.
           </p>
         ) : null}

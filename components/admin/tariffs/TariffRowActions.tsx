@@ -40,7 +40,7 @@ export function TariffRowActions({
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-0.5">
-      {error ? <span className="w-full text-right text-[11px] text-ops-booked">{error}</span> : null}
+      {error ? <span className="w-full text-right text-[11px] text-ops-danger">{error}</span> : null}
 
       {editHref ? (
         <Link
@@ -91,7 +91,7 @@ export function TariffRowActions({
                 }
               })
             }
-            className="rounded-sm bg-ops-booked px-1.5 py-0.5 text-[11px] font-bold uppercase text-white disabled:opacity-50"
+            className="rounded-sm bg-ops-danger px-1.5 py-0.5 text-[11px] font-bold uppercase text-white disabled:opacity-50"
           >
             Confirm
           </button>
@@ -113,7 +113,7 @@ export function TariffRowActions({
           onClick={() => setConfirming(true)}
           aria-label="Delete tariff period"
           title="Delete tariff period"
-          className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[12px] font-bold leading-none text-ops-booked hover:border-ops-booked hover:bg-ops-booked hover:text-white"
+          className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[12px] font-bold leading-none text-ops-danger hover:border-ops-danger hover:bg-ops-danger hover:text-white"
         >
           <span aria-hidden="true">✕</span>
         </button>

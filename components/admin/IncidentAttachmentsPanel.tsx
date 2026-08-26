@@ -68,24 +68,24 @@ export function IncidentAttachmentsPanel({ incidentId, attachments }: { incident
 
   return (
     <div className="flex flex-col gap-4">
-      {attachments.length === 0 && <p className="text-sm text-muted">No documents attached yet.</p>}
+      {attachments.length === 0 && <p className="text-[13px] text-ops-ink-3">No documents attached yet.</p>}
       {grouped.map(({ category, items }) => (
         <div key={category} className="flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-muted">
+          <p className="text-[11px] font-bold uppercase tracking-[0.06em] text-ops-header">
             {ATTACHMENT_CATEGORY_LABELS[category as AttachmentCategory]}
           </p>
           {items.map((a) => (
-            <div key={a.id} className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+            <div key={a.id} className="flex items-center justify-between gap-2 rounded-sm border border-ops-line bg-ops-panel-2 px-2 py-1.5 text-[13px]">
               <div className="min-w-0">
-                <p className="truncate font-medium text-ink">{a.file_name}</p>
-                <p className="text-xs text-muted">{formatSize(a.size_bytes)}</p>
+                <p className="truncate font-semibold text-ops-ink">{a.file_name}</p>
+                <p className="text-[11px] text-ops-ink-3">{formatSize(a.size_bytes)}</p>
               </div>
               <div className="flex shrink-0 gap-2">
                 <button
                   type="button"
                   disabled={pending}
                   onClick={() => handleView(a.storage_path)}
-                  className="rounded-full border border-border px-3 py-1.5 text-xs font-medium text-ink transition-colors hover:border-primary hover:text-primary-dark disabled:pointer-events-none disabled:opacity-60"
+                  className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[11px] font-semibold text-ops-ink-2 hover:border-ops-accent hover:text-ops-header disabled:pointer-events-none disabled:opacity-50"
                 >
                   View
                 </button>
@@ -93,7 +93,7 @@ export function IncidentAttachmentsPanel({ incidentId, attachments }: { incident
                   type="button"
                   disabled={pending}
                   onClick={() => handleDelete(a.id)}
-                  className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-60"
+                  className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[11px] font-semibold text-ops-danger hover:border-ops-danger hover:bg-ops-danger hover:text-white disabled:pointer-events-none disabled:opacity-50"
                 >
                   Delete
                 </button>
@@ -103,8 +103,8 @@ export function IncidentAttachmentsPanel({ incidentId, attachments }: { incident
         </div>
       ))}
 
-      <form action={handleUpload} className="flex flex-wrap items-center gap-2 border-t border-border pt-3">
-        <select name="category" required className="rounded-lg border border-border px-3 py-2 text-sm">
+      <form action={handleUpload} className="flex flex-wrap items-center gap-2 border-t border-ops-line pt-2.5">
+        <select name="category" required className="rounded-sm border border-ops-line bg-white px-2 py-1 text-[13px] text-ops-ink">
           {ATTACHMENT_CATEGORIES.map((c) => (
             <option key={c} value={c}>
               {ATTACHMENT_CATEGORY_LABELS[c]}
@@ -122,7 +122,7 @@ export function IncidentAttachmentsPanel({ incidentId, attachments }: { incident
         <button
           type="submit"
           disabled={pending}
-          className="rounded-full bg-action px-4 py-1.5 text-xs font-semibold text-ink shadow-sm transition-all hover:-translate-y-0.5 hover:bg-action-dark hover:shadow-md disabled:pointer-events-none disabled:opacity-60"
+          className="rounded-sm bg-ops-header px-3 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-white hover:bg-ops-header-2 disabled:pointer-events-none disabled:opacity-50"
         >
           {pending ? "Uploading..." : "Upload"}
         </button>

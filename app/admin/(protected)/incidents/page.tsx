@@ -141,22 +141,24 @@ export default async function AdminIncidentsPage({
           </form>
         </OpsToolbar>
 
-        <OpsTable minWidth="76rem">
+        <OpsTable minWidth="62rem">
           <OpsThead>
             <OpsTr>
-              <OpsTh width="7rem">Date</OpsTh>
-              <OpsTh width="15rem">Vehicle</OpsTh>
-              <OpsTh width="10rem">Type</OpsTh>
-              <OpsTh width="8rem">Severity</OpsTh>
-              <OpsTh width="10rem">Repair status</OpsTh>
-              <OpsTh align="right" width="8rem">
+              <OpsTh width="6rem">Date</OpsTh>
+              <OpsTh width="12rem">Vehicle</OpsTh>
+              <OpsTh width="8rem">Type</OpsTh>
+              <OpsTh width="6rem">Severity</OpsTh>
+              <OpsTh width="7rem" wrap>
+                Repair status
+              </OpsTh>
+              <OpsTh align="right" width="5rem" wrap>
                 Estimated Rs
               </OpsTh>
-              <OpsTh align="right" width="8rem">
+              <OpsTh align="right" width="5rem" wrap>
                 Actual Rs
               </OpsTh>
-              <OpsTh width="9rem">Downtime</OpsTh>
-              <OpsTh align="right" width="8rem">
+              <OpsTh width="7.5rem">Downtime</OpsTh>
+              <OpsTh align="right" width="5.5rem">
                 Action
               </OpsTh>
             </OpsTr>
@@ -167,7 +169,7 @@ export default async function AdminIncidentsPage({
             ) : (
               records.map((r, i) => (
                 <OpsTr key={r.id} zebra={i} highlight={r.severity === "write_off"}>
-                  <OpsTd numeric className="font-semibold text-ops-ink">
+                  <OpsTd numeric className="whitespace-nowrap font-semibold text-ops-ink">
                     {r.incident_date}
                   </OpsTd>
                   <OpsTd>

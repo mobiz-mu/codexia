@@ -25,7 +25,7 @@ export function IncidentCloseBlockButton({ incidentId }: { incidentId: string })
         type="button"
         disabled={pending}
         onClick={handleClose}
-        className="self-start rounded-full border border-primary px-4 py-2 text-sm font-medium text-primary-dark transition-colors hover:bg-primary-tint disabled:pointer-events-none disabled:opacity-60"
+        className="shrink-0 rounded-sm border border-ops-header bg-ops-header px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.06em] text-white hover:bg-ops-header-2 disabled:pointer-events-none disabled:opacity-50"
       >
         {pending ? "Closing..." : "Return vehicle to service (close block)"}
       </button>

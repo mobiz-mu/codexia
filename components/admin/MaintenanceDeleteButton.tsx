@@ -4,6 +4,11 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { deleteMaintenanceRecord } from "@/lib/actions/admin/maintenance";
 
+/**
+ * Icon rather than the word "Delete": next to the Open link, two text
+ * controls wrapped onto a second line and pushed every row taller in a table
+ * whose whole point is density. The accessible name is kept in full.
+ */
 export function MaintenanceDeleteButton({ recordId }: { recordId: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -20,20 +25,22 @@ export function MaintenanceDeleteButton({ recordId }: { recordId: string }) {
   }
 
   return (
-    <div className="flex flex-col items-end gap-1">
+    <span className="inline-flex flex-col items-end gap-0.5">
       <button
         type="button"
         disabled={pending}
         onClick={handleDelete}
-        className="rounded-full border border-red-300 px-3 py-1.5 text-xs font-medium text-red-600 transition-colors hover:bg-red-50 disabled:pointer-events-none disabled:opacity-60"
+        aria-label="Delete maintenance record"
+        title="Delete maintenance record"
+        className="rounded-sm border border-ops-line px-1.5 py-0.5 text-[12px] font-bold leading-none text-ops-danger hover:border-ops-danger hover:bg-ops-danger hover:text-white disabled:pointer-events-none disabled:opacity-50"
       >
-        Delete
+        <span aria-hidden="true">✕</span>
       </button>
-      {error && (
-        <p className="text-xs text-red-600" role="alert">
+      {error ? (
+        <span className="text-[10px] text-ops-danger" role="alert">
           {error}
-        </p>
-      )}
-    </div>
+        </span>
+      ) : null}
+    </span>
   );
 }

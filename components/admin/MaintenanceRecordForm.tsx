@@ -4,8 +4,9 @@ import { useActionState, useState } from "react";
 import type { MaintenanceFormState } from "@/lib/actions/admin/maintenance";
 import { MAINTENANCE_TYPE_LABELS, MAINTENANCE_TYPES } from "@/lib/maintenance/schema";
 
-const fieldClass = "rounded-lg border border-border px-3 py-2 text-sm";
-const labelClass = "text-sm font-medium text-ink";
+const fieldClass =
+  "w-full rounded-sm border border-ops-line bg-white px-2 py-1 text-[13px] text-ops-ink outline-none focus:border-ops-accent focus:ring-1 focus:ring-ops-accent";
+const labelClass = "text-[11px] font-bold uppercase tracking-[0.06em] text-ops-ink-2";
 
 type Initial = {
   vehicle_id?: string;
@@ -73,8 +74,8 @@ export function MaintenanceRecordForm({
   const [markUnavailable, setMarkUnavailable] = useState(false);
 
   return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+    <form action={formAction} className="flex flex-col gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Vehicle</label>
           <select name="vehicleId" defaultValue={initial?.vehicle_id ?? ""} required className={fieldClass}>
@@ -159,9 +160,9 @@ export function MaintenanceRecordForm({
       {/* Fleet running costs are Mauritian Rupees, never euros — customer
           rental pricing is EUR and lives in an entirely separate set of
           tables. The two are never mixed into one total. */}
-      <fieldset className="rounded-lg border border-border p-3">
+      <fieldset className="rounded-sm border border-ops-line p-2.5">
         <legend className={`${labelClass} px-1`}>Cost — Mauritian Rupees (Rs)</legend>
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
           {[
             { name: "partsCostMur", label: "Parts", key: "parts_cost_cents" as const },
             { name: "labourCostMur", label: "Labour", key: "labour_cost_cents" as const },
@@ -171,7 +172,7 @@ export function MaintenanceRecordForm({
             <div key={f.name} className="flex flex-col gap-1">
               <label className={labelClass}>{f.label}</label>
               <div className="relative">
-                <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted">
+                <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[12px] text-ops-ink-3">
                   Rs
                 </span>
                 <input
@@ -179,18 +180,18 @@ export function MaintenanceRecordForm({
                   name={f.name}
                   defaultValue={initial?.[f.key] ? ((initial[f.key] as number) / 100).toFixed(2) : ""}
                   placeholder="0.00"
-                  className={`${fieldClass} w-full pl-9`}
+                  className={`${fieldClass} pl-7`}
                 />
               </div>
             </div>
           ))}
         </div>
-        <p className="mt-2 text-xs text-muted">
+        <p className="mt-2 text-[11px] text-ops-ink-3">
           Leave the total blank to have it calculated from parts, labour and other.
         </p>
       </fieldset>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         <div className="flex flex-col gap-1">
           <label className={labelClass}>Next service due</label>
           <input type="date" name="nextServiceDate" defaultValue={initial?.next_service_date ?? ""} className={fieldClass} />
@@ -207,7 +208,7 @@ export function MaintenanceRecordForm({
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
         {DETAIL_FIELDS.map(({ name, label }) => (
           <div key={name} className="flex flex-col gap-1">
             <label className={labelClass}>{label}</label>
@@ -228,9 +229,9 @@ export function MaintenanceRecordForm({
 
       {/* Downtime is opt-in and explicit. Logging that work happened must
           never, on its own, retroactively take a vehicle off the road. */}
-      <fieldset className="rounded-lg border border-border p-3">
+      <fieldset className="rounded-sm border border-ops-line p-2.5">
         <legend className={`${labelClass} px-1`}>Vehicle availability</legend>
-        <label className="flex items-start gap-2 text-sm text-ink">
+        <label className="flex items-start gap-2 text-[13px] text-ops-ink">
           <input
             type="checkbox"
             name="markUnavailable"
@@ -241,7 +242,7 @@ export function MaintenanceRecordForm({
           />
           <span>
             Mark vehicle unavailable for this work
-            <span className="block text-xs text-muted">
+            <span className="block text-[11px] text-ops-ink-3">
               Creates a maintenance block on the shared availability engine, so the vehicle immediately stops being
               offered in public search, on the planning board and in manual booking. Leave unchecked to record the
               work as history only.
@@ -250,7 +251,7 @@ export function MaintenanceRecordForm({
         </label>
 
         {markUnavailable ? (
-          <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="flex flex-col gap-1">
               <label className={labelClass}>Downtime starts</label>
               <input type="datetime-local" name="downtimeStart" required className={fieldClass} />
@@ -259,7 +260,7 @@ export function MaintenanceRecordForm({
               <label className={labelClass}>Downtime ends</label>
               <input type="datetime-local" name="downtimeEnd" required className={fieldClass} />
             </div>
-            <p className="text-xs text-muted sm:col-span-2">
+            <p className="text-[11px] text-ops-ink-3 sm:col-span-2">
               If this window clashes with an existing booking or block, the record will not be saved and the clash
               will be named — nothing is overwritten.
             </p>
@@ -267,11 +268,11 @@ export function MaintenanceRecordForm({
         ) : null}
       </fieldset>
 
-      <label className="flex items-start gap-2 text-sm text-ink">
+      <label className="flex items-start gap-2 text-[13px] text-ops-ink">
         <input type="checkbox" name="updateVehicleInfo" value="true" className="mt-0.5" />
         <span>
           Update vehicle current service information from this record
-          <span className="block text-xs text-muted">
+          <span className="block text-[11px] text-ops-ink-3">
             Sets the vehicle&apos;s last service date to the date above, and its current mileage to the mileage
             above (if provided). Leave unchecked when backfilling an old record.
           </span>
@@ -279,16 +280,16 @@ export function MaintenanceRecordForm({
       </label>
 
       {state.status === "error" && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-[12px] font-medium text-ops-danger" role="alert">
           {state.error}
         </p>
       )}
-      {state.status === "success" && <p className="text-sm text-green-700">Saved.</p>}
+      {state.status === "success" && <p className="text-[12px] font-semibold text-ops-success">Saved.</p>}
 
       <button
         type="submit"
         disabled={pending}
-        className="self-start rounded-full bg-action px-6 py-2.5 text-sm font-semibold text-ink disabled:opacity-60"
+        className="self-start rounded-sm bg-ops-header px-3 py-1.5 text-[12px] font-bold uppercase tracking-[0.06em] text-white hover:bg-ops-header-2 disabled:opacity-50"
       >
         {pending ? "Saving..." : submitLabel}
       </button>

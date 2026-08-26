@@ -64,7 +64,7 @@ export function ManualBookingForm({
 
   if (state.status === "success") {
     return (
-      <div className="rounded-sm border border-ops-agency bg-ops-agency/10 p-4">
+      <div className="rounded-sm border border-ops-success bg-ops-success/10 p-4">
         <p className="text-[13px] font-semibold text-ops-ink">
           Booking {state.reference} created.
         </p>
@@ -307,7 +307,7 @@ export function ManualBookingForm({
         </Link>
 
         {state.status === "error" ? (
-          <div role="alert" className="w-full rounded-sm border-l-[3px] border-ops-booked bg-ops-booked/10 p-2.5">
+          <div role="alert" className="w-full rounded-sm border-l-[3px] border-ops-danger bg-ops-danger/10 p-2.5">
             <p className="text-[12px] font-semibold text-ops-ink">{state.error}</p>
             {state.conflicts?.length ? (
               <ul className="mt-1.5 flex flex-col gap-1">

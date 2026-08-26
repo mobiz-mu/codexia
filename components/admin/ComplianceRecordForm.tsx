@@ -101,7 +101,7 @@ export function ComplianceRecordForm({
               type="number"
               step="0.01"
               min="0"
-              name="costEur"
+              name="costMur"
               defaultValue={initial?.cost_cents != null ? (initial.cost_cents / 100).toFixed(2) : ""}
               className={`${fieldClass} w-full pl-9`}
             />

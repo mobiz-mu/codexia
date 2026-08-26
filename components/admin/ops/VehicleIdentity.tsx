@@ -58,6 +58,15 @@ export function VehicleIdentity({
 }) {
   const s = SIZES[size];
   const stacked = orientation === "stacked";
+  // Callers build the subtitle as `brand model`, which for most of the fleet
+  // is character-for-character the display name ("Suzuki Swift" over "Suzuki
+  // Swift"). Rendering it twice costs a line in every row of every fleet
+  // table and tells the operator nothing, so a redundant subtitle is dropped
+  // and only a genuinely different one ("Toyota Yaris" over "Yaris Auto")
+  // survives.
+  const normalise = (value: string) => value.replace(/\s+/g, " ").trim().toLowerCase();
+  const subtitle =
+    vehicle.subtitle && normalise(vehicle.subtitle) !== normalise(vehicle.name) ? vehicle.subtitle : null;
   const detail = [
     vehicle.transmission === "automatic" ? "Automatic" : vehicle.transmission === "manual" ? "Manual" : null,
     vehicle.registration,
@@ -110,9 +119,9 @@ export function VehicleIdentity({
         >
           {vehicle.name}
         </p>
-        {vehicle.subtitle ? (
+        {subtitle ? (
           <p className={cn("truncate leading-tight", onDark ? "text-ops-ink-inv-2" : "text-ops-ink-3", s.sub)}>
-            {vehicle.subtitle}
+            {subtitle}
           </p>
         ) : null}
         {detail ? (

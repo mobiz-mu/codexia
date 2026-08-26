@@ -273,8 +273,8 @@ export function TariffRateForm({
           ))}
         </div>
 
-        <p className="flex items-start gap-2 rounded-sm border-l-[3px] border-ops-maint bg-ops-maint/10 px-2.5 py-1.5 text-[12px] text-ops-ink-2">
-          <span aria-hidden="true" className="font-bold text-ops-maint">
+        <p className="flex items-start gap-2 rounded-sm border-l-[3px] border-ops-warning bg-ops-warning/10 px-2.5 py-1.5 text-[12px] text-ops-ink-2">
+          <span aria-hidden="true" className="font-bold text-ops-warning">
             !
           </span>
           <span>
@@ -318,12 +318,12 @@ export function TariffRateForm({
           </button>
           {footerExtra}
           {state.status === "error" ? (
-            <p role="alert" className="text-[12px] font-medium text-ops-booked">
+            <p role="alert" className="text-[12px] font-medium text-ops-danger">
               {state.error}
             </p>
           ) : null}
           {state.status === "success" ? (
-            <p role="status" className="text-[12px] font-medium text-ops-agency">
+            <p role="status" className="text-[12px] font-medium text-ops-success">
               Saved.
             </p>
           ) : null}

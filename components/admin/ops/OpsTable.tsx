@@ -43,19 +43,30 @@ export function OpsTh({
   className,
   scope = "col",
   width,
+  wrap = false,
 }: {
   children?: React.ReactNode;
   align?: "left" | "right" | "center";
   className?: string;
   scope?: "col" | "row";
   width?: string;
+  /**
+   * Let a two-word label break onto a second line. Headings are normally kept
+   * on one line, but on a money column the *heading* is the widest thing in
+   * it — "Labour Rs" is half again as wide as any amount below it — so four
+   * cost columns held nowrap add roughly 150px of dead width and push the
+   * actions column off the side of the screen. Wrapping the heading costs one
+   * row of header height and buys back the whole overflow.
+   */
+  wrap?: boolean;
 }) {
   return (
     <th
       scope={scope}
       style={width ? { width } : undefined}
       className={cn(
-        "whitespace-nowrap border-r border-white/15 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-white last:border-r-0",
+        "border-r border-white/15 px-2.5 py-1.5 text-[11px] font-bold uppercase tracking-[0.06em] text-white last:border-r-0",
+        wrap ? "leading-[1.15]" : "whitespace-nowrap",
         align === "right" && "text-right",
         align === "center" && "text-center",
         align === "left" && "text-left",
