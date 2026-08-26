@@ -73,7 +73,7 @@ function makeSupabase(opts: {
   vehicle?: Record<string, unknown> | null;
   attachmentCount?: number;
   attachment?: Record<string, unknown> | null;
-  maintenanceRows?: { id: string; repairs_performed: string | null }[];
+  maintenanceRows?: { id: string; source_inspection_followup_key: string | null }[];
   insertItemsError?: { message: string } | null;
   storageRemoveError?: { message: string } | null;
 }) {
@@ -612,7 +612,7 @@ describe("approval privilege boundary", () => {
 // ---------------------------------------------------------------------------
 
 describe("maintenance follow-up", () => {
-  function setup(items: ItemRow[], maintenanceRows: { id: string; repairs_performed: string | null }[] = []) {
+  function setup(items: ItemRow[], maintenanceRows: { id: string; source_inspection_followup_key: string | null }[] = []) {
     const { client, writes } = makeSupabase({
       items,
       maintenanceRows,
@@ -688,8 +688,7 @@ describe("maintenance follow-up", () => {
   it("treats a repeated identical submission as a no-op", async () => {
     const items = allItems("pass");
     items[35].result = "fail";
-    const existingDescription = "[FAIL] Brakes operating correctly";
-    setup(items, [{ id: "m1", repairs_performed: existingDescription }]);
+    setup(items, [{ id: "m1", source_inspection_followup_key: "road_brakes" }]);
     vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
 
     const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["road_brakes"]));
@@ -703,7 +702,7 @@ describe("maintenance follow-up", () => {
     const items = allItems("pass");
     items[35].result = "fail"; // road_brakes
     items[24].result = "fail"; // int_air_conditioning
-    setup(items, [{ id: "m1", repairs_performed: "[FAIL] Brakes operating correctly" }]);
+    setup(items, [{ id: "m1", source_inspection_followup_key: "road_brakes" }]);
     vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
 
     const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["int_air_conditioning"]));
@@ -1105,5 +1104,142 @@ describe("draft walk-back — how a completed synthetic inspection is cleaned", 
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/approved/);
     expect(writes.some((w) => w.table === "vehicle_inspection_items")).toBe(false);
+  });
+});
+
+/**
+ * The concurrency guarantee (0035).
+ *
+ * The application pre-check is a courtesy that two simultaneous requests can
+ * both pass. The partial unique index on
+ * (source_inspection_id, source_inspection_followup_key) is what actually
+ * stops the second insert, and the action must translate its 23505 into
+ * something an operator can read.
+ */
+describe("follow-up concurrency", () => {
+  function setupRace(items: ItemRow[], maintenanceRows: { id: string; source_inspection_followup_key: string | null }[] = []) {
+    const { client, writes } = makeSupabase({
+      items,
+      maintenanceRows,
+      inspection: {
+        id: INSPECTION_ID,
+        vehicle_id: VEHICLE_ID,
+        inspection_date: "2026-09-18",
+        odometer_km: 50000,
+        result: "failed",
+        approved_at: null,
+        availability_block_id: null,
+      },
+    });
+    vi.mocked(createAdminClient).mockReturnValue(client);
+    return { writes };
+  }
+
+  function followUpForm(keys: string[]) {
+    const fd = new FormData();
+    for (const k of keys) fd.append("itemKeys", k);
+    return fd;
+  }
+
+  function defectItems() {
+    const items = allItems("pass");
+    items[35].result = "fail"; // road_brakes
+    items[3].result = "attention"; // ext_wiper_blades
+    return items;
+  }
+
+  it("sends the canonical key, not the human description", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
+
+    await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["road_brakes", "ext_wiper_blades"]));
+
+    const sent = vi.mocked(createMaintenanceRecord).mock.calls[0][1] as FormData;
+    expect(sent.get("sourceInspectionFollowupKey")).toBe("ext_wiper_blades,road_brakes");
+  });
+
+  it("produces the same key whichever order the items arrive in", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
+
+    await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["ext_wiper_blades", "road_brakes"]));
+
+    const sent = vi.mocked(createMaintenanceRecord).mock.calls[0][1] as FormData;
+    expect(sent.get("sourceInspectionFollowupKey")).toBe("ext_wiper_blades,road_brakes");
+  });
+
+  it("treats a reversed-order resubmission as the existing follow-up", async () => {
+    setupRace(defectItems(), [{ id: "m1", source_inspection_followup_key: "ext_wiper_blades,road_brakes" }]);
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
+
+    const res = await createMaintenanceFromInspection(
+      INSPECTION_ID,
+      followUpForm(["road_brakes", "ext_wiper_blades"])
+    );
+
+    expect(res.duplicate).toBe(true);
+    expect(createMaintenanceRecord).not.toHaveBeenCalled();
+  });
+
+  // The race the index exists for: the pre-check passes, the database refuses.
+  it("reports a lost race as a duplicate, not a failure", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({
+      status: "error",
+      error: "A maintenance follow-up for these inspection defects already exists.",
+    });
+
+    const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["road_brakes"]));
+
+    expect(res.ok).toBe(true);
+    expect(res.duplicate).toBe(true);
+  });
+
+  it("still surfaces a genuine failure as an error", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({
+      status: "error",
+      error: "Failed to save maintenance record.",
+    });
+
+    const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["road_brakes"]));
+
+    expect(res.ok).toBe(false);
+    expect(res.error).toMatch(/Failed to save/);
+  });
+
+  it("never leaks a Postgres constraint name to the operator", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({
+      status: "error",
+      error: "A maintenance follow-up for these inspection defects already exists.",
+    });
+
+    const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["road_brakes"]));
+    expect(JSON.stringify(res)).not.toMatch(/23505|uniq|constraint|index/i);
+  });
+
+  it("keys a different selection differently, so a second job is allowed", async () => {
+    setupRace(defectItems(), [{ id: "m1", source_inspection_followup_key: "road_brakes" }]);
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
+
+    const res = await createMaintenanceFromInspection(INSPECTION_ID, followUpForm(["ext_wiper_blades"]));
+
+    expect(res.duplicate).toBeUndefined();
+    const sent = vi.mocked(createMaintenanceRecord).mock.calls[0][1] as FormData;
+    expect(sent.get("sourceInspectionFollowupKey")).toBe("ext_wiper_blades");
+  });
+
+  it("ignores a duplicated item id in the request", async () => {
+    setupRace(defectItems());
+    vi.mocked(createMaintenanceRecord).mockResolvedValue({ status: "success" });
+
+    await createMaintenanceFromInspection(
+      INSPECTION_ID,
+      followUpForm(["road_brakes", "road_brakes", "ext_wiper_blades"])
+    );
+
+    const sent = vi.mocked(createMaintenanceRecord).mock.calls[0][1] as FormData;
+    expect(sent.get("sourceInspectionFollowupKey")).toBe("ext_wiper_blades,road_brakes");
   });
 });

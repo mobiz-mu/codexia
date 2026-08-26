@@ -801,6 +801,8 @@ export type Database = {
         availability_block_id: string | null;
         /** Set when this job was raised from a weekly inspection defect (0034). One inspection may have many. */
         source_inspection_id: string | null;
+        /** Canonical follow-up identity: sorted, deduplicated checklist item_keys (0035). Unique per inspection. */
+        source_inspection_followup_key: string | null;
         /** Always 'MUR' — internal fleet costs are rupee-denominated (0030). */
         currency: string;
         remarks: string | null;

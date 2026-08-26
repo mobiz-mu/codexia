@@ -25,6 +25,7 @@ import {
   weekEndingFor,
   type InspectionFormState,
 } from "@/lib/inspections/schema";
+import { inspectionFollowUpKey } from "@/lib/inspections/follow-up";
 import { insertVehicleBlock } from "./availability";
 import { createMaintenanceRecord } from "./maintenance";
 
@@ -560,16 +561,21 @@ export async function createMaintenanceFromInspection(
   const inspection = await loadInspection(supabase, inspectionId);
   if (!inspection) return { ok: false, error: "Inspection not found." };
 
+  // Deduplicate before the ownership check: a request may legitimately repeat
+  // an id (a double-toggled checkbox), and comparing a raw count against the
+  // returned rows would reject that as if it referenced another inspection.
+  const requestedKeys = [...new Set(parsed.data.itemKeys)];
+
   // The selected items must belong to THIS inspection and must actually be
   // defects — you cannot raise a repair job against a passing check.
   const { data: items } = await supabase
     .from("vehicle_inspection_items")
     .select("item_key, result, remarks")
     .eq("inspection_id", inspectionId)
-    .in("item_key", parsed.data.itemKeys);
+    .in("item_key", requestedKeys);
 
   const found = (items ?? []) as { item_key: string; result: InspectionResult | null; remarks: string | null }[];
-  if (found.length !== parsed.data.itemKeys.length) {
+  if (found.length !== requestedKeys.length) {
     return { ok: false, error: "One or more selected items do not belong to this inspection." };
   }
   const notDefects = found.filter((i) => i.result !== "fail" && i.result !== "attention");
@@ -580,8 +586,13 @@ export async function createMaintenanceFromInspection(
     };
   }
 
-  // Deterministic description, which is also what makes the duplicate guard
-  // reliable: the same selection always produces the same text.
+  // Identity of this follow-up: the selected checklist keys, canonicalised.
+  // Deliberately NOT the description below — that embeds display labels and
+  // editable remarks, so the same selection would stop matching itself the
+  // moment somebody reworded a remark.
+  const followUpKey = inspectionFollowUpKey(found.map((i) => i.item_key));
+  if (!followUpKey) return { ok: false, error: "Select at least one defect to raise maintenance for." };
+
   const description = found
     .slice()
     .sort((a, b) => a.item_key.localeCompare(b.item_key))
@@ -592,12 +603,15 @@ export async function createMaintenanceFromInspection(
     })
     .join("\n");
 
+  // Friendly pre-check. This is a courtesy, not the guarantee: two genuinely
+  // concurrent requests can both pass it, which is why 0035 adds a partial
+  // unique index and createMaintenanceRecord translates its 23505.
   const { data: existing } = await supabase
     .from("vehicle_maintenance_records")
-    .select("id, repairs_performed")
+    .select("id, source_inspection_followup_key")
     .eq("source_inspection_id", inspectionId);
 
-  if ((existing ?? []).some((r) => r.repairs_performed === description)) {
+  if ((existing ?? []).some((r) => r.source_inspection_followup_key === followUpKey)) {
     // A second click on the same selection is a no-op, not a second job.
     return { ok: true, duplicate: true };
   }
@@ -610,6 +624,7 @@ export async function createMaintenanceFromInspection(
   maintenanceForm.set("mileageKm", String(inspection.odometer_km));
   maintenanceForm.set("repairsPerformed", description);
   maintenanceForm.set("sourceInspectionId", inspectionId);
+  maintenanceForm.set("sourceInspectionFollowupKey", followUpKey);
   if (parsed.data.serviceProvider) maintenanceForm.set("serviceProvider", parsed.data.serviceProvider);
   maintenanceForm.set(
     "remarks",
@@ -624,6 +639,9 @@ export async function createMaintenanceFromInspection(
 
   const created = await createMaintenanceRecord({ status: "idle" }, maintenanceForm);
   if (created.status !== "success") {
+    // The database rejected a concurrent duplicate. Report it as the no-op it
+    // is rather than as a failure the operator should retry.
+    if (created.error?.includes("already exists")) return { ok: true, duplicate: true };
     return { ok: false, error: created.error ?? "Failed to raise the maintenance job." };
   }
 
@@ -632,7 +650,7 @@ export async function createMaintenanceFromInspection(
     action: "inspection_maintenance_raised",
     entity: "vehicle_inspections",
     entity_id: inspectionId,
-    diff: { item_keys: parsed.data.itemKeys.slice().sort() },
+    diff: { item_keys: requestedKeys.slice().sort(), follow_up_key: followUpKey },
   });
 
   return { ok: true };

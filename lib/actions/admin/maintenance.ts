@@ -267,6 +267,7 @@ function mapToRow(parsed: ReturnType<typeof maintenanceSchema.safeParse> & { suc
     next_service_mileage_km: d.nextServiceMileageKm,
     remarks: d.remarks,
     source_inspection_id: d.sourceInspectionId,
+    source_inspection_followup_key: d.sourceInspectionFollowupKey,
   };
 }
 
@@ -332,6 +333,17 @@ export async function createMaintenanceRecord(
   if (error || !inserted) {
     // Don't strand the block we just took out on the vehicle.
     if (blockId) await supabase.from("vehicle_blocks").delete().eq("id", blockId);
+
+    // 23505 on the follow-up index means a concurrent request won the race to
+    // raise this exact selection. That is a duplicate, not a failure, and the
+    // operator gets told in their own terms rather than shown a constraint.
+    if (error?.code === "23505" && error.message.includes("inspection_followup")) {
+      return {
+        status: "error",
+        error: "A maintenance follow-up for these inspection defects already exists.",
+      };
+    }
+
     console.error("createMaintenanceRecord failed", error?.message);
     return { status: "error", error: "Failed to save maintenance record." };
   }

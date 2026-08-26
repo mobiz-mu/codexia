@@ -104,6 +104,13 @@ export const maintenanceSchema = z
       .refine((v) => v === null || z.string().uuid().safeParse(v).success, {
         message: "Invalid source inspection reference.",
       }),
+    // Canonical identity of the follow-up, derived from checklist item keys.
+    // A partial unique index on (source_inspection_id, this) is what actually
+    // prevents two concurrent requests raising the same job twice (0035).
+    sourceInspectionFollowupKey: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim().length > 0 ? v.trim() : null)),
 
     // Downtime is opt-in. Recording that work happened must never, on its own,
     // retroactively take a vehicle off the road.
