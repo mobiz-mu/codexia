@@ -26,6 +26,7 @@ import {
   type InspectionFormState,
 } from "@/lib/inspections/schema";
 import { inspectionFollowUpKey } from "@/lib/inspections/follow-up";
+import { buildInspectionReport } from "@/lib/inspections/report";
 import { insertVehicleBlock } from "./availability";
 import { createMaintenanceRecord } from "./maintenance";
 
@@ -1085,7 +1086,7 @@ export async function getInspectionAdmin(id: string) {
       .order("created_at", { ascending: false }),
     supabase
       .from("vehicle_maintenance_records")
-      .select("id, maintenance_date, maintenance_type, cost_cents, service_provider")
+      .select("id, maintenance_date, maintenance_type, cost_cents, service_provider, source_inspection_followup_key")
       .eq("source_inspection_id", id)
       .order("maintenance_date", { ascending: false }),
   ]);
@@ -1153,6 +1154,48 @@ export async function getRecentInspectionsForVehicle(vehicleId: string, limit = 
     attentionCount: byInspection.get(r.id)?.attention ?? 0,
     failCount: byInspection.get(r.id)?.fail ?? 0,
   }));
+}
+
+/**
+ * The report model for one inspection, assembled from the SAME reader the
+ * detail screen uses. The PDF route calls this rather than re-querying, so
+ * there is exactly one interpretation of an inspection.
+ */
+export async function getInspectionReport(id: string) {
+  const user = await requireAdminUser();
+  assertPermission(user, "view_inspections");
+
+  const { record, items, followUps } = await getInspectionAdmin(id);
+  if (!record) return null;
+
+  const r = record as unknown as Parameters<typeof buildInspectionReport>[0]["inspection"] & {
+    approver?: { full_name: string | null } | null;
+    availability_block_id?: string | null;
+  };
+
+  // Downtime is read only when the inspection actually links a block, and is
+  // never reconstructed when the link has been released and cleared.
+  let downtime: { startAt: string; endAt: string; released: boolean } | null = null;
+  if (r.availability_block_id) {
+    const supabase = createAdminClient();
+    const { data: block } = await supabase
+      .from("vehicle_blocks")
+      .select("period")
+      .eq("id", r.availability_block_id)
+      .maybeSingle();
+    if (block) {
+      const match = /\[([^,]+),([^)]+)\)/.exec(block.period as unknown as string);
+      const clean = (raw: string) => raw.trim().replace(/^"|"$/g, "").slice(0, 16);
+      if (match) downtime = { startAt: clean(match[1]), endAt: clean(match[2]), released: false };
+    }
+  }
+
+  return buildInspectionReport({
+    inspection: { ...r, approver_name: r.approver?.full_name ?? null },
+    items: items.map((i) => ({ item_key: i.item_key, result: i.result, remarks: i.remarks })),
+    followUps: followUps as never[],
+    downtime,
+  });
 }
 
 export async function listVehiclesForInspectionSelect() {

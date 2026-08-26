@@ -124,6 +124,22 @@ export default async function InspectionDetailPage({ params }: { params: Promise
             {editable && r.result === "draft" ? (
               <InspectionDeleteButton inspectionId={r.id} redirectTo="/admin/inspections" />
             ) : null}
+            {/* The PDF is the canonical print output — open it and print from
+                the viewer, rather than maintaining a second HTML template. */}
+            <a
+              href={`/admin/inspections/${r.id}/pdf`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="rounded-sm bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-ops-header hover:bg-ops-panel-2"
+            >
+              View PDF
+            </a>
+            <a
+              href={`/admin/inspections/${r.id}/pdf?download=1`}
+              className="rounded-sm bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-ops-header hover:bg-ops-panel-2"
+            >
+              Download PDF
+            </a>
             <Link
               href="/admin/inspections"
               className="rounded-sm bg-white px-2.5 py-1 text-[11px] font-bold uppercase tracking-[0.06em] text-ops-header hover:bg-ops-panel-2"
