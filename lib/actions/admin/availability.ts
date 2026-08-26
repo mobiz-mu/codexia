@@ -2,6 +2,7 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
 
@@ -139,28 +140,14 @@ export async function closeBlockEarly(blockId: string): Promise<{ ok: boolean; e
   assertPermission(user, "manage_vehicles");
 
   const supabase = createAdminClient();
-  const { data: block } = await supabase.from("vehicle_blocks").select("period").eq("id", blockId).maybeSingle();
-  if (!block) return { ok: false, error: "Block not found." };
+  const result = await releaseVehicleBlock(supabase, blockId);
 
-  const match = /\[([^,]+),([^)]+)\)/.exec(block.period as unknown as string);
-  const start = match?.[1];
-  if (!start) return { ok: false, error: "Could not read the block's start time." };
+  if (!result.ok) return result;
 
-  const nowIso = new Date().toISOString();
-
-  // A block that hasn't started yet can't be "shortened" to end before it
-  // starts — closing it early in that case just means removing it outright.
-  if (new Date(start) >= new Date(nowIso)) {
-    await supabase.from("vehicle_blocks").delete().eq("id", blockId);
-    return { ok: true };
-  }
-
-  const { error } = await supabase.from("vehicle_blocks").update({ period: `[${start},${nowIso})` }).eq("id", blockId);
-
-  if (error) {
-    console.error("closeBlockEarly failed", error.message);
-    return { ok: false, error: "Failed to close the block." };
-  }
+  // An operator who explicitly asked to close a specific block should be told
+  // when it is no longer there, even though the record-deletion callers treat
+  // the same outcome as success.
+  if (result.outcome === "already_gone") return { ok: false, error: "Block not found." };
 
   return { ok: true };
 }

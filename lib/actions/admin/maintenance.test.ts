@@ -7,9 +7,13 @@ vi.mock("@/lib/auth/get-current-admin-user", () => ({
   requireAdminUser: vi.fn(),
   getCurrentAdminUser: vi.fn(),
 }));
+vi.mock("@/lib/fleet/vehicle-blocks", () => ({
+  releaseVehicleBlock: vi.fn(),
+}));
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
+import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import { createMaintenanceRecord, updateMaintenanceRecord, deleteMaintenanceRecord } from "./maintenance";
 
 const VEHICLE_ID = "11111111-1111-4111-8111-111111111111";
@@ -273,5 +277,96 @@ describe("deleteMaintenanceRecord", () => {
 
     const result = await deleteMaintenanceRecord(RECORD_ID);
     expect(result.ok).toBe(false);
+  });
+});
+
+/**
+ * Maintenance downtime is released on delete by the SAME primitive the
+ * incident path uses, so the two cannot drift apart.
+ */
+describe("deleteMaintenanceRecord — downtime must never be orphaned", () => {
+  function supabaseWithBlock(blockId: string | null) {
+    const deleted: string[] = [];
+    const audits: unknown[] = [];
+    const client = {
+      from: (table: string) => {
+        if (table === "vehicle_maintenance_records") {
+          const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: () => builder,
+            maybeSingle: async () => ({ data: { availability_block_id: blockId }, error: null }),
+            delete: () => ({
+              eq: async (_c: string, id: string) => {
+                deleted.push(id);
+                return { data: null, error: null };
+              },
+            }),
+          };
+          return builder;
+        }
+        if (table === "audit_logs") {
+          return {
+            insert: async (payload: unknown) => {
+              audits.push(payload);
+              return { data: null, error: null };
+            },
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    };
+    return { client, deleted, audits };
+  }
+
+  beforeEach(() => {
+    vi.mocked(requireAdminUser).mockResolvedValue(FULL_USER);
+    vi.mocked(releaseVehicleBlock).mockReset();
+  });
+
+  it("deletes a history-only record without touching any block", async () => {
+    const { client, deleted } = supabaseWithBlock(null);
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+
+    const result = await deleteMaintenanceRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(deleted).toEqual([RECORD_ID]);
+    expect(releaseVehicleBlock).not.toHaveBeenCalled();
+  });
+
+  it("releases downtime before deleting a record that took the car off the road", async () => {
+    const { client, deleted, audits } = supabaseWithBlock("block-1");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "removed" });
+
+    const result = await deleteMaintenanceRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(releaseVehicleBlock).toHaveBeenCalledWith(expect.anything(), "block-1");
+    expect(deleted).toEqual([RECORD_ID]);
+    expect(audits[0]).toMatchObject({ diff: { availability_block: "removed" } });
+  });
+
+  it("preserves an already-served downtime by shortening rather than deleting it", async () => {
+    const { client, audits } = supabaseWithBlock("block-started");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "shortened" });
+
+    const result = await deleteMaintenanceRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(audits[0]).toMatchObject({ diff: { availability_block: "shortened" } });
+  });
+
+  it("keeps the record when the block cannot be released", async () => {
+    const { client, deleted } = supabaseWithBlock("block-stuck");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: false, error: "Failed to close the vehicle's downtime." });
+
+    const result = await deleteMaintenanceRecord(RECORD_ID);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/was not deleted/);
+    expect(deleted).toEqual([]);
   });
 });

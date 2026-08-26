@@ -7,6 +7,7 @@ import { incidentSchema, normalizeIncidentListFilters, sanitizeSearchTerm } from
 import { OPEN_REPAIR_STATUSES, type Severity } from "@/lib/incidents/schema";
 import { ATTACHMENT_CATEGORIES, type AttachmentCategory } from "@/lib/incidents/schema";
 import { insertVehicleBlock, closeBlockEarly } from "./availability";
+import { releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {
@@ -398,6 +399,31 @@ export async function deleteIncidentRecord(id: string): Promise<{ ok: boolean; e
 
   const supabase = createAdminClient();
 
+  // The incident owns the reference to its downtime, and the FK is
+  // on-delete-set-null in the other direction, so deleting the record on its
+  // own would leave the vehicle_blocks row behind with nothing pointing at
+  // it — a car silently held out of service that no screen can explain.
+  // Release the downtime FIRST, through the shared primitive, and only then
+  // delete. Fail-closed: if the block cannot be released the incident stays,
+  // so the block always remains explainable by the record that created it.
+  const { data: existing } = await supabase
+    .from("vehicle_incident_records")
+    .select("availability_block_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  let blockOutcome: BlockReleaseOutcome | null = null;
+  if (existing?.availability_block_id) {
+    const release = await releaseVehicleBlock(supabase, existing.availability_block_id);
+    if (!release.ok) {
+      return {
+        ok: false,
+        error: `${release.error} The incident was not deleted, so the vehicle's downtime stays linked to it.`,
+      };
+    }
+    blockOutcome = release.outcome;
+  }
+
   const { error } = await supabase.from("vehicle_incident_records").delete().eq("id", id);
   if (error) {
     console.error("deleteIncidentRecord failed", error.message);
@@ -409,6 +435,7 @@ export async function deleteIncidentRecord(id: string): Promise<{ ok: boolean; e
     action: "incident_record_deleted",
     entity: "vehicle_incident_records",
     entity_id: id,
+    diff: blockOutcome ? { availability_block: blockOutcome } : null,
   });
 
   return { ok: true };

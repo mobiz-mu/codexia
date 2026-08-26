@@ -1,6 +1,7 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
+import { releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
 import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { maintenanceSchema, normalizeMaintenanceListFilters, sanitizeSearchTerm } from "@/lib/maintenance/schema";
 import { insertVehicleBlock, closeBlockEarly } from "@/lib/actions/admin/availability";
@@ -401,6 +402,29 @@ export async function deleteMaintenanceRecord(id: string): Promise<{ ok: boolean
 
   const supabase = createAdminClient();
 
+  // Same hazard as the incident path, and deliberately the same primitive so
+  // the two cannot drift: a maintenance record that opted into downtime owns
+  // the only reference to its vehicle_blocks row, so deleting it alone would
+  // strand the block and hold the vehicle off the road with nothing to
+  // explain it. Release first, fail-closed, then delete.
+  const { data: existing } = await supabase
+    .from("vehicle_maintenance_records")
+    .select("availability_block_id")
+    .eq("id", id)
+    .maybeSingle();
+
+  let blockOutcome: BlockReleaseOutcome | null = null;
+  if (existing?.availability_block_id) {
+    const release = await releaseVehicleBlock(supabase, existing.availability_block_id);
+    if (!release.ok) {
+      return {
+        ok: false,
+        error: `${release.error} The maintenance record was not deleted, so the vehicle's downtime stays linked to it.`,
+      };
+    }
+    blockOutcome = release.outcome;
+  }
+
   const { error } = await supabase.from("vehicle_maintenance_records").delete().eq("id", id);
   if (error) {
     console.error("deleteMaintenanceRecord failed", error.message);
@@ -412,6 +436,7 @@ export async function deleteMaintenanceRecord(id: string): Promise<{ ok: boolean
     action: "maintenance_record_deleted",
     entity: "vehicle_maintenance_records",
     entity_id: id,
+    diff: blockOutcome ? { availability_block: blockOutcome } : null,
   });
 
   return { ok: true };

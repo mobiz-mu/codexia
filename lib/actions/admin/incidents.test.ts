@@ -11,10 +11,14 @@ vi.mock("./availability", () => ({
   insertVehicleBlock: vi.fn(),
   closeBlockEarly: vi.fn(),
 }));
+vi.mock("@/lib/fleet/vehicle-blocks", () => ({
+  releaseVehicleBlock: vi.fn(),
+}));
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
 import { insertVehicleBlock, closeBlockEarly } from "./availability";
+import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import {
   createIncidentRecord,
   updateIncidentRecord,
@@ -609,5 +613,131 @@ describe("getIncidentDashboardStats — aggregation", () => {
   it("rejects with permission denied when view_incidents is missing", async () => {
     vi.mocked(requireAdminUser).mockResolvedValue({ ...FULL_USER, permissions: new Set() });
     await expect(getIncidentDashboardStats()).rejects.toThrow(/Missing required permission: view_incidents/);
+  });
+});
+
+/**
+ * An admin deleting an incident must never leave the vehicle silently held
+ * out of service. The incident owns the only reference to its block, so the
+ * downtime has to be released before the record goes.
+ */
+describe("deleteIncidentRecord — downtime must never be orphaned", () => {
+  function supabaseWithBlock(blockId: string | null) {
+    const deleted: string[] = [];
+    const audits: unknown[] = [];
+    const client = {
+      from: (table: string) => {
+        if (table === "vehicle_incident_records") {
+          const builder: Record<string, unknown> = {
+            select: () => builder,
+            eq: (_c: string, id: string) => {
+              builder._id = id;
+              return builder;
+            },
+            maybeSingle: async () => ({ data: { availability_block_id: blockId }, error: null }),
+            delete: () => ({
+              eq: async (_c: string, id: string) => {
+                deleted.push(id);
+                return { data: null, error: null };
+              },
+            }),
+          };
+          return builder;
+        }
+        if (table === "audit_logs") {
+          return {
+            insert: async (payload: unknown) => {
+              audits.push(payload);
+              return { data: null, error: null };
+            },
+          };
+        }
+        throw new Error(`unexpected table ${table}`);
+      },
+    };
+    return { client, deleted, audits };
+  }
+
+  beforeEach(() => {
+    vi.mocked(requireAdminUser).mockResolvedValue(FULL_USER);
+    vi.mocked(releaseVehicleBlock).mockReset();
+  });
+
+  it("deletes normally when the incident has no block, without touching any block", async () => {
+    const { client, deleted } = supabaseWithBlock(null);
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+
+    const result = await deleteIncidentRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(deleted).toEqual([RECORD_ID]);
+    expect(releaseVehicleBlock).not.toHaveBeenCalled();
+  });
+
+  it("removes a future block and only then deletes the incident", async () => {
+    const { client, deleted, audits } = supabaseWithBlock("block-future");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "removed" });
+
+    const result = await deleteIncidentRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(releaseVehicleBlock).toHaveBeenCalledWith(expect.anything(), "block-future");
+    expect(deleted).toEqual([RECORD_ID]);
+    expect(audits[0]).toMatchObject({
+      action: "incident_record_deleted",
+      diff: { availability_block: "removed" },
+    });
+  });
+
+  it("shortens an already-started block, preserving the downtime actually served", async () => {
+    const { client, deleted, audits } = supabaseWithBlock("block-started");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "shortened" });
+
+    const result = await deleteIncidentRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(deleted).toEqual([RECORD_ID]);
+    expect(audits[0]).toMatchObject({ diff: { availability_block: "shortened" } });
+  });
+
+  // Fail-closed: a half-done cleanup that removes the record but keeps the
+  // block is the exact failure this whole change exists to prevent.
+  it("keeps the incident when the block cannot be released", async () => {
+    const { client, deleted } = supabaseWithBlock("block-stuck");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({
+      ok: false,
+      error: "Failed to close the vehicle's downtime.",
+    });
+
+    const result = await deleteIncidentRecord(RECORD_ID);
+
+    expect(result.ok).toBe(false);
+    expect(result.error).toMatch(/was not deleted/);
+    expect(deleted).toEqual([]);
+  });
+
+  it("never touches a block belonging to a different record", async () => {
+    const { client } = supabaseWithBlock("block-mine");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "removed" });
+
+    await deleteIncidentRecord(RECORD_ID);
+
+    expect(releaseVehicleBlock).toHaveBeenCalledTimes(1);
+    expect(releaseVehicleBlock).toHaveBeenCalledWith(expect.anything(), "block-mine");
+  });
+
+  it("succeeds when the block was already gone, leaving nothing orphaned", async () => {
+    const { client, deleted } = supabaseWithBlock("block-vanished");
+    vi.mocked(createAdminClient).mockReturnValue(client as unknown as ReturnType<typeof createAdminClient>);
+    vi.mocked(releaseVehicleBlock).mockResolvedValue({ ok: true, outcome: "already_gone" });
+
+    const result = await deleteIncidentRecord(RECORD_ID);
+
+    expect(result).toEqual({ ok: true });
+    expect(deleted).toEqual([RECORD_ID]);
   });
 });
