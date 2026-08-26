@@ -30,7 +30,7 @@ export function IncidentCloseBlockButton({ incidentId }: { incidentId: string })
         {pending ? "Closing..." : "Return vehicle to service (close block)"}
       </button>
       {error && (
-        <p className="text-xs text-red-600" role="alert">
+        <p className="text-[12px] font-medium text-ops-danger" role="alert">
           {error}
         </p>
       )}

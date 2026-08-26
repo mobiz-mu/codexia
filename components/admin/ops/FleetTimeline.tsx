@@ -281,13 +281,23 @@ export function FleetTimeline({
                             const def = OPS_STATUS[seg.status];
                             const width = (seg.endIndex - seg.startIndex) * dayWidth;
                             if (width <= 0) return null;
+                            // The sr-only status label guarantees the state is
+                            // never conveyed by colour alone. It is redundant
+                            // when the segment already says it though — a
+                            // maintenance bar labelled "Maintenance" was read
+                            // out as "Maintenance Maintenance" — so it is
+                            // emitted only when it adds something. The status
+                            // itself is never dropped.
+                            const statusNeedsAnnouncing =
+                              seg.label.replace(/\s+/g, " ").trim().toLowerCase() !==
+                              def.label.replace(/\s+/g, " ").trim().toLowerCase();
                             const content = (
                               <>
                                 <span aria-hidden="true" className="font-mono text-[9px] opacity-80">
                                   {def.glyph}
                                 </span>
                                 <span className="truncate">{seg.label}</span>
-                                <span className="sr-only">{def.label}</span>
+                                {statusNeedsAnnouncing ? <span className="sr-only">{def.label}</span> : null}
                               </>
                             );
                             const className = cn(
