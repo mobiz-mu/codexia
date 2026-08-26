@@ -5,6 +5,8 @@
  */
 export interface SiteSettings {
   companyName: string;
+  /** Monday opening the first Mauritius week in which Weekly Inspections are required. */
+  weeklyInspectionProgramStartDate: string;
   domain: string;
   phone: string;
   whatsapp: string;
@@ -33,6 +35,7 @@ export interface SiteSettings {
 
 export const SITE_DEFAULTS: SiteSettings = {
   companyName: "Codexia Ltd",
+  weeklyInspectionProgramStartDate: "2026-08-24",
   domain: "www.codexia.mu",
   phone: "+230 52811999",
   whatsapp: "+230 52811999",

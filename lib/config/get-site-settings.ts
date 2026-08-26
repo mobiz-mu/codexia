@@ -20,6 +20,10 @@ export const getSiteSettings = cache(async (): Promise<SiteSettings> => {
 
     return {
       companyName: pick(rows.company_name, SITE_DEFAULTS.companyName),
+      weeklyInspectionProgramStartDate: pick(
+        rows.weekly_inspection_program_start_date,
+        SITE_DEFAULTS.weeklyInspectionProgramStartDate
+      ),
       domain: pick(rows.domain, SITE_DEFAULTS.domain),
       phone: pick(rows.phone, SITE_DEFAULTS.phone),
       whatsapp: pick(rows.whatsapp, SITE_DEFAULTS.whatsapp),

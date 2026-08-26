@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   EXEMPTING_BLOCK_TYPES,
   exemptingTypesForWeek,
-  historyBoundaryWeek,
+  programStartWeek,
   isExemptForWeek,
   isExemptingBlockType,
   isInspectionEligible,
@@ -380,77 +380,138 @@ describe("missed-week history", () => {
       inspectionsByWeek: new Map(),
       blocks: [],
       now: new Date("2026-09-28T06:00:00Z"),
-      earliestWeekEnding: "2026-09-13",
+      programStartWeekEnding: "2026-09-13",
     });
     expect(missed).toEqual(["2026-09-13", "2026-09-20"]);
   });
 });
 
-describe("history boundary", () => {
-  it("is the week of the earliest recorded inspection", () => {
-    expect(historyBoundaryWeek("2026-09-18")).toBe("2026-09-20");
-  });
-
-  // With no inspections ever recorded, no week can honestly be called missed.
-  it("is null when no inspection has ever been recorded", () => {
-    expect(historyBoundaryWeek(null)).toBeNull();
-    expect(historyBoundaryWeek(undefined)).toBeNull();
-  });
-});
-
 /**
- * Before Weekly Inspections existed, nobody failed to perform one. Without
- * this boundary every historical week would read as a fleet-wide failure that
- * never happened — which live verification caught on the previous-week view.
+ * The programme start boundary.
+ *
+ * Compliance ACTIVITY cannot define when a compliance REQUIREMENT began. These
+ * tests exist because an earlier version derived the boundary from the oldest
+ * recorded inspection, which silently erased exactly the weeks somebody has to
+ * answer for — the ones where nobody inspected anything.
  */
-describe("pre-launch weeks are never called missed", () => {
-  const past = mauritiusWeekInterval("2026-08-23");
+describe("programme start boundary", () => {
+  const PROGRAM_START = "2026-08-24"; // Monday
+  const START_WEEK = programStartWeek(PROGRAM_START)!; // 2026-08-30
 
-  it("is not_required when no inspection has ever been recorded", () => {
-    const r = resolveWeeklyStatus({
+  const resolveWeek = (weekEnding: string, over: Record<string, unknown> = {}) =>
+    resolveWeeklyStatus({
       vehicle: ACTIVE,
-      week: past,
+      week: mauritiusWeekInterval(weekEnding),
       inspections: [],
       blocks: [],
-      now: new Date("2026-09-21T06:00:00Z"),
-      earliestWeekEnding: null,
+      now: new Date("2026-10-05T06:00:00Z"),
+      programStartWeekEnding: START_WEEK,
+      ...over,
     });
-    expect(r.status).toBe("not_required");
+
+  it("turns the start Monday into the Sunday closing its week", () => {
+    expect(START_WEEK).toBe("2026-08-30");
   });
 
-  it("is not_required for a week before the first recorded inspection", () => {
-    const r = resolveWeeklyStatus({
-      vehicle: ACTIVE,
-      week: past,
-      inspections: [],
-      blocks: [],
-      now: new Date("2026-09-21T06:00:00Z"),
-      earliestWeekEnding: "2026-09-13",
-    });
-    expect(r.status).toBe("not_required");
+  it("treats a week before the programme start as not required", () => {
+    expect(resolveWeek("2026-08-23").status).toBe("not_required");
   });
 
-  it("is overdue once the week is on or after the boundary", () => {
-    const r = resolveWeeklyStatus({
-      vehicle: ACTIVE,
-      week: mauritiusWeekInterval("2026-09-13"),
-      inspections: [],
-      blocks: [],
-      now: new Date("2026-09-21T06:00:00Z"),
-      earliestWeekEnding: "2026-09-13",
-    });
-    expect(r.status).toBe("overdue");
+  it("applies the normal rules from the programme start week onward", () => {
+    expect(resolveWeek("2026-08-30").status).toBe("overdue");
   });
 
-  // Omitting the boundary must not silently suppress genuine overdue weeks.
-  it("still reports overdue when no boundary is supplied at all", () => {
-    const r = resolveWeeklyStatus({
+  // The scenario that motivated this phase.
+  it("keeps weeks 1-2 missed even though the first inspection lands in week 4", () => {
+    const week4Inspection = inspection({ inspection_date: "2026-09-16", result: "completed" });
+
+    expect(resolveWeek("2026-08-30").status).toBe("overdue"); // week 1
+    expect(resolveWeek("2026-09-06").status).toBe("overdue"); // week 2
+    expect(resolveWeek("2026-09-13").status).toBe("overdue"); // week 3
+    expect(resolveWeek("2026-09-20", { inspections: [week4Inspection] }).status).toBe("completed");
+  });
+
+  // The boundary is a setting, so the data cannot move it.
+  it("does not move when the earliest inspection is deleted", () => {
+    const withInspection = resolveWeek("2026-08-30", {
+      inspections: [inspection({ inspection_date: "2026-08-26", result: "completed" })],
+    });
+    expect(withInspection.status).toBe("completed");
+
+    // Same week, inspection now gone: still required, so still overdue.
+    expect(resolveWeek("2026-08-30").status).toBe("overdue");
+    // And a pre-programme week is unaffected either way.
+    expect(resolveWeek("2026-08-23").status).toBe("not_required");
+  });
+
+  it("is unaffected by how many inspections exist or when they happened", () => {
+    expect(programStartWeek(PROGRAM_START)).toBe("2026-08-30");
+    expect(programStartWeek("2026-08-24")).toBe("2026-08-30");
+  });
+
+  it("requires nothing anywhere when no programme start is configured", () => {
+    expect(programStartWeek(null)).toBeNull();
+    expect(resolveWeek("2026-08-30", { programStartWeekEnding: null }).status).toBe("not_required");
+  });
+
+  it("is DUE, not overdue, for the current week after the programme start", () => {
+    const current = "2026-10-11";
+    const status = resolveWeeklyStatus({
       vehicle: ACTIVE,
-      week: past,
+      week: mauritiusWeekInterval(current),
       inspections: [],
       blocks: [],
-      now: new Date("2026-09-21T06:00:00Z"),
+      now: new Date("2026-10-07T06:00:00Z"), // Wednesday of that week
+      programStartWeekEnding: START_WEEK,
     });
-    expect(r.status).toBe("overdue");
+    expect(status.status).toBe("due");
+  });
+
+  it("is exempt, not overdue, for a fully off-road week after the start", () => {
+    const week = mauritiusWeekInterval("2026-09-06");
+    const status = resolveWeeklyStatus({
+      vehicle: ACTIVE,
+      week,
+      inspections: [],
+      blocks: [{ type: "maintenance", startsAt: week.startsAt, endsAt: week.endsAt }],
+      now: new Date("2026-10-05T06:00:00Z"),
+      programStartWeekEnding: START_WEEK,
+    });
+    expect(status.status).toBe("exempt_off_road");
+  });
+
+  it("does not let a draft satisfy a post-start week", () => {
+    expect(resolveWeek("2026-08-30", { inspections: [inspection({ result: "draft" })] }).status).toBe("overdue");
+  });
+
+  it("counts a failed inspection as performed and keeps it failed", () => {
+    const r = resolveWeek("2026-08-30", { inspections: [inspection({ result: "failed" })] });
+    expect(r.status).toBe("failed");
+    expect(r.performed).toBe(true);
+  });
+
+  it("applies the same programme start to a staff car", () => {
+    const staff = { ...ACTIVE, is_staff_car: true };
+    expect(resolveWeek("2026-08-23", { vehicle: staff }).status).toBe("not_required");
+    expect(resolveWeek("2026-08-30", { vehicle: staff }).status).toBe("overdue");
+  });
+
+  // created_at proves non-existence, never an in-service date.
+  it("does not accuse a vehicle of missing weeks before its record existed", () => {
+    const late = { ...ACTIVE, created_at: "2026-09-10T00:00:00Z" };
+    expect(resolveWeek("2026-08-30", { vehicle: late }).status).toBe("not_required");
+    expect(resolveWeek("2026-09-13", { vehicle: late }).status).toBe("overdue");
+  });
+
+  it("honours the programme start in missed-week history", () => {
+    const missed = missedWeeks({
+      vehicle: ACTIVE,
+      weekEndings: ["2026-08-16", "2026-08-23", "2026-08-30", "2026-09-06"],
+      inspectionsByWeek: new Map(),
+      blocks: [],
+      now: new Date("2026-10-05T06:00:00Z"),
+      programStartWeekEnding: START_WEEK,
+    });
+    expect(missed).toEqual(["2026-08-30", "2026-09-06"]);
   });
 });

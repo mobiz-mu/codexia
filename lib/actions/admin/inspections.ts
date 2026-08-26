@@ -32,9 +32,9 @@ import { buildInspectionReport } from "@/lib/inspections/report";
 import {
   EXEMPTING_BLOCK_TYPES,
   WEEKLY_STATUS_LABELS,
-  historyBoundaryWeek,
   mauritiusWeekInterval,
   parseBlockPeriod,
+  programStartWeek,
   resolveWeeklyStatus,
   statusPriority,
   type BlockRange,
@@ -42,6 +42,7 @@ import {
   type WeeklyInspectionStatus,
 } from "@/lib/inspections/due";
 import { isSafetyCriticalKey } from "@/lib/fleet/inspection-checklist";
+import { getSiteSettings } from "@/lib/config/get-site-settings";
 import { insertVehicleBlock } from "./availability";
 import { createMaintenanceRecord } from "./maintenance";
 
@@ -1324,16 +1325,14 @@ export async function getFleetWeekStatus(weekEndingParam?: string): Promise<Flee
       .filter("period", "ov", `[${week.startsAt.toISOString()},${week.endsAt.toISOString()})`),
   ]);
 
-  // The boundary before which no week can honestly be called missed: Weekly
-  // Inspections were not in use here, so nobody failed to perform one. Derived
-  // from the earliest recorded inspection rather than a hard-coded deployment
-  // date, which would be an invisible constant nobody could later explain.
-  const { data: earliest } = await supabase
-    .from("vehicle_inspections")
-    .select("inspection_date")
-    .order("inspection_date", { ascending: true })
-    .limit(1);
-  const earliestWeekEnding = historyBoundaryWeek(earliest?.[0]?.inspection_date ?? null);
+  // The first week the requirement applies to, from the programme start
+  // setting — never from the data. Deriving it from the oldest inspection
+  // would let compliance activity define when the obligation began, so weeks
+  // in which nobody inspected anything would quietly stop counting.
+  // getSiteSettings is React-cached per request, so this costs no extra
+  // round-trip on a page that already reads settings.
+  const settings = await getSiteSettings();
+  const programStartWeekEnding = programStartWeek(settings.weeklyInspectionProgramStartDate);
 
   // 4 — failed items only, so a safety failure can be ranked first without
   // pulling forty rows per inspection.
@@ -1381,7 +1380,7 @@ export async function getFleetWeekStatus(weekEndingParam?: string): Promise<Flee
       inspections: inspectionsByVehicle.get(vehicle.id) ?? [],
       blocks: blocksByVehicle.get(vehicle.id) ?? [],
       now,
-      earliestWeekEnding,
+      programStartWeekEnding,
     });
     const presentation = WEEKLY_STATUS_LABELS[resolved.status];
     return {

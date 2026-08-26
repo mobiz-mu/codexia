@@ -215,11 +215,11 @@ export function resolveWeeklyStatus(input: {
   /** "Now" as an instant, so an in-progress week reads as due rather than overdue. */
   now: Date;
   /**
-   * The earliest week this system may call missed. Before Weekly Inspections
-   * were in use here nobody failed to perform one, so a week older than this
-   * is not required rather than overdue. See historyBoundaryWeek.
+   * The first week the requirement applies to, from the programme start
+   * setting. A week before it is not required rather than overdue — the
+   * obligation did not exist yet. See programStartWeek.
    */
-  earliestWeekEnding?: string | null;
+  programStartWeekEnding?: string | null;
 }): WeeklyStatusResult {
   const { vehicle, week, inspections, blocks, now } = input;
 
@@ -264,10 +264,13 @@ export function resolveWeeklyStatus(input: {
     return { ...base, status: "not_required", inspection: null };
   }
 
-  // ...and only if Weekly Inspections were actually in use that week. Without
-  // this, every week before the module shipped would read as a fleet-wide
-  // failure that never happened.
-  if (input.earliestWeekEnding === null || (input.earliestWeekEnding && week.weekEnding < input.earliestWeekEnding)) {
+  // ...and only if the requirement existed that week. Without this, every week
+  // before the programme began would read as a fleet-wide failure that never
+  // happened.
+  if (
+    input.programStartWeekEnding === null ||
+    (input.programStartWeekEnding && week.weekEnding < input.programStartWeekEnding)
+  ) {
     return { ...base, status: "not_required", inspection: null };
   }
 
@@ -319,9 +322,9 @@ export function needsAttention(status: WeeklyInspectionStatus): boolean {
 /**
  * Weeks in the given range that were required and not satisfied.
  *
- * `earliestWeekEnding` is the boundary before which the system cannot claim a
- * week was missed. Weekly Inspections did not exist before then, so nobody
- * failed to perform one — see historyBoundaryWeek below.
+ * `programStartWeekEnding` is the first week the requirement applied to.
+ * Before it the obligation did not exist, so nobody failed to meet it — see
+ * programStartWeek below.
  */
 export function missedWeeks(input: {
   vehicle: EligibilityVehicle & { created_at?: string | null };
@@ -329,7 +332,7 @@ export function missedWeeks(input: {
   inspectionsByWeek: Map<string, WeekInspection[]>;
   blocks: BlockRange[];
   now: Date;
-  earliestWeekEnding?: string | null;
+  programStartWeekEnding?: string | null;
 }): string[] {
   return input.weekEndings.filter((weekEnding) => {
     const week = mauritiusWeekInterval(weekEnding);
@@ -339,24 +342,27 @@ export function missedWeeks(input: {
       inspections: input.inspectionsByWeek.get(weekEnding) ?? [],
       blocks: input.blocks,
       now: input.now,
-      earliestWeekEnding: input.earliestWeekEnding,
+      programStartWeekEnding: input.programStartWeekEnding,
     });
     return resolved.status === "overdue";
   });
 }
 
 /**
- * The earliest week the system may call "missed".
+ * The first week the Weekly Inspection requirement applies to.
  *
- * Derived from the data rather than configured or hard-coded: before the first
- * inspection was ever recorded, Weekly Inspections were not in use here, so no
- * week before that can honestly be described as missed. With no inspections at
- * all there is no missed history — only the current week being due.
+ * Comes from the `weekly_inspection_program_start_date` setting, NOT from the
+ * data. An earlier version derived it from the oldest recorded inspection,
+ * which was wrong in a way that mattered: compliance ACTIVITY cannot define
+ * when a compliance REQUIREMENT began. If the programme starts in week 1 and
+ * nobody inspects anything until week 4, an activity-derived boundary erases
+ * weeks 1-3 — exactly the weeks somebody must answer for — and deleting the
+ * oldest inspection would silently move the boundary again.
  *
- * Deliberately NOT the 0034 migration timestamp: baking a deployment date into
- * application logic would be an invisible constant nobody could later explain.
+ * The setting is a Monday; this returns the Sunday that closes its week, since
+ * every comparison in this module is on week endings.
  */
-export function historyBoundaryWeek(earliestInspectionDate: string | null | undefined): string | null {
-  if (!earliestInspectionDate) return null;
-  return weekEndingFor(earliestInspectionDate);
+export function programStartWeek(programStartDate: string | null | undefined): string | null {
+  if (!programStartDate) return null;
+  return weekEndingFor(programStartDate);
 }
