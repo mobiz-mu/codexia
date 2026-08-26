@@ -98,7 +98,13 @@ export async function getMaintenanceRecordAdmin(id: string) {
 
   const supabase = createAdminClient();
   const [{ data: record }, { data: attachments }] = await Promise.all([
-    supabase.from("vehicle_maintenance_records").select("*, vehicles(name)").eq("id", id).maybeSingle(),
+    supabase
+      .from("vehicle_maintenance_records")
+      // Vehicle identity comes back on the same read the record does, so the
+      // detail header can show the car rather than just its name in a title.
+      .select("*, vehicles(name, brand, model, transmission, internal_registration_ref)")
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("vehicle_maintenance_attachments")
       .select("id, file_name, mime_type, size_bytes, storage_path, created_at")

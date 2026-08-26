@@ -4,7 +4,7 @@ import { cache } from "react";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { incidentSchema, normalizeIncidentListFilters, sanitizeSearchTerm } from "@/lib/incidents/schema";
-import { OPEN_REPAIR_STATUSES, isOpenRepairStatus, type Severity } from "@/lib/incidents/schema";
+import { OPEN_REPAIR_STATUSES, type Severity } from "@/lib/incidents/schema";
 import { ATTACHMENT_CATEGORIES, type AttachmentCategory } from "@/lib/incidents/schema";
 import { insertVehicleBlock, closeBlockEarly } from "./availability";
 
@@ -106,7 +106,13 @@ export async function getIncidentRecordAdmin(id: string) {
 
   const supabase = createAdminClient();
   const [{ data: record }, { data: attachments }] = await Promise.all([
-    supabase.from("vehicle_incident_records").select("*, vehicles(name), bookings(reference)").eq("id", id).maybeSingle(),
+    supabase
+      .from("vehicle_incident_records")
+      .select(
+        "*, vehicles(name, brand, model, transmission, internal_registration_ref), bookings(reference)"
+      )
+      .eq("id", id)
+      .maybeSingle(),
     supabase
       .from("vehicle_incident_attachments")
       .select("id, category, file_name, mime_type, size_bytes, storage_path, created_at")
@@ -182,8 +188,8 @@ function mapToRow(parsed: { data: ReturnType<typeof incidentSchema.parse> }, boo
     police_report_reference: d.policeReportReference,
     insurance_claim_reference: d.insuranceClaimReference,
     third_party_details: d.thirdPartyDetails,
-    estimated_repair_cost_cents: d.estimatedRepairCostEur,
-    actual_repair_cost_cents: d.actualRepairCostEur,
+    estimated_repair_cost_cents: d.estimatedRepairCostMur,
+    actual_repair_cost_cents: d.actualRepairCostMur,
     vehicle_operational_status: d.vehicleOperationalStatus,
     repair_status: d.repairStatus,
     severity: d.severity,
@@ -673,4 +679,10 @@ export async function getOpenIncidentsList(limit = 10): Promise<OpenIncidentSumm
     .slice(0, limit);
 }
 
-export { isOpenRepairStatus };
+// NOTE: nothing may be re-exported from this module that is not an async
+// function. Every export of a "use server" file becomes a server action, and
+// a synchronous re-export (this file previously re-exported the pure helper
+// isOpenRepairStatus) invalidates the action manifest for the WHOLE file —
+// every form pointing at createIncidentRecord then failed with
+// "Failed to find Server Action ..." and a 404 on POST. Import pure helpers
+// straight from @/lib/incidents/schema instead.

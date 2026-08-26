@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { maintenanceSchema, normalizeMaintenanceListFilters, sanitizeSearchTerm } from "./schema";
+import {
+  maintenanceSchema,
+  normalizeMaintenanceListFilters,
+  resolveMaintenanceCostBreakdown,
+  sanitizeSearchTerm,
+  summariseMaintenanceCosts,
+} from "./schema";
 import { formatMoney } from "@/lib/pricing/format";
 
 const VALID_VEHICLE_ID = "11111111-1111-4111-8111-111111111111";
@@ -293,5 +299,97 @@ describe("maintenance downtime", () => {
       baseInput({ downtimeStart: "2027-03-03T17:00", downtimeEnd: "2027-03-01T08:00" })
     );
     expect(r.success).toBe(true);
+  });
+});
+
+describe("resolveMaintenanceCostBreakdown", () => {
+  it("reports an itemised record when components are present", () => {
+    const result = resolveMaintenanceCostBreakdown({
+      parts_cost_cents: 80000,
+      labour_cost_cents: 65050,
+      other_cost_cents: 4927,
+      cost_cents: 149977,
+    });
+    expect(result).toEqual({ kind: "itemised", parts: 80000, labour: 65050, other: 4927, total: 149977 });
+  });
+
+  // The real production row: a total captured before the itemised columns
+  // existed. It must never be shown as "Parts Rs 0.00 ... Total Rs 1,499.77".
+  it("reports a legacy total with no components as unitemised", () => {
+    const result = resolveMaintenanceCostBreakdown({
+      parts_cost_cents: 0,
+      labour_cost_cents: 0,
+      other_cost_cents: 0,
+      cost_cents: 149977,
+    });
+    expect(result).toEqual({ kind: "unitemised", total: 149977 });
+  });
+
+  it("treats null components as zero rather than throwing", () => {
+    const result = resolveMaintenanceCostBreakdown({
+      parts_cost_cents: null,
+      labour_cost_cents: null,
+      other_cost_cents: null,
+      cost_cents: 5000,
+    });
+    expect(result).toEqual({ kind: "unitemised", total: 5000 });
+  });
+
+  it("reports no cost at all when everything is zero", () => {
+    const result = resolveMaintenanceCostBreakdown({
+      parts_cost_cents: 0,
+      labour_cost_cents: 0,
+      other_cost_cents: 0,
+      cost_cents: 0,
+    });
+    expect(result).toEqual({ kind: "none" });
+  });
+
+  it("stays itemised when components are present but do not sum to the total", () => {
+    // Deliberately not "corrected": the stored figures are what the supplier
+    // invoiced, and silently rewriting either side would destroy the evidence.
+    const result = resolveMaintenanceCostBreakdown({
+      parts_cost_cents: 1000,
+      labour_cost_cents: 0,
+      other_cost_cents: 0,
+      cost_cents: 9999,
+    });
+    expect(result).toEqual({ kind: "itemised", parts: 1000, labour: 0, other: 0, total: 9999 });
+  });
+});
+
+describe("summariseMaintenanceCosts", () => {
+  it("keeps a legacy lump sum out of the component totals but inside the grand total", () => {
+    const summary = summariseMaintenanceCosts([
+      { parts_cost_cents: 0, labour_cost_cents: 0, other_cost_cents: 0, cost_cents: 149977 },
+      { parts_cost_cents: 10000, labour_cost_cents: 5000, other_cost_cents: 2500, cost_cents: 17500 },
+    ]);
+    expect(summary.parts).toBe(10000);
+    expect(summary.labour).toBe(5000);
+    expect(summary.other).toBe(2500);
+    expect(summary.unitemisedTotal).toBe(149977);
+    expect(summary.total).toBe(167477);
+    expect(summary.hasItemisation).toBe(true);
+  });
+
+  it("flags a page containing only legacy rows as having no itemisation", () => {
+    const summary = summariseMaintenanceCosts([
+      { parts_cost_cents: 0, labour_cost_cents: 0, other_cost_cents: 0, cost_cents: 149977 },
+    ]);
+    expect(summary.hasItemisation).toBe(false);
+    expect(summary.unitemisedTotal).toBe(149977);
+    expect(summary.total).toBe(149977);
+  });
+
+  it("returns zeroes for an empty page", () => {
+    const summary = summariseMaintenanceCosts([]);
+    expect(summary).toEqual({
+      parts: 0,
+      labour: 0,
+      other: 0,
+      total: 0,
+      unitemisedTotal: 0,
+      hasItemisation: false,
+    });
   });
 });

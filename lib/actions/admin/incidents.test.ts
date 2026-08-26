@@ -111,8 +111,8 @@ function baseFormData(overrides: Record<string, string> = {}) {
     policeReportReference: "",
     insuranceClaimReference: "",
     thirdPartyDetails: "",
-    estimatedRepairCostEur: "450.00",
-    actualRepairCostEur: "",
+    estimatedRepairCostMur: "450.00",
+    actualRepairCostMur: "",
     vehicleOperationalStatus: "operational",
     repairStatus: "reported",
     severity: "moderate",
@@ -326,7 +326,7 @@ describe("createIncidentRecord", () => {
     vi.mocked(requireAdminUser).mockResolvedValue(FULL_USER);
     const fakeFrom = vi.fn();
     vi.mocked(createAdminClient).mockReturnValue({ from: fakeFrom } as unknown as ReturnType<typeof createAdminClient>);
-    const result = await createIncidentRecord({ status: "idle" }, baseFormData({ estimatedRepairCostEur: "-100" }));
+    const result = await createIncidentRecord({ status: "idle" }, baseFormData({ estimatedRepairCostMur: "-100" }));
     expect(result).toEqual({ status: "error", error: "Please check the form for errors." });
     expect(fakeFrom).not.toHaveBeenCalled();
   });

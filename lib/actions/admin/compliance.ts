@@ -164,7 +164,7 @@ function mapToRow(parsed: { data: ReturnType<typeof complianceSchema.parse> }) {
     provider: d.provider,
     issued_date: d.issuedDate,
     expiry_date: d.expiryDate,
-    cost_cents: d.costEur,
+    cost_cents: d.costMur,
     remarks: d.remarks,
   };
 }

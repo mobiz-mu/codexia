@@ -41,7 +41,7 @@ export const complianceSchema = z
     // Optional — entered as a plain rupee decimal string ("5500.00") when
     // present, stored as cents. An empty field means "cost not recorded",
     // not zero.
-    costEur: z
+    costMur: z
       .string()
       .optional()
       .transform((v) => (v && v.trim().length > 0 ? v : null))

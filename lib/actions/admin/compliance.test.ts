@@ -138,7 +138,7 @@ function validFormData(overrides: Record<string, string> = {}) {
     provider: "Mauritius Union",
     issuedDate: "2026-01-01",
     expiryDate: "2027-01-01",
-    costEur: "450.00",
+    costMur: "450.00",
     remarks: "",
     ...overrides,
   };
@@ -184,7 +184,7 @@ describe("createComplianceRecord", () => {
     vi.mocked(requireAdminUser).mockResolvedValue(FULL_USER);
     const fakeFrom = vi.fn();
     vi.mocked(createAdminClient).mockReturnValue({ from: fakeFrom } as unknown as ReturnType<typeof createAdminClient>);
-    const result = await createComplianceRecord({ status: "idle" }, validFormData({ costEur: "-5" }));
+    const result = await createComplianceRecord({ status: "idle" }, validFormData({ costMur: "-5" }));
     expect(result).toEqual({ status: "error", error: "Please check the form for errors." });
     expect(fakeFrom).not.toHaveBeenCalled();
   });

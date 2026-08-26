@@ -160,3 +160,76 @@ export function normalizeMaintenanceListFilters(params: {
 export function sanitizeSearchTerm(term: string): string {
   return term.replace(/[,()]/g, "").trim();
 }
+
+/**
+ * How a maintenance record's money should be presented.
+ *
+ * Records predating the itemised columns (0032) carry a total with all three
+ * components at zero. Rendering those as "Parts Rs 0.00 · Labour Rs 0.00 ·
+ * Other Rs 0.00 · Total Rs 1,499.77" reads as a reconciliation failure to an
+ * operator, when in fact the breakdown was simply never captured.
+ *
+ * The stored row is never rewritten and no breakdown is ever invented — this
+ * only decides which of three shapes the UI draws.
+ */
+export type MaintenanceCostBreakdown =
+  | { kind: "itemised"; parts: number; labour: number; other: number; total: number }
+  | { kind: "unitemised"; total: number }
+  | { kind: "none" };
+
+export function resolveMaintenanceCostBreakdown(costs: {
+  parts_cost_cents: number | null;
+  labour_cost_cents: number | null;
+  other_cost_cents: number | null;
+  cost_cents: number | null;
+}): MaintenanceCostBreakdown {
+  const parts = costs.parts_cost_cents ?? 0;
+  const labour = costs.labour_cost_cents ?? 0;
+  const other = costs.other_cost_cents ?? 0;
+  const total = costs.cost_cents ?? 0;
+  const itemisedSum = parts + labour + other;
+
+  // Nothing was ever recorded against this job.
+  if (total === 0 && itemisedSum === 0) return { kind: "none" };
+
+  // A total with no components behind it: legacy, or entered as a lump sum.
+  if (itemisedSum === 0) return { kind: "unitemised", total };
+
+  return { kind: "itemised", parts, labour, other, total };
+}
+
+/**
+ * Aggregate across a page of records. Components are summed only from rows
+ * that actually have a breakdown, so a legacy lump sum never inflates the
+ * "Parts" figure — but it still counts toward the total, and the caller is
+ * told how much of that total is unaccounted for.
+ */
+export function summariseMaintenanceCosts(
+  rows: Array<{
+    parts_cost_cents: number | null;
+    labour_cost_cents: number | null;
+    other_cost_cents: number | null;
+    cost_cents: number | null;
+  }>
+) {
+  let parts = 0;
+  let labour = 0;
+  let other = 0;
+  let total = 0;
+  let unitemisedTotal = 0;
+
+  for (const row of rows) {
+    const breakdown = resolveMaintenanceCostBreakdown(row);
+    if (breakdown.kind === "itemised") {
+      parts += breakdown.parts;
+      labour += breakdown.labour;
+      other += breakdown.other;
+      total += breakdown.total;
+    } else if (breakdown.kind === "unitemised") {
+      unitemisedTotal += breakdown.total;
+      total += breakdown.total;
+    }
+  }
+
+  return { parts, labour, other, total, unitemisedTotal, hasItemisation: parts + labour + other > 0 };
+}

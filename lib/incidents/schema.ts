@@ -108,7 +108,7 @@ const optionalDate = () =>
     .transform((v) => (v && v.trim().length > 0 ? v : null))
     .refine((v) => v === null || !Number.isNaN(Date.parse(v)), { message: "Not a valid date." });
 
-const optionalEurCost = () =>
+const optionalMurCost = () =>
   z
     .string()
     .optional()
@@ -134,8 +134,8 @@ export const incidentSchema = z
     policeReportReference: optionalText(200),
     insuranceClaimReference: optionalText(200),
     thirdPartyDetails: optionalText(2000),
-    estimatedRepairCostEur: optionalEurCost(),
-    actualRepairCostEur: optionalEurCost(),
+    estimatedRepairCostMur: optionalMurCost(),
+    actualRepairCostMur: optionalMurCost(),
     vehicleOperationalStatus: z.enum(VEHICLE_OPERATIONAL_STATUSES, { message: "Please select an operational status." }),
     repairStatus: z.enum(REPAIR_STATUSES, { message: "Please select a repair status." }),
     severity: z.enum(SEVERITIES, { message: "Please select a severity." }),

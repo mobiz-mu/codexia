@@ -76,6 +76,17 @@
   --color-ops-staff: #475569;
   --color-ops-stopsell: #2563eb;
   --color-ops-conflict: #eab308;
+
+  /* Generic UI feedback. Deliberately SEPARATE from the planning-board
+     semantics above: a validation error is not a "booked" day and a saved
+     form is not an "agency booking". Keeping them apart means the board's
+     palette can be retuned for operational reasons without silently
+     restyling every form in the admin, and a reader of the markup can tell
+     domain state from interface feedback. */
+  --color-ops-danger: #b42318;
+  --color-ops-success: #15803d;
+  --color-ops-warning: #a16207;
+  --color-ops-info: #1f4e79;
 }
 
 @theme inline {
@@ -119,6 +130,10 @@
   --color-ops-staff: var(--color-ops-staff);
   --color-ops-stopsell: var(--color-ops-stopsell);
   --color-ops-conflict: var(--color-ops-conflict);
+  --color-ops-danger: var(--color-ops-danger);
+  --color-ops-success: var(--color-ops-success);
+  --color-ops-warning: var(--color-ops-warning);
+  --color-ops-info: var(--color-ops-info);
 
   --font-sans: var(--font-inter);
   --font-display: var(--font-display);

@@ -19,8 +19,8 @@ function baseInput(overrides: Record<string, string> = {}) {
     policeReportReference: "",
     insuranceClaimReference: "",
     thirdPartyDetails: "",
-    estimatedRepairCostEur: "450.00",
-    actualRepairCostEur: "",
+    estimatedRepairCostMur: "450.00",
+    actualRepairCostMur: "",
     vehicleOperationalStatus: "operational",
     repairStatus: "reported",
     severity: "moderate",
@@ -35,12 +35,12 @@ function baseInput(overrides: Record<string, string> = {}) {
 }
 
 describe("incidentSchema — happy path", () => {
-  it("accepts a valid record and converts EUR costs to cents", () => {
+  it("accepts a valid record and converts MUR costs to cents", () => {
     const result = incidentSchema.safeParse(baseInput());
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.estimatedRepairCostEur).toBe(45000);
-      expect(result.data.actualRepairCostEur).toBeNull();
+      expect(result.data.estimatedRepairCostMur).toBe(45000);
+      expect(result.data.actualRepairCostMur).toBeNull();
     }
   });
 
@@ -148,28 +148,28 @@ describe("incidentSchema — downtime validation", () => {
   });
 });
 
-describe("incidentSchema — EUR cost validation", () => {
+describe("incidentSchema — MUR cost validation", () => {
   it("rejects a negative estimated cost", () => {
-    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostEur: "-100" }));
+    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostMur: "-100" }));
     expect(result.success).toBe(false);
   });
 
   it("rejects a non-numeric actual cost", () => {
-    const result = incidentSchema.safeParse(baseInput({ actualRepairCostEur: "abc" }));
+    const result = incidentSchema.safeParse(baseInput({ actualRepairCostMur: "abc" }));
     expect(result.success).toBe(false);
   });
 
   it("accepts a zero cost", () => {
-    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostEur: "0" }));
+    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostMur: "0" }));
     expect(result.success).toBe(true);
   });
 
   it("allows both costs to be omitted (not yet estimated)", () => {
-    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostEur: "", actualRepairCostEur: "" }));
+    const result = incidentSchema.safeParse(baseInput({ estimatedRepairCostMur: "", actualRepairCostMur: "" }));
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.estimatedRepairCostEur).toBeNull();
-      expect(result.data.actualRepairCostEur).toBeNull();
+      expect(result.data.estimatedRepairCostMur).toBeNull();
+      expect(result.data.actualRepairCostMur).toBeNull();
     }
   });
 });

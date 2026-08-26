@@ -17,35 +17,35 @@ function baseInput(overrides: Record<string, string> = {}) {
     provider: "Mauritius Union",
     issuedDate: "2026-01-01",
     expiryDate: "2027-01-01",
-    costEur: "450.00",
+    costMur: "450.00",
     remarks: "",
     ...overrides,
   };
 }
 
 describe("complianceSchema", () => {
-  it("accepts a valid insurance record and converts cost to EUR cents", () => {
+  it("accepts a valid insurance record and converts cost to MUR cents", () => {
     const result = complianceSchema.safeParse(baseInput());
     expect(result.success).toBe(true);
     if (result.success) {
-      expect(result.data.costEur).toBe(45000);
+      expect(result.data.costMur).toBe(45000);
       expect(result.data.provider).toBe("Mauritius Union");
     }
   });
 
   it("allows cost to be omitted entirely (not recorded, distinct from zero)", () => {
-    const result = complianceSchema.safeParse(baseInput({ costEur: "" }));
+    const result = complianceSchema.safeParse(baseInput({ costMur: "" }));
     expect(result.success).toBe(true);
-    if (result.success) expect(result.data.costEur).toBeNull();
+    if (result.success) expect(result.data.costMur).toBeNull();
   });
 
   it("rejects a negative cost", () => {
-    const result = complianceSchema.safeParse(baseInput({ costEur: "-10" }));
+    const result = complianceSchema.safeParse(baseInput({ costMur: "-10" }));
     expect(result.success).toBe(false);
   });
 
   it("rejects a non-numeric cost", () => {
-    const result = complianceSchema.safeParse(baseInput({ costEur: "abc" }));
+    const result = complianceSchema.safeParse(baseInput({ costMur: "abc" }));
     expect(result.success).toBe(false);
   });
 
