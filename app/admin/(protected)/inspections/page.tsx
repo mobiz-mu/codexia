@@ -1,7 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { listInspectionsAdmin, listVehiclesForInspectionSelect } from "@/lib/actions/admin/inspections";
+import {
+  getFleetWeekStatus,
+  listInspectionsAdmin,
+  listVehiclesForInspectionSelect,
+} from "@/lib/actions/admin/inspections";
+import { FleetWeekPanel } from "@/components/admin/inspections/FleetWeekPanel";
 import {
   InspectionApprovalBadge,
   InspectionResultBadge,
@@ -29,13 +34,16 @@ export default async function AdminInspectionsPage({
     defectsOnly?: string;
     search?: string;
     page?: string;
+    week?: string;
+    fleetStatus?: string;
   }>;
 }) {
   const params = await searchParams;
 
-  const [{ records, total, page, pageSize }, vehicles] = await Promise.all([
+  const [{ records, total, page, pageSize }, vehicles, fleetWeek] = await Promise.all([
     listInspectionsAdmin(params),
     listVehiclesForInspectionSelect(),
+    getFleetWeekStatus(params.week),
   ]);
 
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
@@ -58,6 +66,8 @@ export default async function AdminInspectionsPage({
 
   return (
     <div className="flex flex-col gap-3">
+      <FleetWeekPanel summary={fleetWeek} statusFilter={params.fleetStatus} />
+
       <OpsPanel
         title="Weekly vehicle inspections"
         subtitle={`${total} inspection${total === 1 ? "" : "s"} · ${failed} failed · ${attention} attention · ${unapproved} awaiting approval`}

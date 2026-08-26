@@ -23,10 +23,16 @@ import {
   CarFront,
   Siren,
   AlertOctagon,
+  AlertTriangle,
+  ClipboardCheck,
+  CircleDashed,
+  CircleSlash,
 } from "lucide-react";
 import { getOverviewStats } from "@/lib/actions/admin/overview";
 import { getComplianceDashboardStats, getComplianceAlerts } from "@/lib/actions/admin/compliance";
 import { getIncidentDashboardStats, getOpenIncidentsList } from "@/lib/actions/admin/incidents";
+import { getFleetWeekStatus } from "@/lib/actions/admin/inspections";
+import { needsAttention } from "@/lib/inspections/due";
 import { DOCUMENT_TYPE_LABELS } from "@/lib/compliance/schema";
 import { INCIDENT_TYPE_LABELS } from "@/lib/incidents/schema";
 import { ComplianceStatusBadge } from "@/components/admin/ComplianceStatusBadge";
@@ -90,13 +96,24 @@ export default async function AdminOverviewPage() {
   const user = await getCurrentAdminUser();
   if (!user || user.roles.length === 0) redirect("/admin/login");
 
-  const [stats, complianceStats, complianceAlerts, incidentStats, openIncidents] = await Promise.all([
+  // Weekly inspection status is only fetched for someone allowed to see it,
+  // so the dashboard costs no extra queries for a role without the permission.
+  const canViewInspections = user.permissions.has("view_inspections");
+
+  const [stats, complianceStats, complianceAlerts, incidentStats, openIncidents, fleetWeek] = await Promise.all([
     getOverviewStats(),
     getComplianceDashboardStats(),
     getComplianceAlerts(10),
     getIncidentDashboardStats(),
     getOpenIncidentsList(10),
+    canViewInspections ? getFleetWeekStatus() : Promise.resolve(null),
   ]);
+
+  // Already sorted by operational priority in the resolver, so this is a slice
+  // of the worst cases rather than a second ranking.
+  const inspectionsNeedingAttention = (fleetWeek?.rows ?? [])
+    .filter((row) => needsAttention(row.status))
+    .slice(0, 6);
 
   return (
     <div className="flex flex-col gap-7">
@@ -189,6 +206,97 @@ export default async function AdminOverviewPage() {
           </div>
         )}
       </div>
+
+      {canViewInspections && fleetWeek ? (
+        <div>
+          <KpiSection title="Weekly Inspections" icon={ClipboardCheck}>
+            <KpiCard
+              icon={CircleDashed}
+              label="Due This Week"
+              value={String(fleetWeek.counts.due)}
+              tone={fleetWeek.counts.due > 0 ? "warning" : "primary"}
+            />
+            <KpiCard
+              icon={AlertOctagon}
+              label="Failed"
+              value={String(fleetWeek.counts.failed)}
+              tone={fleetWeek.counts.failed > 0 ? "danger" : "primary"}
+            />
+            <KpiCard
+              icon={AlertTriangle}
+              label="Attention Required"
+              value={String(fleetWeek.counts.attention)}
+              tone={fleetWeek.counts.attention > 0 ? "warning" : "primary"}
+            />
+            <KpiCard
+              icon={CheckCircle2}
+              label="Completed"
+              value={String(fleetWeek.counts.completed)}
+              tone="primary"
+            />
+            <KpiCard
+              icon={CircleSlash}
+              label="Exempt Off Road"
+              value={String(fleetWeek.counts.exempt)}
+              tone="primary"
+            />
+          </KpiSection>
+
+          {inspectionsNeedingAttention.length === 0 ? (
+            <div className="mt-3 rounded-xl border border-border bg-background p-4 shadow-sm">
+              <p className="text-sm text-muted">
+                Nothing outstanding for the week ending {fleetWeek.weekEnding}.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-3 rounded-xl border border-border bg-background p-4 shadow-sm">
+              <div className="mb-2 flex items-center justify-between">
+                <h3 className="text-sm font-semibold text-ink">Vehicles Needing Attention</h3>
+                <Link href="/admin/inspections" className="text-sm font-medium text-primary-dark hover:underline">
+                  View all
+                </Link>
+              </div>
+              <ul className="flex flex-col divide-y divide-border">
+                {inspectionsNeedingAttention.map((row) => (
+                  <li key={row.vehicleId} className="flex items-center justify-between gap-3 py-2 text-sm">
+                    <div className="min-w-0">
+                      <span className="font-medium text-ink">{row.name}</span>
+                      {row.registration ? (
+                        <span className="ml-1.5 text-xs text-muted">{row.registration}</span>
+                      ) : null}
+                      {row.isStaffCar ? (
+                        <span className="ml-1.5 rounded px-1 py-px text-[10px] font-bold uppercase text-muted">
+                          Staff car
+                        </span>
+                      ) : null}
+                      <div className="text-xs text-muted">
+                        {/* Glyph plus word: never colour alone. */}
+                        {row.statusGlyph} {row.statusLabel}
+                        {row.hasSafetyFailure ? " · safety failure" : ""} · week ending {fleetWeek.weekEnding}
+                      </div>
+                    </div>
+                    <Link
+                      href={
+                        row.inspectionId
+                          ? `/admin/inspections/${row.inspectionId}`
+                          : `/admin/inspections/new?vehicleId=${row.vehicleId}`
+                      }
+                      className="shrink-0 text-sm font-medium text-primary-dark hover:underline"
+                      aria-label={
+                        row.inspectionId
+                          ? `View the inspection for ${row.name}`
+                          : `Start an inspection for ${row.name}`
+                      }
+                    >
+                      {row.inspectionId ? "View" : "Start"}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <div>
         <KpiSection title="Incidents" icon={Siren}>

@@ -19,14 +19,29 @@ import {
   inspectionDowntimeSchema,
   inspectionFollowUpSchema,
   inspectionItemUpdateSchema,
+  isSunday,
   normalizeInspectionListFilters,
   sanitizeSearchTerm,
+  todayInMauritius,
   updateInspectionSchema,
   weekEndingFor,
   type InspectionFormState,
 } from "@/lib/inspections/schema";
 import { inspectionFollowUpKey } from "@/lib/inspections/follow-up";
 import { buildInspectionReport } from "@/lib/inspections/report";
+import {
+  EXEMPTING_BLOCK_TYPES,
+  WEEKLY_STATUS_LABELS,
+  historyBoundaryWeek,
+  mauritiusWeekInterval,
+  parseBlockPeriod,
+  resolveWeeklyStatus,
+  statusPriority,
+  type BlockRange,
+  type WeekInspection,
+  type WeeklyInspectionStatus,
+} from "@/lib/inspections/due";
+import { isSafetyCriticalKey } from "@/lib/fleet/inspection-checklist";
 import { insertVehicleBlock } from "./availability";
 import { createMaintenanceRecord } from "./maintenance";
 
@@ -1211,4 +1226,201 @@ export async function listVehiclesForInspectionSelect() {
     .limit(500);
 
   return data ?? [];
+}
+
+// ---------------------------------------------------------------------------
+// Weekly due status (E6)
+// ---------------------------------------------------------------------------
+
+export type FleetWeekRow = {
+  vehicleId: string;
+  name: string;
+  brand: string | null;
+  model: string | null;
+  transmission: "manual" | "automatic" | null;
+  registration: string | null;
+  isStaffCar: boolean;
+  status: WeeklyInspectionStatus;
+  statusLabel: string;
+  statusGlyph: string;
+  priority: number;
+  hasSafetyFailure: boolean;
+  exemptTypes: string[];
+  inspectionId: string | null;
+  inspectionDate: string | null;
+  inspectionResult: string | null;
+  approvedAt: string | null;
+};
+
+export type FleetWeekSummary = {
+  weekEnding: string;
+  weekStart: string;
+  isCurrentWeek: boolean;
+  rows: FleetWeekRow[];
+  counts: {
+    required: number;
+    completed: number;
+    due: number;
+    overdue: number;
+    attention: number;
+    failed: number;
+    exempt: number;
+  };
+};
+
+/**
+ * Weekly inspection status for the whole fleet, for one Mauritius week.
+ *
+ * FOUR bounded queries regardless of fleet size — vehicles, that week's
+ * inspections, failed items for those inspections, and blocks intersecting the
+ * week — then every status is derived in memory by the pure resolver. There is
+ * no per-vehicle or per-week query anywhere in this path.
+ */
+export async function getFleetWeekStatus(weekEndingParam?: string): Promise<FleetWeekSummary> {
+  const user = await requireAdminUser();
+  assertPermission(user, "view_inspections");
+
+  const supabase = createAdminClient();
+  const today = todayInMauritius();
+  const weekEnding =
+    weekEndingParam && /^\d{4}-\d{2}-\d{2}$/.test(weekEndingParam) && isSunday(weekEndingParam)
+      ? weekEndingParam
+      : weekEndingFor(today);
+  const week = mauritiusWeekInterval(weekEnding);
+
+  // 1 — eligible vehicle identities. Staff cars included: is_staff_car governs
+  // public rentability, not whether the company drives the car.
+  const { data: vehicles } = await supabase
+    .from("vehicles")
+    .select("id, name, brand, model, transmission, internal_registration_ref, status, is_staff_car, deleted_at, created_at")
+    .eq("status", "active")
+    .is("deleted_at", null)
+    .order("name", { ascending: true });
+
+  const fleet = vehicles ?? [];
+  if (fleet.length === 0) {
+    return {
+      weekEnding,
+      weekStart: week.weekStart,
+      isCurrentWeek: weekEnding === weekEndingFor(today),
+      rows: [],
+      counts: { required: 0, completed: 0, due: 0, overdue: 0, attention: 0, failed: 0, exempt: 0 },
+    };
+  }
+  const vehicleIds = fleet.map((v) => v.id);
+
+  // 2 — that week's inspections, and 3 — blocks intersecting the week.
+  const [{ data: inspections }, { data: blocks }] = await Promise.all([
+    supabase
+      .from("vehicle_inspections")
+      .select("id, vehicle_id, inspection_date, result, approved_at, created_at")
+      .eq("week_ending", weekEnding)
+      .in("vehicle_id", vehicleIds),
+    supabase
+      .from("vehicle_blocks")
+      .select("vehicle_id, type, period")
+      .in("vehicle_id", vehicleIds)
+      .in("type", [...EXEMPTING_BLOCK_TYPES])
+      .filter("period", "ov", `[${week.startsAt.toISOString()},${week.endsAt.toISOString()})`),
+  ]);
+
+  // The boundary before which no week can honestly be called missed: Weekly
+  // Inspections were not in use here, so nobody failed to perform one. Derived
+  // from the earliest recorded inspection rather than a hard-coded deployment
+  // date, which would be an invisible constant nobody could later explain.
+  const { data: earliest } = await supabase
+    .from("vehicle_inspections")
+    .select("inspection_date")
+    .order("inspection_date", { ascending: true })
+    .limit(1);
+  const earliestWeekEnding = historyBoundaryWeek(earliest?.[0]?.inspection_date ?? null);
+
+  // 4 — failed items only, so a safety failure can be ranked first without
+  // pulling forty rows per inspection.
+  const inspectionIds = (inspections ?? []).map((i) => i.id);
+  let safetyFailureIds = new Set<string>();
+  if (inspectionIds.length > 0) {
+    const { data: failedItems } = await supabase
+      .from("vehicle_inspection_items")
+      .select("inspection_id, item_key")
+      .in("inspection_id", inspectionIds)
+      .eq("result", "fail");
+    safetyFailureIds = new Set(
+      (failedItems ?? []).filter((i) => isSafetyCriticalKey(i.item_key)).map((i) => i.inspection_id)
+    );
+  }
+
+  const inspectionsByVehicle = new Map<string, WeekInspection[]>();
+  for (const row of inspections ?? []) {
+    const list = inspectionsByVehicle.get(row.vehicle_id) ?? [];
+    list.push({
+      id: row.id,
+      inspection_date: row.inspection_date,
+      result: row.result as WeekInspection["result"],
+      approved_at: row.approved_at,
+      created_at: row.created_at,
+      hasSafetyFailure: safetyFailureIds.has(row.id),
+    });
+    inspectionsByVehicle.set(row.vehicle_id, list);
+  }
+
+  const blocksByVehicle = new Map<string, BlockRange[]>();
+  for (const row of blocks ?? []) {
+    const parsed = parseBlockPeriod(row.period as unknown as string);
+    if (!parsed) continue;
+    const list = blocksByVehicle.get(row.vehicle_id) ?? [];
+    list.push({ type: row.type, ...parsed });
+    blocksByVehicle.set(row.vehicle_id, list);
+  }
+
+  const now = new Date();
+  const rows: FleetWeekRow[] = fleet.map((vehicle) => {
+    const resolved = resolveWeeklyStatus({
+      vehicle,
+      week,
+      inspections: inspectionsByVehicle.get(vehicle.id) ?? [],
+      blocks: blocksByVehicle.get(vehicle.id) ?? [],
+      now,
+      earliestWeekEnding,
+    });
+    const presentation = WEEKLY_STATUS_LABELS[resolved.status];
+    return {
+      vehicleId: vehicle.id,
+      name: vehicle.name,
+      brand: vehicle.brand,
+      model: vehicle.model,
+      transmission: vehicle.transmission,
+      registration: vehicle.internal_registration_ref,
+      isStaffCar: vehicle.is_staff_car === true,
+      status: resolved.status,
+      statusLabel: presentation.label,
+      statusGlyph: presentation.glyph,
+      priority: statusPriority(resolved),
+      hasSafetyFailure: resolved.hasSafetyFailure,
+      exemptTypes: resolved.exemptTypes,
+      inspectionId: resolved.inspection?.id ?? null,
+      inspectionDate: resolved.inspection?.inspection_date ?? null,
+      inspectionResult: resolved.inspection?.result ?? null,
+      approvedAt: resolved.inspection?.approved_at ?? null,
+    };
+  });
+
+  rows.sort((a, b) => a.priority - b.priority || a.name.localeCompare(b.name));
+
+  const countBy = (status: WeeklyInspectionStatus) => rows.filter((r) => r.status === status).length;
+  return {
+    weekEnding,
+    weekStart: week.weekStart,
+    isCurrentWeek: weekEnding === weekEndingFor(today),
+    rows,
+    counts: {
+      required: rows.filter((r) => r.status !== "not_required").length,
+      completed: countBy("completed"),
+      due: countBy("due"),
+      overdue: countBy("overdue"),
+      attention: countBy("attention_required"),
+      failed: countBy("failed"),
+      exempt: countBy("exempt_off_road"),
+    },
+  };
 }
