@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { listBlocks, listVehicleOptions, getAvailabilityBoardData } from "@/lib/actions/admin/availability";
 import { CreateBlockForm } from "@/components/admin/CreateBlockForm";
-import { DeleteBlockButton } from "@/components/admin/DeleteBlockButton";
+import { ReleaseBlockButton } from "@/components/admin/ReleaseBlockButton";
 import { FleetTimeline } from "@/components/admin/ops/FleetTimeline";
 import { PlanningLegend } from "@/components/admin/ops/OpsStatusBadge";
 import { OpsPanel, OpsToolbar } from "@/components/admin/ops/OpsPanel";
@@ -239,7 +239,7 @@ export default async function AdminAvailabilityPage({
                 <OpsTd className="font-mono text-[11px]">{b.period}</OpsTd>
                 <OpsTd>{b.note ?? "—"}</OpsTd>
                 <OpsTd align="right">
-                  <DeleteBlockButton blockId={b.id} />
+                  <ReleaseBlockButton blockId={b.id} />
                 </OpsTd>
               </OpsTr>
             ))}

@@ -6,8 +6,8 @@ import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-ad
 import { incidentSchema, normalizeIncidentListFilters, sanitizeSearchTerm } from "@/lib/incidents/schema";
 import { OPEN_REPAIR_STATUSES, type Severity } from "@/lib/incidents/schema";
 import { ATTACHMENT_CATEGORIES, type AttachmentCategory } from "@/lib/incidents/schema";
-import { insertVehicleBlock, closeBlockEarly } from "./availability";
-import { releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
+import { closeBlockEarly } from "./availability";
+import { insertVehicleBlock, releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {

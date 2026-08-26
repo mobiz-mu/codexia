@@ -27,8 +27,8 @@ import {
   updateComplianceRecord,
   deleteComplianceRecord,
   uploadComplianceAttachment,
-  runComplianceAlertCheck,
 } from "./compliance";
+import { runComplianceAlertCheck } from "@/lib/compliance/run-alert-check";
 
 const VEHICLE_ID = "11111111-1111-4111-8111-111111111111";
 const RECORD_ID = "22222222-2222-4222-8222-222222222222";

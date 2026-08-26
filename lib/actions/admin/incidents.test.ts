@@ -8,17 +8,17 @@ vi.mock("@/lib/auth/get-current-admin-user", () => ({
   getCurrentAdminUser: vi.fn(),
 }));
 vi.mock("./availability", () => ({
-  insertVehicleBlock: vi.fn(),
   closeBlockEarly: vi.fn(),
 }));
 vi.mock("@/lib/fleet/vehicle-blocks", () => ({
+  insertVehicleBlock: vi.fn(),
   releaseVehicleBlock: vi.fn(),
 }));
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
-import { insertVehicleBlock, closeBlockEarly } from "./availability";
-import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
+import { closeBlockEarly } from "./availability";
+import { insertVehicleBlock, releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import {
   createIncidentRecord,
   updateIncidentRecord,

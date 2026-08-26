@@ -1,11 +1,11 @@
 "use server";
 
 import { createAdminClient } from "@/lib/supabase/admin";
-import { releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
+import { insertVehicleBlock, releaseVehicleBlock, type BlockReleaseOutcome } from "@/lib/fleet/vehicle-blocks";
 import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
 import { maintenanceSchema, normalizeMaintenanceListFilters, sanitizeSearchTerm } from "@/lib/maintenance/schema";
-import { insertVehicleBlock, closeBlockEarly } from "@/lib/actions/admin/availability";
-import { findAvailabilityConflicts } from "@/lib/actions/admin/manual-booking";
+import { closeBlockEarly } from "@/lib/actions/admin/availability";
+import { findAvailabilityConflicts } from "@/lib/booking/availability-conflicts";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {
   if (!user.permissions.has(permission)) {

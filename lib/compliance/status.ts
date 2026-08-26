@@ -50,3 +50,17 @@ export function computeComplianceStatus(expiryDate: string | Date, today: string
 export function isAlarmStatus(status: ComplianceStatus): status is Exclude<ComplianceStatus, "valid"> {
   return status !== "valid";
 }
+
+/**
+ * Calendar-date arithmetic on an ISO `YYYY-MM-DD` string.
+ *
+ * Built through `Date.UTC` deliberately: compliance expiry is a calendar date,
+ * not an instant, so adding days must never be nudged across a boundary by a
+ * local timezone offset.
+ */
+export function addDaysIso(iso: string, days: number): string {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(Date.UTC(y, m - 1, d));
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}

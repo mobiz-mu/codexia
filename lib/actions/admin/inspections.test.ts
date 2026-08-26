@@ -5,14 +5,15 @@ vi.mock("@/lib/auth/get-current-admin-user", () => ({
   requireAdminUser: vi.fn(),
   getCurrentAdminUser: vi.fn(),
 }));
-vi.mock("@/lib/fleet/vehicle-blocks", () => ({ releaseVehicleBlock: vi.fn() }));
-vi.mock("./availability", () => ({ insertVehicleBlock: vi.fn() }));
+vi.mock("@/lib/fleet/vehicle-blocks", () => ({
+  insertVehicleBlock: vi.fn(),
+  releaseVehicleBlock: vi.fn(),
+}));
 vi.mock("./maintenance", () => ({ createMaintenanceRecord: vi.fn() }));
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
-import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
-import { insertVehicleBlock } from "./availability";
+import { insertVehicleBlock, releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import { createMaintenanceRecord } from "./maintenance";
 import { INSPECTION_CHECKLIST } from "@/lib/fleet/inspection-checklist";
 import {

@@ -2,7 +2,7 @@
 
 import { createAdminClient } from "@/lib/supabase/admin";
 import { requireAdminUser, getCurrentAdminUser } from "@/lib/auth/get-current-admin-user";
-import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
+import { insertVehicleBlock, releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
 import { checkOdometerAgainstHistory, type OdometerReading } from "@/lib/fleet/odometer";
 import {
   CHECKLIST_VERSION,
@@ -43,7 +43,6 @@ import {
 } from "@/lib/inspections/due";
 import { isSafetyCriticalKey } from "@/lib/fleet/inspection-checklist";
 import { getSiteSettings } from "@/lib/config/get-site-settings";
-import { insertVehicleBlock } from "./availability";
 import { createMaintenanceRecord } from "./maintenance";
 
 function assertPermission(user: { permissions: Set<string> }, permission: string) {

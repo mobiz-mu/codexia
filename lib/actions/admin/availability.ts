@@ -2,7 +2,12 @@
 
 import { z } from "zod";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { releaseVehicleBlock } from "@/lib/fleet/vehicle-blocks";
+import {
+  insertVehicleBlock,
+  releaseVehicleBlock,
+  type BlockReleaseOutcome,
+  type VehicleBlockType,
+} from "@/lib/fleet/vehicle-blocks";
 import { publicStorageUrl } from "@/lib/supabase/storage";
 import { requireAdminUser } from "@/lib/auth/get-current-admin-user";
 
@@ -54,55 +59,6 @@ const blockSchema = z.object({
 
 export type BlockFormState = { status: "idle" | "success" | "error"; error?: string };
 
-export type VehicleBlockType =
-  | "maintenance"
-  | "internal"
-  | "preparing"
-  | "cleaning"
-  | "incident"
-  | "stop_sell"
-  | "inspection";
-
-// Shared low-level insert primitive — the ONE place vehicle_blocks rows get
-// created from, so a caller (createBlock's own form, or the Accident &
-// Damage History module) never has to re-derive the Postgres range-literal
-// construction or the exclusion-constraint error translation. Deliberately
-// does NOT check permissions itself: each public caller enforces whichever
-// permission is appropriate for it (createBlock -> manage_vehicles,
-// incident-linked blocks -> manage_incidents) before calling this.
-export async function insertVehicleBlock(input: {
-  vehicleId: string;
-  type: VehicleBlockType;
-  note?: string | null;
-  startAt: string;
-  endAt: string;
-  actorId: string;
-}): Promise<{ ok: true; blockId: string } | { ok: false; error: string }> {
-  const supabase = createAdminClient();
-
-  const { data, error } = await supabase
-    .from("vehicle_blocks")
-    .insert({
-      vehicle_id: input.vehicleId,
-      type: input.type,
-      note: input.note || null,
-      period: `[${input.startAt},${input.endAt})`,
-      created_by: input.actorId,
-    })
-    .select("id")
-    .single();
-
-  if (error || !data) {
-    if (error?.code === "23P01") {
-      return { ok: false, error: "This vehicle already has an overlapping block or booking." };
-    }
-    console.error("insertVehicleBlock failed", error?.message);
-    return { ok: false, error: "Failed to create availability block." };
-  }
-
-  return { ok: true, blockId: data.id };
-}
-
 export async function createBlock(_prev: BlockFormState, formData: FormData): Promise<BlockFormState> {
   const user = await requireAdminUser();
   assertPermission(user, "manage_vehicles");
@@ -127,36 +83,46 @@ export async function createBlock(_prev: BlockFormState, formData: FormData): Pr
   return { status: "success" };
 }
 
-export async function deleteBlock(id: string) {
-  const user = await requireAdminUser();
-  assertPermission(user, "manage_vehicles");
-
-  const supabase = createAdminClient();
-  await supabase.from("vehicle_blocks").delete().eq("id", id);
-  return { ok: true as const };
-}
-
-// Ends an active block early rather than deleting it outright — the
-// "deliberate way to close/end the block" required when an incident-blocked
-// vehicle returns to service. Gated on manage_vehicles (same permission as
-// every other vehicle_blocks operation in this file, not a new incident-
-// specific check) — all three roles granted manage_incidents already have
-// manage_vehicles today, so this creates no practical access gap.
-export async function closeBlockEarly(blockId: string): Promise<{ ok: boolean; error?: string }> {
+// Ends a block rather than deleting it outright — the single way the manual
+// Availability screen, and anything else an operator drives, gives a vehicle
+// back to the fleet.
+//
+// There used to be a `deleteBlock` beside this that ran an unconditional
+// `delete().eq("id", id)`. It was reachable from the Remove control on every
+// row of /admin/availability, including rows owned by a maintenance, incident
+// or inspection record — and because those FKs are ON DELETE SET NULL, using
+// it on a block that had already started erased downtime the vehicle really
+// did undergo while leaving the owning record still claiming it. That is the
+// exact history vehicle_blocks exists to hold, so the hard-delete path is
+// gone: every operator-initiated release now goes through the same primitive
+// as Maintenance, Incidents and Inspections.
+//
+//   not started yet -> removed    (no history to keep)
+//   already running -> shortened  (ends now, the period it ran is preserved)
+//   already gone    -> reported, not treated as success
+//   any failure     -> fail closed with a message an operator can act on
+//
+// Gated on manage_vehicles (same permission as every other vehicle_blocks
+// operation in this file, not a new incident-specific check) — all three roles
+// granted manage_incidents already have manage_vehicles today, so this creates
+// no practical access gap.
+export async function closeBlockEarly(
+  blockId: string
+): Promise<{ ok: boolean; outcome?: BlockReleaseOutcome; error?: string }> {
   const user = await requireAdminUser();
   assertPermission(user, "manage_vehicles");
 
   const supabase = createAdminClient();
   const result = await releaseVehicleBlock(supabase, blockId);
 
-  if (!result.ok) return result;
+  if (!result.ok) return { ok: false, error: result.error };
 
   // An operator who explicitly asked to close a specific block should be told
   // when it is no longer there, even though the record-deletion callers treat
   // the same outcome as success.
-  if (result.outcome === "already_gone") return { ok: false, error: "Block not found." };
+  if (result.outcome === "already_gone") return { ok: false, error: "That block no longer exists." };
 
-  return { ok: true };
+  return { ok: true, outcome: result.outcome };
 }
 
 const BOARD_ACTIVE_STATUSES = [

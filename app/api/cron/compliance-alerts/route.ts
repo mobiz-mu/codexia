@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { runComplianceAlertCheck } from "@/lib/actions/admin/compliance";
+import { runComplianceAlertCheck } from "@/lib/compliance/run-alert-check";
 
 export async function GET(request: NextRequest) {
   const secret = process.env.CRON_SECRET;

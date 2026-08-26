@@ -1,4 +1,5 @@
-import type { createAdminClient } from "@/lib/supabase/admin";
+import "server-only";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 /**
  * The one place that decides what "release this vehicle block" means.
@@ -19,6 +20,62 @@ import type { createAdminClient } from "@/lib/supabase/admin";
  *     was off the road for that period and the history must survive; this is
  *     why the FK is on-delete-set-null and not a blind cascade.
  */
+
+export type VehicleBlockType =
+  | "maintenance"
+  | "internal"
+  | "preparing"
+  | "cleaning"
+  | "incident"
+  | "stop_sell"
+  | "inspection";
+
+/**
+ * The ONE place vehicle_blocks rows get created, so no caller has to
+ * re-derive the Postgres range literal or the exclusion-constraint message.
+ *
+ * It performs no permission check of its own — it cannot, because its four
+ * callers each enforce a different one (createBlock → manage_vehicles,
+ * incidents → manage_incidents, maintenance → manage_maintenance,
+ * inspections → manage_inspections). That is exactly why it lives here and
+ * not in a "use server" module: an export from one of those becomes a
+ * remotely callable Server Action, and this one takes `actorId` from its
+ * caller, so as an action it would have let any authenticated session write
+ * arbitrary downtime under a forged `created_by`. Callers authorise first,
+ * then call this.
+ */
+export async function insertVehicleBlock(input: {
+  vehicleId: string;
+  type: VehicleBlockType;
+  note?: string | null;
+  startAt: string;
+  endAt: string;
+  actorId: string;
+}): Promise<{ ok: true; blockId: string } | { ok: false; error: string }> {
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("vehicle_blocks")
+    .insert({
+      vehicle_id: input.vehicleId,
+      type: input.type,
+      note: input.note || null,
+      period: `[${input.startAt},${input.endAt})`,
+      created_by: input.actorId,
+    })
+    .select("id")
+    .single();
+
+  if (error || !data) {
+    if (error?.code === "23P01") {
+      return { ok: false, error: "This vehicle already has an overlapping block or booking." };
+    }
+    console.error("insertVehicleBlock failed", error?.message);
+    return { ok: false, error: "Failed to create availability block." };
+  }
+
+  return { ok: true, blockId: data.id };
+}
 
 export type BlockReleaseOutcome = "removed" | "shortened" | "already_gone";
 
