@@ -502,6 +502,72 @@ export type Database = {
         uploaded_by: string | null;
         created_at: string;
       }>;
+
+      vehicle_inspections: Table<{
+        id: string;
+        vehicle_id: string;
+        /** Which canonical checklist definition this sheet was taken against (0034). */
+        checklist_version: number;
+        /** Sunday of the Mauritius operational week (Monday-Sunday). */
+        week_ending: string;
+        inspection_date: string;
+        odometer_km: number;
+        company_name: string | null;
+        /** Identity snapshot for the printed sheet; vehicle_id stays authoritative. */
+        vehicle_registration: string | null;
+        vehicle_make_model: string | null;
+        /** Free text: a driver is not necessarily an admin user. */
+        driver_name: string | null;
+        driver_acknowledged_on: string | null;
+        inspector_name: string | null;
+        inspected_by: string | null;
+        inspector_acknowledged_on: string | null;
+        /** Written only by the approve path, from the authenticated user. */
+        approved_by: string | null;
+        approved_at: string | null;
+        approval_remarks: string | null;
+        /** Derived from the items. Deliberately has no 'approved' value — approval is a separate layer. */
+        result: "draft" | "completed" | "attention_required" | "failed";
+        defects_notes: string | null;
+        /** Optional canonical vehicle_blocks link; never populated automatically. */
+        availability_block_id: string | null;
+        created_by: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+
+      vehicle_inspection_items: Table<{
+        id: string;
+        inspection_id: string;
+        section:
+          | "exterior"
+          | "tyres_wheels"
+          | "engine_fluids"
+          | "interior"
+          | "safety_equipment"
+          | "road_test";
+        /** Stable key from lib/fleet/inspection-checklist.ts. Append-only. */
+        item_key: string;
+        display_order: number;
+        /** null means not yet answered, which keeps the inspection in draft. */
+        result: "pass" | "attention" | "fail" | "na" | null;
+        remarks: string | null;
+        created_at: string;
+        updated_at: string;
+      }>;
+
+      vehicle_inspection_attachments: Table<{
+        id: string;
+        inspection_id: string;
+        /** Optionally pins the evidence to the exact checklist item it supports. */
+        inspection_item_id: string | null;
+        storage_path: string;
+        file_name: string;
+        mime_type: string;
+        size_bytes: number;
+        uploaded_by: string | null;
+        created_at: string;
+      }>;
       vehicle_tariff_periods: Table<{
         id: string;
         vehicle_id: string | null;
@@ -725,6 +791,8 @@ export type Database = {
         next_service_mileage_km: number | null;
         /** Optional link to the canonical vehicle_blocks row taking this car off the road (0032). */
         availability_block_id: string | null;
+        /** Set when this job was raised from a weekly inspection defect (0034). One inspection may have many. */
+        source_inspection_id: string | null;
         /** Always 'MUR' — internal fleet costs are rupee-denominated (0030). */
         currency: string;
         remarks: string | null;
