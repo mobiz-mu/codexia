@@ -94,6 +94,17 @@ export const maintenanceSchema = z
       }),
     remarks: optionalText(4000),
 
+    // Set when this job was raised from a weekly inspection defect (0034).
+    // Carried through the SAME create path as any other maintenance record so
+    // an inspection follow-up is a normal maintenance job, not a parallel one.
+    sourceInspectionId: z
+      .string()
+      .optional()
+      .transform((v) => (v && v.trim().length > 0 ? v.trim() : null))
+      .refine((v) => v === null || z.string().uuid().safeParse(v).success, {
+        message: "Invalid source inspection reference.",
+      }),
+
     // Downtime is opt-in. Recording that work happened must never, on its own,
     // retroactively take a vehicle off the road.
     markUnavailable: z.coerce.boolean().default(false),

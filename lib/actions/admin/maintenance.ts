@@ -266,6 +266,7 @@ function mapToRow(parsed: ReturnType<typeof maintenanceSchema.safeParse> & { suc
     next_service_date: d.nextServiceDate,
     next_service_mileage_km: d.nextServiceMileageKm,
     remarks: d.remarks,
+    source_inspection_id: d.sourceInspectionId,
   };
 }
 

@@ -595,7 +595,15 @@ export type Database = {
         id: string;
         vehicle_id: string;
         period: string;
-        type: "maintenance" | "internal" | "preparing" | "cleaning" | "incident" | "stop_sell";
+        /** 'inspection' added by 0034 — one availability engine, one more caller. */
+        type:
+          | "maintenance"
+          | "internal"
+          | "preparing"
+          | "cleaning"
+          | "incident"
+          | "stop_sell"
+          | "inspection";
         note: string | null;
         created_by: string | null;
         created_at: string;
